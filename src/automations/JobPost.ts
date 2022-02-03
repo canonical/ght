@@ -11,7 +11,7 @@ export default class JobPost {
         page.setCookie(
             {
                 name: "sessionid",
-                value: "sxqeeh9u4jngesqrgsw5so33r02fmlm8",
+                value: "your-session-id",
                 domain: "login.ubuntu.com"
             }
         );
