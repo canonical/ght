@@ -86,11 +86,8 @@ export default class JobPost {
                 throw new Error("Page information cannot be found");
 
             const jobPostInfo: Post[] = [];
-            for (
-                let currentPage = 1;
-                currentPage <= pageElements.length;
-                currentPage++
-            ) {
+            const pageCount = pageElements.length ? pageElements.length : 1;
+            for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
                 await this.page.goto(`${jobappURL}?page=${currentPage}`);
                 jobPostInfo.push(...(await this.getJobPostData()));
             }
