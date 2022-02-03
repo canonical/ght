@@ -1,14 +1,11 @@
-export async function gotoURL(page: any, url: string) {
-    await page.goto(url);
-    await page.waitForNetworkIdle();
-}
+import Puppeteer, { ElementHandle } from "puppeteer";
 
-export async function getIDFromURL(element: any, selector: string) {
+export async function getIDFromURL(element: ElementHandle, selector: string): Promise<number> {
     const url = await element.$eval(selector, (anchor: any) => anchor.getAttribute('href'));
-    const urlParts = url.split("/");
-    return urlParts[urlParts.length - 1]; 
+    const urlParts: string[] = ("" + url).split("/");
+    return +urlParts[urlParts.length - 1]; 
 }
 
-export function getInnerText(element: any) {
-    return element.evaluate((el: any) => el.innerText);
+export function getInnerText(element: Puppeteer.ElementHandle): Promise<string> {
+    return element?.evaluate((el: Element) => (el as HTMLElement).innerText);
 }
