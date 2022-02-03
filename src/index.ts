@@ -88,6 +88,18 @@ async function getJobData(page: any, jobIDs: number[]) {
     return jobData;
 }
 
+// TODO delete this function
+function printJobData(jobData: Job[]) {
+    jobData.forEach((job: Job) => {
+        console.log(`Job: ${job.id} - ${job.name}`);
+        console.log("Posts: ");
+        job.posts.forEach((post: JobPost, i: number) => {
+            console.log(`-- ${i + 1}) ${post.id} - ${post.name} - ${post.location}`)
+        });
+        console.log("==================")
+    });
+}
+
 async function main() {
     const browser = await Puppeteer.launch();
 	const page = await browser.newPage();
@@ -104,8 +116,7 @@ async function main() {
     const jobID = [exampleJobID, webDeveloperID];
 
     const jobData = await getJobData(page, jobID);
-    console.log(jobData)
-
+    printJobData(jobData);
     browser.close();
 };
 
