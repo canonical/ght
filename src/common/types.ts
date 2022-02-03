@@ -3,11 +3,11 @@ export interface BaseInfo {
     name: string;
 }
 
-export interface JobPost extends BaseInfo {
+export interface Post extends BaseInfo {
     location: string;
     boardInfo: BaseInfo;
 }
 
 export interface Job extends BaseInfo {
-    posts: JobPost[];
+    posts: Post[];
 }
