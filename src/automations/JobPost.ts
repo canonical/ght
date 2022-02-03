@@ -26,7 +26,7 @@ export default class JobPost {
     private async getJobPostData() {
         const jobPosts: Post[] = [];
         const posts = await this.page.$$(".job-application");
-        if (!posts || posts.length === 0)
+        if (!posts || !posts.length)
             throw new Error("No post found!");
                 
         for (let post of posts) {
