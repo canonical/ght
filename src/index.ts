@@ -1,9 +1,13 @@
 import JobPost from "./automations/JobPost";
+import SSO from "./automations/SSO";
 import Puppeteer from "puppeteer";
 import { MAIN_URL } from "./common/constants";
 import { getCSRFToken, getInnerText } from "./common/pageUtils";
 
 (async () => {
+    const sso = new SSO();
+    console.log(await sso.login());
+
     const exampleJobID = 2044596;
     const webDeveloperID = 1662652;
     const jobIDs = [exampleJobID, webDeveloperID];

@@ -13,3 +13,7 @@ export function getCSRFToken(page: Puppeteer.Page): Promise<string> {
         (element) => (element as HTMLMetaElement).content
     );
 }
+
+export function joinURL(baseURL: string, relativeURL: string) {
+    return new URL(relativeURL, baseURL).href;
+}
