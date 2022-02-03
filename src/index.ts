@@ -1,5 +1,5 @@
-import Puppeteer from "puppeteer";
 import JobPost from "./automations/JobPost";
+import Puppeteer from "puppeteer";
 
 (async () => {
     const exampleJobID = 2044596;
