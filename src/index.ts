@@ -22,7 +22,7 @@ import { getCSRFToken, getInnerText } from "./common/pageUtils";
 
     await page.goto(MAIN_URL);
     const csrfToken = await getCSRFToken(page);
-    console.log(`CSRF Token: ${csrfToken}`)
+    console.log(`CSRF Token: ${csrfToken}`);
 
     // cleanup
     browser.close();
