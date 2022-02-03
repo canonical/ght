@@ -1,18 +1,18 @@
+import JobPost from "./automations/JobPost";
 import Puppeteer from "puppeteer";
 
-async function helloWorldPuppeteer() {
+(async () => {
+    const exampleJobID = 2044596;
+    const webDeveloperID = 1662652;
+    const jobIDs = [exampleJobID, webDeveloperID];
+
     const browser = await Puppeteer.launch();
     const page = await browser.newPage();
-    page.setCookie({
-        name: "_cookies_accepted",
-        value: "all",
-        domain: "canonical.com",
-    });
-    await page.goto("https://canonical.com");
-    await page.waitForNetworkIdle();
 
-    await page.screenshot({ path: "screenshot.png" });
+    const postJobs = new JobPost(page);
+    const jobData = await postJobs.getJobData(jobIDs);
+    postJobs.printJobData(jobData);
 
-    await browser.close();
-}
-helloWorldPuppeteer();
+    // cleanup
+    browser.close();
+})();
