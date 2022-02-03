@@ -8,11 +8,6 @@ export default class JobPost {
 
     constructor(page: Puppeteer.Page) {
         this.page = page;
-        page.setCookie({
-            name: "sessionid",
-            value: "your-session-id",
-            domain: "login.ubuntu.com",
-        });
     }
 
     private async getIDFromURL(
