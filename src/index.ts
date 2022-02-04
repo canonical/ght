@@ -1,20 +1,22 @@
 import JobPost from "./automations/JobPost";
-import Puppeteer from "puppeteer";
+import SSO from "./automations/SSO";
 import { MAIN_URL } from "./common/constants";
-import { getCSRFToken, getInnerText } from "./common/pageUtils";
+import { getCSRFToken } from "./common/pageUtils";
+import Puppeteer from "puppeteer";
+import { green } from "colors";
 
 (async () => {
+    const sso = new SSO();
+    const loginCookies = await sso.login();
+    console.log(green("✓"), "Authentications complete");
+
     const exampleJobID = 2044596;
     const webDeveloperID = 1662652;
     const jobIDs = [exampleJobID, webDeveloperID];
 
     const browser = await Puppeteer.launch();
     const page = await browser.newPage();
-    page.setCookie({
-        name: "sessionid",
-        value: "your-session-id",
-        domain: "login.ubuntu.com",
-    });
+    await sso.setCookies(page, loginCookies);
 
     const postJobs = new JobPost(page);
     const jobData = await postJobs.getJobData(jobIDs);
