@@ -1,11 +1,16 @@
-import { CONFIG_PATH, SSO_URL } from "../common/constants";
+import { CONFIG_PATH, SSO_DOMAIN, SSO_URL } from "../common/constants";
 import { joinURL } from "../common/pageUtils";
 import { HttpsCookieAgent } from "http-cookie-agent";
 import { JSDOM } from "jsdom";
 import fetch, { RequestInit, Response } from "node-fetch";
 import { CookieJar } from "tough-cookie";
 import Enquirer = require("enquirer");
+import { Page } from "puppeteer";
 import { existsSync, readFileSync, writeFileSync } from "fs";
+
+export type SSOCookies = {
+    sessionId: string;
+};
 
 export default class SSO {
     private jar;
@@ -59,11 +64,19 @@ export default class SSO {
         writeFileSync(CONFIG_PATH, JSON.stringify(this.jar));
     }
 
-    public async login(): Promise<{ sessionid: string }> {
+    public setCookies(page: Page, ssoCookies: SSOCookies) {
+        return page.setCookie({
+            name: "sessionid",
+            value: ssoCookies.sessionId,
+            domain: SSO_DOMAIN,
+        });
+    }
+
+    public async login(): Promise<SSOCookies> {
         console.log("SSO authentication...");
         let sessionId = await this.currentSessionId();
         if ((await this.isLoggedIn()) && sessionId)
-            return { sessionid: sessionId };
+            return { sessionId: sessionId };
         const credentials = await this.prompt();
         let response: Response = await fetch(
             joinURL(SSO_URL, "/+login"),
@@ -98,7 +111,7 @@ export default class SSO {
         if (!(await this.isLoggedIn()) || !sessionId)
             throw new Error("Invalid 2FA");
         this.saveUserSettings();
-        return { sessionid: sessionId };
+        return { sessionId: sessionId };
     }
 
     public async isLoggedIn() {

@@ -7,7 +7,7 @@ import { green } from "colors";
 
 (async () => {
     const sso = new SSO();
-    console.log(await sso.login());
+    const loginCookies = await sso.login();
     console.log(green("✓"), "Authentications complete");
 
     const exampleJobID = 2044596;
@@ -16,11 +16,7 @@ import { green } from "colors";
 
     const browser = await Puppeteer.launch();
     const page = await browser.newPage();
-    page.setCookie({
-        name: "sessionid",
-        value: "your-session-id",
-        domain: "login.ubuntu.com",
-    });
+    await sso.setCookies(page, loginCookies);
 
     const postJobs = new JobPost(page);
     const jobData = await postJobs.getJobData(jobIDs);
