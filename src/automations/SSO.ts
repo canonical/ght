@@ -60,6 +60,7 @@ export default class SSO {
     }
 
     public async login(): Promise<{ sessionid: string }> {
+        console.log("SSO authentication...");
         let sessionId = await this.currentSessionId();
         if ((await this.isLoggedIn()) && sessionId)
             return { sessionid: sessionId };
@@ -97,7 +98,6 @@ export default class SSO {
         if (!(await this.isLoggedIn()) || !sessionId)
             throw new Error("Invalid 2FA");
         this.saveUserSettings();
-
         return { sessionid: sessionId };
     }
 

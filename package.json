@@ -11,6 +11,7 @@
     "repository": "git@github.com:canonical/greenhouse-automations.git",
     "license": "MIT",
     "dependencies": {
+        "colors": "^1.4.0",
         "enquirer": "^2.3.6",
         "http-cookie-agent": "^1.0.4",
         "jsdom": "^19.0.0",
@@ -20,6 +21,7 @@
     },
     "devDependencies": {
         "@tsconfig/node16": "^1.0.2",
+        "@types/colors": "^1.2.1",
         "@types/jsdom": "^16.2.14",
         "@types/node": "^17.0.14",
         "@types/node-fetch": "^2",

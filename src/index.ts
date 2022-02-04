@@ -1,12 +1,14 @@
 import JobPost from "./automations/JobPost";
 import SSO from "./automations/SSO";
-import Puppeteer from "puppeteer";
 import { MAIN_URL } from "./common/constants";
-import { getCSRFToken, getInnerText } from "./common/pageUtils";
+import { getCSRFToken } from "./common/pageUtils";
+import Puppeteer from "puppeteer";
+import { green } from "colors";
 
 (async () => {
     const sso = new SSO();
     console.log(await sso.login());
+    console.log(green("✓"), "Authentications complete");
 
     const exampleJobID = 2044596;
     const webDeveloperID = 1662652;
