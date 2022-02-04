@@ -1,14 +1,13 @@
 import JobPost from "./automations/JobPost";
 import SSO from "./automations/SSO";
 import { MAIN_URL } from "./common/constants";
-import { getCSRFToken } from "./common/pageUtils";
 import Puppeteer from "puppeteer";
 import { green } from "colors";
 
 (async () => {
     const sso = new SSO();
     const loginCookies = await sso.login();
-    console.log(green("✓"), "Authentications complete");
+    console.log(green("✓"), "Authentication complete");
 
     const exampleJobID = 2044596;
     const webDeveloperID = 1662652;
@@ -20,11 +19,12 @@ import { green } from "colors";
 
     const postJobs = new JobPost(page);
     const jobData = await postJobs.getJobData(jobIDs);
-    postJobs.printJobData(jobData);
-
+    // postJobs.printJobData(jobData);
+    await postJobs.duplicate(jobData[0].posts[0], "test");
+    await postJobs.setStatus(jobData[0].posts[2], "live");
     await page.goto(MAIN_URL);
-    const csrfToken = await getCSRFToken(page);
-    console.log(`CSRF Token: ${csrfToken}`);
+    // const csrfToken = await getCSRFToken(page);
+    // console.log(`CSRF Token: ${csrfToken}`);
 
     // cleanup
     browser.close();
