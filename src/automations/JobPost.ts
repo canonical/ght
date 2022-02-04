@@ -179,7 +179,7 @@ export default class JobPost {
         });
 
         const response = await this.page.evaluate(
-            async ({ referrerURL, CSRFToken, payload, url }) =>
+            async ({ referrer, CSRFToken, payload, url }) =>
                 // create new job post
                 {
                     try {
@@ -193,7 +193,7 @@ export default class JobPost {
                                         "application/json;charset=UTF-8",
                                     "x-csrf-token": CSRFToken,
                                 },
-                                referrer: referrerURL,
+                                referrer,
                                 referrerPolicy:
                                     "strict-origin-when-cross-origin",
                                 body: JSON.stringify(payload),
@@ -207,7 +207,7 @@ export default class JobPost {
                     }
                 },
             {
-                referrerURL: url,
+                referrer: url,
                 CSRFToken: await getCSRFToken(this.page),
                 payload,
                 url: joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapps`),
@@ -217,5 +217,49 @@ export default class JobPost {
         if (response?.status !== "success" || !response.goto)
             throw new Error("Failed to create a new job post " + logName);
         console.log(`${green("✓")} Created job post ${logName}`);
+    }
+
+    public async setStatus(jobPost: Post, newStatus: "live" | "offline") {
+        const logName = `of "${blue(jobPost.name)}" to ${blue(newStatus)}`;
+        const url = joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapp`);
+        await this.page.goto(url);
+        const response = await this.page.evaluate(
+            async ({ url, referrer, CSRFToken, statusId }) => {
+                try {
+                    return await (
+                        await fetch(url, {
+                            headers: {
+                                accept: "application/json, text/javascript, */*; q=0.01",
+                                "accept-language": "en-US,en;q=0.9,fr;q=0.8",
+                                "content-type":
+                                    "application/x-www-form-urlencoded; charset=UTF-8",
+
+                                "x-csrf-token": CSRFToken,
+                                "x-requested-with": "XMLHttpRequest",
+                            },
+                            referrer,
+                            referrerPolicy: "strict-origin-when-cross-origin",
+                            body: `utf8=%E2%9C%93&authenticity_token=${CSRFToken}&job_application_status_id=${statusId}`,
+                            method: "POST",
+                            mode: "cors",
+                            credentials: "include",
+                        })
+                    ).json();
+                } catch {
+                    return null;
+                }
+            },
+            {
+                url: joinURL(MAIN_URL, `/jobapps/${jobPost.id}/status`),
+                referrer: url,
+                CSRFToken: await getCSRFToken(this.page),
+                statusId: newStatus === "live" ? 3 : 2,
+            }
+        );
+        if (response?.status !== "success")
+            throw new Error(
+                "Failed to update the status of the job post " + logName
+            );
+        console.log(`${green("✓")} Changed the status ${logName}`);
     }
 }
