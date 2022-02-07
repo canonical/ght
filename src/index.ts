@@ -1,9 +1,9 @@
 import JobPost from "./automations/JobPost";
 import SSO from "./automations/SSO";
 import { MAIN_URL } from "./common/constants";
+import { Job } from "./common/types";
 import Puppeteer from "puppeteer";
 import { green } from "colors";
-import { Job } from "./common/types";
 
 (async () => {
     const sso = new SSO();
@@ -11,7 +11,6 @@ import { Job } from "./common/types";
     console.log(green("✓"), "Authentication complete");
 
     const exampleJobID = 2044596;
-    const webDeveloperID = 1662652;
     const jobIDs = [exampleJobID];
 
     const browser = await Puppeteer.launch();

@@ -1,7 +1,6 @@
 import { getCSRFToken, getInnerText, joinURL } from "../common/pageUtils";
 import {
     FILTERED_ATTRIBUTES,
-    DEFAULT_HEADER,
     MAIN_URL,
     PROTECTED_JOB_BOARDS,
 } from "../common/constants";
@@ -11,6 +10,19 @@ import { blue, green } from "colors";
 
 export default class JobPost {
     private page: Puppeteer.Page;
+
+    private DEFAULT_HEADER = {
+        accept: "application/json, text/javascript, */*; q=0.01",
+        "accept-language": "en-US,en;q=0.9",
+        "sec-ch-ua":
+            '" Not;A Brand";v="99", "Google Chrome";v="97", "Chromium";v="97"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Linux"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "x-requested-with": "XMLHttpRequest",
+    };
 
     constructor(page: Puppeteer.Page) {
         this.page = page;
@@ -110,12 +122,12 @@ export default class JobPost {
 
     private async deletePost(
         jobPostID: number,
-        headers: {[key: string]: string},
+        headers: { [key: string]: string },
         referrer: string
     ) {
         const url = `${MAIN_URL}jobapps/${jobPostID}`;
         const options = this.getDefaultOptions(referrer);
-        
+
         return await this.page.evaluate(
             async (headers, options, url) => {
                 const response = await fetch(url, {
@@ -137,11 +149,11 @@ export default class JobPost {
         const referrer = `${MAIN_URL}plans/${jobID}/jobapp`;
         const posts: Post[] = jobData.posts;
         const failedPostIDs = [];
-      
-        for (let post of posts) {
+
+        for (const post of posts) {
             const csrfToken = await getCSRFToken(this.page);
             const headers = {
-                ...DEFAULT_HEADER,
+                ...this.DEFAULT_HEADER,
                 "x-csrf-token": csrfToken,
             };
             const jobPostID = post.id;
