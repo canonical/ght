@@ -18,28 +18,15 @@ import { green } from "colors";
     await sso.setCookies(page, loginCookies);
 
     const postJobs = new JobPost(page);
-    // postJobs.printJobData(jobData);
-    
     await page.goto(MAIN_URL);
-    // const csrfToken = await getCSRFToken(page);
-    // console.log(`CSRF Token: ${csrfToken}`);
 
     let jobData: Job;
     for (const jobID of jobIDs) {
         jobData = await postJobs.getJobData(jobID);
         await page.goto(MAIN_URL);
-        const failedDelete = await postJobs.deletePosts(jobData);
-
         postJobs.printJobData(jobData);
 
-        if (!failedDelete || failedDelete.length) {
-            console.log(
-                "Job posts that cannot be deleted: " +
-                    failedDelete
-                        .map((item) => "" + item)
-                        .reduce((item1, item2) => `${item1}, ${item2}`)
-            );
-        }
+        await postJobs.deletePosts(jobData);
 
         await postJobs.duplicate(jobData.posts[0], "test");
         await postJobs.setStatus(jobData.posts[2], "live");
