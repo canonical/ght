@@ -1,5 +1,10 @@
-import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
 import { getCSRFToken, getInnerText, joinURL } from "../common/pageUtils";
+import {
+    FILTERED_ATTRIBUTES,
+    DEFAULT_HEADER,
+    MAIN_URL,
+    PROTECTED_JOB_BOARDS,
+} from "../common/constants";
 import { Job, Post } from "../common/types";
 import Puppeteer, { ElementHandle } from "puppeteer";
 import { blue, green } from "colors";
@@ -48,6 +53,10 @@ export default class JobPost {
             const boardName = await getInnerText(postBoard);
             const boardID = await this.getIDFromURL(postBoard, "a");
 
+            const postRowClassName: string = await (
+                await post.getProperty("className")
+            ).jsonValue();
+
             jobPosts.push({
                 id: jobPostID,
                 name: titleLocationInfo[0],
@@ -57,6 +66,7 @@ export default class JobPost {
                     id: boardID,
                 },
                 job,
+                isLive: postRowClassName.includes("live"),
             });
         }
         return jobPosts;
@@ -69,46 +79,108 @@ export default class JobPost {
         return await getInnerText(jobAnchor);
     }
 
-    public async getJobData(jobIDs: number[]): Promise<Job[]> {
-        const jobData: Job[] = [];
-        for (const jobID of jobIDs) {
-            const jobappURL = `${MAIN_URL}/plans/${jobID}/jobapp`;
-            await this.page.goto(jobappURL);
+    public async getJobData(jobID: number): Promise<Job> {
+        const jobappURL = `${MAIN_URL}/plans/${jobID}/jobapp`;
+        await this.page.goto(jobappURL);
+        const jobTitle = await this.getJobName();
+        const job: Job = {
+            name: jobTitle,
+            id: jobID,
+            posts: [],
+        };
 
-            const jobTitle = await this.getJobName();
-            const job: Job = {
-                name: jobTitle,
-                id: jobID,
-                posts: [],
-            };
+        const pageElements = await this.page.$$("*[aria-label*=Page]");
+        if (!pageElements) throw new Error("Page information cannot be found");
 
-            const pageElements = await this.page.$$("*[aria-label*=Page]");
-            if (!pageElements)
-                throw new Error("Page information cannot be found");
-
-            const pageCount = pageElements.length ? pageElements.length : 1;
-            for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
-                await this.page.goto(`${jobappURL}?page=${currentPage}`);
-                job.posts.push(...(await this.getJobPostData(job)));
-            }
-
-            jobData.push(job);
+        const pageCount = pageElements.length ? pageElements.length : 1;
+        for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
+            await this.page.goto(`${jobappURL}?page=${currentPage}`);
+            job.posts.push(...(await this.getJobPostData(job)));
         }
-        return jobData;
+
+        return job;
+    }
+
+    private getDefaultOptions = (referrer: string) => ({
+        mode: "cors",
+        credentials: "include",
+        referrer,
+        referrerPolicy: "strict-origin-when-cross-origin",
+    });
+
+    private async deletePost(
+        jobPostID: number,
+        headers: {[key: string]: string},
+        referrer: string
+    ) {
+        const url = `${MAIN_URL}jobapps/${jobPostID}`;
+        const options = this.getDefaultOptions(referrer);
+        
+        return await this.page.evaluate(
+            async (headers, options, url) => {
+                const response = await fetch(url, {
+                    body: null,
+                    method: "DELETE",
+                    headers,
+                    ...options,
+                });
+                return response.status >= 200 && response.status <= 299;
+            },
+            headers,
+            options,
+            url
+        );
+    }
+
+    public async deletePosts(jobData: Job) {
+        const jobID = jobData.id;
+        const referrer = `${MAIN_URL}plans/${jobID}/jobapp`;
+        const posts: Post[] = jobData.posts;
+        const failedPostIDs = [];
+      
+        for (let post of posts) {
+            const csrfToken = await getCSRFToken(this.page);
+            const headers = {
+                ...DEFAULT_HEADER,
+                "x-csrf-token": csrfToken,
+            };
+            const jobPostID = post.id;
+            // Check if job post board is not in protected boards
+            if (!PROTECTED_JOB_BOARDS.includes(post.boardInfo.name)) {
+                if (post.isLive) {
+                    await this.setStatus(
+                        post,
+                        "offline"
+                    );
+                }
+
+                let isSuccessful: boolean = false;
+                isSuccessful = await this.deletePost(
+                    jobPostID,
+                    headers,
+                    referrer
+                );
+                await this.page.reload();
+                if (!isSuccessful)
+                    failedPostIDs.push(jobPostID);
+            }
+        }
+
+        return failedPostIDs;
     }
 
     // TODO delete this function
-    public printJobData(jobData: Job[]): void {
-        jobData.forEach((job: Job) => {
-            console.log(`Job: ${job.id} - ${job.name}`);
-            console.log("Posts: ");
-            job.posts.forEach((post: Post, i: number) => {
-                console.log(
-                    `-- ${i + 1}) ${post.id} - ${post.name} - ${post.location}`
-                );
-            });
-            console.log("==================");
+    public printJobData(job: Job): void {
+        console.log(`Job: ${job.id} - ${job.name}`);
+        console.log("Posts: ");
+        job.posts.forEach((post: Post, i: number) => {
+            console.log(
+                `-- ${i + 1}) ${post.id} - ${post.name} - ${
+                    post.location
+                } - Board: ${post.boardInfo.name} - Live: ${post.isLive}`
+            );
         });
+        console.log("==================");
     }
 
     /**

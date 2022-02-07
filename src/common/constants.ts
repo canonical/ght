@@ -43,3 +43,17 @@ export const FILTERED_ATTRIBUTES = [
     "location",
     "updated_at",
 ];
+
+export const PROTECTED_JOB_BOARDS = ["Canonical", "INTERNAL"];
+
+export const DEFAULT_HEADER = {
+    "accept": "application/json, text/javascript, */*; q=0.01",
+    "accept-language": "en-US,en;q=0.9",
+    "sec-ch-ua": "\" Not;A Brand\";v=\"99\", \"Google Chrome\";v=\"97\", \"Chromium\";v=\"97\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Linux\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "x-requested-with": "XMLHttpRequest",
+};
