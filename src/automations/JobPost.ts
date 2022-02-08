@@ -129,12 +129,13 @@ export default class JobPost {
                         new RegExp(post.boardInfo.name, "i")
                     )
             );
-            // Check if job post board is not in protected boards
-            if (!isProtected) {
-                !post.isLive && (await this.setStatus(post, "offline"));
-                await this.deletePost(jobPostID, referrer);
-                await this.page.reload();
-            }
+            
+            // if job is protected do not delete it.
+            if (isProtected) continue;
+
+            post.isLive && (await this.setStatus(post, "offline"));
+            await this.deletePost(jobPostID, referrer);
+            await this.page.reload();
         }
 
         console.log(`${green("✓")} Deleted posts of ${jobData.name}`);
