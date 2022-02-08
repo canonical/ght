@@ -43,3 +43,5 @@ export const FILTERED_ATTRIBUTES = [
     "location",
     "updated_at",
 ];
+
+export const PROTECTED_JOB_BOARDS = ["Canonical", "Internal"];

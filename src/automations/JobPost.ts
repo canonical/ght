@@ -1,5 +1,9 @@
-import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
 import { getCSRFToken, getInnerText, joinURL } from "../common/pageUtils";
+import {
+    FILTERED_ATTRIBUTES,
+    MAIN_URL,
+    PROTECTED_JOB_BOARDS,
+} from "../common/constants";
 import { Job, Post } from "../common/types";
 import Puppeteer, { ElementHandle } from "puppeteer";
 import { blue, green } from "colors";
@@ -48,6 +52,10 @@ export default class JobPost {
             const boardName = await getInnerText(postBoard);
             const boardID = await this.getIDFromURL(postBoard, "a");
 
+            const postRowClassName: string = await (
+                await post.getProperty("className")
+            ).jsonValue();
+
             jobPosts.push({
                 id: jobPostID,
                 name: titleLocationInfo[0],
@@ -57,6 +65,7 @@ export default class JobPost {
                     id: boardID,
                 },
                 job,
+                isLive: postRowClassName.includes("live"),
             });
         }
         return jobPosts;
@@ -69,46 +78,83 @@ export default class JobPost {
         return await getInnerText(jobAnchor);
     }
 
-    public async getJobData(jobIDs: number[]): Promise<Job[]> {
-        const jobData: Job[] = [];
-        for (const jobID of jobIDs) {
-            const jobappURL = `${MAIN_URL}/plans/${jobID}/jobapp`;
-            await this.page.goto(jobappURL);
+    public async getJobData(jobID: number): Promise<Job> {
+        const jobappURL = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
+        await this.page.goto(jobappURL);
+        const jobTitle = await this.getJobName();
+        const job: Job = {
+            name: jobTitle,
+            id: jobID,
+            posts: [],
+        };
 
-            const jobTitle = await this.getJobName();
-            const job: Job = {
-                name: jobTitle,
-                id: jobID,
-                posts: [],
-            };
+        const pageElements = await this.page.$$("*[aria-label*=Page]");
+        if (!pageElements) throw new Error("Page information cannot be found");
 
-            const pageElements = await this.page.$$("*[aria-label*=Page]");
-            if (!pageElements)
-                throw new Error("Page information cannot be found");
-
-            const pageCount = pageElements.length ? pageElements.length : 1;
-            for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
-                await this.page.goto(`${jobappURL}?page=${currentPage}`);
-                job.posts.push(...(await this.getJobPostData(job)));
-            }
-
-            jobData.push(job);
+        const pageCount = pageElements.length ? pageElements.length : 1;
+        for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
+            await this.page.goto(`${jobappURL}?page=${currentPage}`);
+            job.posts.push(...(await this.getJobPostData(job)));
         }
-        return jobData;
+
+        return job;
+    }
+    private async deletePost(jobPostID: number, referrer: string) {
+        const url = joinURL(MAIN_URL, `/jobapps/${jobPostID}`);
+
+        await this.sendRequest(
+            url,
+            {
+                "x-requested-with": "XMLHttpRequest",
+            },
+            {
+                referrer,
+                body: null,
+                method: "DELETE",
+            },
+            `Failed to delete the job post with ${jobPostID} ID.`
+        );
+        
+        console.log(`${green("✓")} Deleted job post with ${jobPostID} ID`);
+    }
+
+    public async deletePosts(jobData: Job) {
+        const jobID = jobData.id;
+        const referrer = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
+        const posts: Post[] = jobData.posts;
+
+        for (const post of posts) {
+            const jobPostID = post.id;
+            const isProtected = !!PROTECTED_JOB_BOARDS.find(
+                (protectedBoardName) =>
+                    protectedBoardName.match(
+                        new RegExp(post.boardInfo.name, "i")
+                    )
+            );
+
+            // if job is protected, do not delete it.
+            if (isProtected) continue;
+
+            post.isLive && (await this.setStatus(post, "offline"));
+            await this.deletePost(jobPostID, referrer);
+            await this.page.reload();
+        }
+
+        console.log(`${green("✓")} Deleted posts of ${jobData.name}`);
     }
 
     // TODO delete this function
-    public printJobData(jobData: Job[]): void {
-        jobData.forEach((job: Job) => {
-            console.log(`Job: ${job.id} - ${job.name}`);
-            console.log("Posts: ");
-            job.posts.forEach((post: Post, i: number) => {
-                console.log(
-                    `-- ${i + 1}) ${post.id} - ${post.name} - ${post.location}`
-                );
-            });
-            console.log("==================");
+    public printJobData(job: Job): void {
+        console.log(`Job: ${job.id} - ${job.name}`);
+        console.log("Posts: ");
+        job.posts.forEach((post: Post, i: number) => {
+            console.log(
+                `-- ${i + 1}) ${post.id} - ${post.name} - ${
+                    post.location
+                } - Board: ${post.boardInfo.name} - Live: ${post.isLive}`
+            );
         });
+        console.log("==================");
     }
 
     /**
@@ -178,44 +224,19 @@ export default class JobPost {
             delete payload.greenhouse_job_application[attr];
         });
 
-        const response = await this.page.evaluate(
-            async ({ referrer, CSRFToken, payload, url }) =>
-                // create new job post
-                {
-                    try {
-                        return await (
-                            await fetch(url, {
-                                headers: {
-                                    accept: "application/json",
-                                    "accept-language":
-                                        "en-US,en;q=0.9,fr;q=0.8",
-                                    "content-type":
-                                        "application/json;charset=UTF-8",
-                                    "x-csrf-token": CSRFToken,
-                                },
-                                referrer,
-                                referrerPolicy:
-                                    "strict-origin-when-cross-origin",
-                                body: JSON.stringify(payload),
-                                method: "POST",
-                                mode: "cors",
-                                credentials: "include",
-                            })
-                        ).json();
-                    } catch {
-                        return null;
-                    }
-                },
+        await this.sendRequest(
+            joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapps`),
+            {
+                "content-type": "application/json;charset=UTF-8",
+            },
             {
                 referrer: url,
-                CSRFToken: await getCSRFToken(this.page),
-                payload,
-                url: joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapps`),
-            }
+                body: JSON.stringify(payload),
+                method: "POST",
+            },
+            "Failed to create a new job post " + logName
         );
 
-        if (response?.status !== "success" || !response.goto)
-            throw new Error("Failed to create a new job post " + logName);
         console.log(`${green("✓")} Created job post ${logName}`);
     }
 
@@ -223,26 +244,49 @@ export default class JobPost {
         const logName = `of "${blue(jobPost.name)}" to ${blue(newStatus)}`;
         const url = joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapp`);
         await this.page.goto(url);
+
+        const csrfToken = await getCSRFToken(this.page);
+        await this.sendRequest(
+            joinURL(MAIN_URL, `/jobapps/${jobPost.id}/status`),
+            {
+                "content-type":
+                    "application/x-www-form-urlencoded; charset=UTF-8",
+                "x-requested-with": "XMLHttpRequest",
+            },
+            {
+                referrer: url,
+                body: `utf8=%E2%9C%93&authenticity_token=${csrfToken}&job_application_status_id=${
+                    newStatus === "live" ? 3 : 2
+                }`,
+                method: "POST",
+            },
+            "Failed to update the status of the job post " + logName
+        );
+
+        console.log(`${green("✓")} Changed the status ${logName}`);
+    }
+
+    private async sendRequest(
+        url: string,
+        headers: { [key: string]: string },
+        options: { [key: string]: string | null },
+        errorMessage: string
+    ) {
         const response = await this.page.evaluate(
-            async ({ url, referrer, CSRFToken, statusId }) => {
+            async ({ url, headers, options, csrfToken }) => {
                 try {
                     return await (
                         await fetch(url, {
                             headers: {
                                 accept: "application/json, text/javascript, */*; q=0.01",
                                 "accept-language": "en-US,en;q=0.9,fr;q=0.8",
-                                "content-type":
-                                    "application/x-www-form-urlencoded; charset=UTF-8",
-
-                                "x-csrf-token": CSRFToken,
-                                "x-requested-with": "XMLHttpRequest",
+                                "x-csrf-token": csrfToken,
+                                ...headers,
                             },
-                            referrer,
                             referrerPolicy: "strict-origin-when-cross-origin",
-                            body: `utf8=%E2%9C%93&authenticity_token=${CSRFToken}&job_application_status_id=${statusId}`,
-                            method: "POST",
                             mode: "cors",
                             credentials: "include",
+                            ...options,
                         })
                     ).json();
                 } catch {
@@ -250,16 +294,14 @@ export default class JobPost {
                 }
             },
             {
-                url: joinURL(MAIN_URL, `/jobapps/${jobPost.id}/status`),
-                referrer: url,
-                CSRFToken: await getCSRFToken(this.page),
-                statusId: newStatus === "live" ? 3 : 2,
+                url,
+                headers,
+                options,
+                csrfToken: await getCSRFToken(this.page),
             }
         );
-        if (response?.status !== "success")
-            throw new Error(
-                "Failed to update the status of the job post " + logName
-            );
-        console.log(`${green("✓")} Changed the status ${logName}`);
+        if (!(response?.status === "success" || response?.success))
+            throw new Error(errorMessage);
+        return response;
     }
 }
