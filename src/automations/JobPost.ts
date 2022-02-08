@@ -114,6 +114,8 @@ export default class JobPost {
             },
             `Failed to delete the job post with ${jobPostID} ID.`
         );
+        
+        console.log(`${green("✓")} Deleted job post with ${jobPostID} ID`);
     }
 
     public async deletePosts(jobData: Job) {
