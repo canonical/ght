@@ -102,7 +102,8 @@ export default class JobPost {
     private async deletePost(jobPostID: number, referrer: string) {
         const url = joinURL(MAIN_URL, `/jobapps/${jobPostID}`);
 
-        await this.sendReuest(
+        await this.sendRequest(
+            url,
             {
                 "x-requested-with": "XMLHttpRequest",
             },
@@ -111,7 +112,6 @@ export default class JobPost {
                 body: null,
                 method: "DELETE",
             },
-            url,
             `Failed to delete the job post with ${jobPostID} ID.`
         );
     }
@@ -123,14 +123,21 @@ export default class JobPost {
 
         for (const post of posts) {
             const jobPostID = post.id;
+            const isProtected = !!PROTECTED_JOB_BOARDS.find(
+                (protectedBoardName) =>
+                    protectedBoardName.match(
+                        new RegExp(post.boardInfo.name, "i")
+                    )
+            );
             // Check if job post board is not in protected boards
-            if (!PROTECTED_JOB_BOARDS.includes(post.boardInfo.name)) {
+            if (!isProtected) {
                 !post.isLive && (await this.setStatus(post, "offline"));
-
                 await this.deletePost(jobPostID, referrer);
                 await this.page.reload();
             }
         }
+
+        console.log(`${green("✓")} Deleted posts of ${jobData.name}`);
     }
 
     // TODO delete this function
@@ -214,7 +221,8 @@ export default class JobPost {
             delete payload.greenhouse_job_application[attr];
         });
 
-        await this.sendReuest(
+        await this.sendRequest(
+            joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapps`),
             {
                 "content-type": "application/json;charset=UTF-8",
             },
@@ -223,7 +231,6 @@ export default class JobPost {
                 body: JSON.stringify(payload),
                 method: "POST",
             },
-            joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapps`),
             "Failed to create a new job post " + logName
         );
 
@@ -236,31 +243,31 @@ export default class JobPost {
         await this.page.goto(url);
 
         const csrfToken = await getCSRFToken(this.page);
-        await this.sendReuest(
+        await this.sendRequest(
+            joinURL(MAIN_URL, `/jobapps/${jobPost.id}/status`),
             {
                 "content-type":
                     "application/x-www-form-urlencoded; charset=UTF-8",
                 "x-requested-with": "XMLHttpRequest",
             },
             {
-                referrer: joinURL(MAIN_URL, `/jobapps/${jobPost.id}/status`),
+                referrer: url,
                 body: `utf8=%E2%9C%93&authenticity_token=${csrfToken}&job_application_status_id=${
                     newStatus === "live" ? 3 : 2
                 }`,
                 method: "POST",
             },
-            url,
             "Failed to update the status of the job post " + logName
         );
 
         console.log(`${green("✓")} Changed the status ${logName}`);
     }
 
-    private async sendReuest(
+    private async sendRequest(
+        url: string,
         headers: { [key: string]: string },
         options: { [key: string]: string | null },
-        url: string,
-        errorLog: string
+        errorMessage: string
     ) {
         const response = await this.page.evaluate(
             async ({ url, headers, options, csrfToken }) => {
@@ -268,10 +275,10 @@ export default class JobPost {
                     return await (
                         await fetch(url, {
                             headers: {
-                                ...headers,
                                 accept: "application/json, text/javascript, */*; q=0.01",
                                 "accept-language": "en-US,en;q=0.9,fr;q=0.8",
                                 "x-csrf-token": csrfToken,
+                                ...headers,
                             },
                             referrerPolicy: "strict-origin-when-cross-origin",
                             mode: "cors",
@@ -290,6 +297,7 @@ export default class JobPost {
                 csrfToken: await getCSRFToken(this.page),
             }
         );
-        if (response?.status !== "success") throw new Error(errorLog);
+        if (response?.status !== "success") throw new Error(errorMessage);
+        return response;
     }
 }

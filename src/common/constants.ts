@@ -44,4 +44,4 @@ export const FILTERED_ATTRIBUTES = [
     "updated_at",
 ];
 
-export const PROTECTED_JOB_BOARDS = ["Canonical", "INTERNAL"];
+export const PROTECTED_JOB_BOARDS = ["Canonical", "Internal"];
