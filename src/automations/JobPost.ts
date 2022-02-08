@@ -129,8 +129,8 @@ export default class JobPost {
                         new RegExp(post.boardInfo.name, "i")
                     )
             );
-            
-            // if job is protected do not delete it.
+
+            // if job is protected, do not delete it.
             if (isProtected) continue;
 
             post.isLive && (await this.setStatus(post, "offline"));
@@ -298,7 +298,8 @@ export default class JobPost {
                 csrfToken: await getCSRFToken(this.page),
             }
         );
-        if (response?.status !== "success") throw new Error(errorMessage);
+        if (!(response?.status === "success" || response?.success))
+            throw new Error(errorMessage);
         return response;
     }
 }
