@@ -45,3 +45,10 @@ export const FILTERED_ATTRIBUTES = [
 ];
 
 export const PROTECTED_JOB_BOARDS = ["Canonical", "Internal"];
+
+export const REGION = [
+    "europe",
+    "americas",
+    "emea",
+    "apac"
+];
