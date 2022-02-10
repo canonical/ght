@@ -55,7 +55,7 @@ export default class Job {
         for (const protectedPost of protectedPosts) {
             const protectedJobName = protectedPost.name;
 
-            // Get existing posts' location that have same name with the current protected job.
+            // Get existing post's location that have same name with the current protected job.
             const existingLocations = posts
                 .filter((post) => post.name === protectedJobName)
                 .map((post) => post.location);
