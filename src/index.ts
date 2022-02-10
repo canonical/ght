@@ -1,8 +1,9 @@
 import JobPost from "./automations/JobPost";
 import SSO from "./automations/SSO";
 import { Job, Post } from "./common/types";
-import { JOB_BOARD, PROTECTED_JOB_BOARDS, REGIONS } from "./common/constants";
+import { JOB_BOARD, PROTECTED_JOB_BOARDS } from "./common/constants";
 import { getBoards } from "./common/pageUtils";
+import regions from "./common/regions";
 import Puppeteer from "puppeteer";
 import { green, yellow } from "colors";
 import { Command, Argument, Option } from "commander";
@@ -47,7 +48,7 @@ async function clonePost(
             .map((post) => post.location);
 
         for (const regionName of regionsToPost) {
-            const regionCities = REGIONS[regionName];
+            const regionCities = regions[regionName];
 
             // New posts' locations = Current region's locations - Existing locations
             const locations = regionCities.filter(
@@ -118,15 +119,15 @@ async function main() {
             "Add job posts to given region/s",
             (value) => {
                 const enteredRegions: string[] = value.split(",");
-                const regions = Object.keys(REGIONS);
+                const regionNames = Object.keys(regions);
                 enteredRegions.forEach((enteredRegion) => {
                     if (
-                        !regions.find((region) =>
+                        !regionNames.find((region) =>
                             region.match(new RegExp(enteredRegion, "i"))
                         )
                     )
                         throw new Error(
-                            `Invalid region is entered: "${enteredRegion}". It must be one of the predefined regions: ${regions.reduce(
+                            `Invalid region is entered: "${enteredRegion}". It must be one of the predefined regions: ${regionNames.reduce(
                                 (str1, str2) => `${str1}, ${str2}`
                             )}`
                         );

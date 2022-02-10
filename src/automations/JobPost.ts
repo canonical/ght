@@ -92,7 +92,9 @@ export default class JobPost {
         if (!pageElements) throw new Error("Page information cannot be found");
 
         const pageLength = pageElements.length ? pageElements.length - 1 : 0;
-        const pageCount = parseInt(await getInnerText(pageElements[pageLength]));
+        const pageCount = parseInt(
+            await getInnerText(pageElements[pageLength])
+        );
 
         for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
             await this.page.goto(`${jobappURL}?page=${currentPage}`);
