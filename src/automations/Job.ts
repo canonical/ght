@@ -1,6 +1,7 @@
 import JobPost from "./JobPost";
+import Board from "./Board";
 import { JOB_BOARD, MAIN_URL, PROTECTED_JOB_BOARDS } from "../common/constants";
-import { getBoards, getInnerText, joinURL } from "../common/pageUtils";
+import { getInnerText, joinURL } from "../common/pageUtils";
 import regions from "../common/regions";
 import { JobInfo, PostInfo } from "../common/types";
 import Puppeteer from "puppeteer";
@@ -9,10 +10,12 @@ import { green, yellow } from "colors";
 export default class Job {
     private page: Puppeteer.Page;
     private jobPost: JobPost;
+    private board: Board;
 
     constructor(page: Puppeteer.Page) {
         this.page = page;
         this.jobPost = new JobPost(page);
+        this.board = new Board(page);
     }
 
     /**
@@ -48,7 +51,7 @@ export default class Job {
             throw new Error(`There is no post to clone.`);
 
         // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
-        const boards = await getBoards(page);
+        const boards = await this.board.getBoards();
         const boardToPost = boards.find((board) => board.name === JOB_BOARD);
         if (!boardToPost) throw new Error(`Board cannot be found!.`);
 

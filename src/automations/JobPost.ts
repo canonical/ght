@@ -1,4 +1,9 @@
-import { getCSRFToken, getInnerText, joinURL } from "../common/pageUtils";
+import {
+    getCSRFToken,
+    getInnerText,
+    joinURL,
+    sendRequest,
+} from "../common/pageUtils";
 import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
 import { PostInfo } from "../common/types";
 import Puppeteer, { ElementHandle } from "puppeteer";
@@ -59,10 +64,14 @@ export default class JobPost {
         };
     }
 
+    public isSuccessful = (response: { [key: string]: string }) =>
+        !(response?.status === "success" || response?.success);
+
     public async deletePost(jobPostID: number, referrer: string) {
         const url = joinURL(MAIN_URL, `/jobapps/${jobPostID}`);
 
-        await this.sendRequest(
+        await sendRequest(
+            this.page,
             url,
             {
                 "x-requested-with": "XMLHttpRequest",
@@ -72,7 +81,8 @@ export default class JobPost {
                 body: null,
                 method: "DELETE",
             },
-            `Failed to delete the job post with ${jobPostID} ID.`
+            `Failed to delete the job post with ${jobPostID} ID.`,
+            this.isSuccessful
         );
 
         console.log(`${green("✓")} Deleted job post with ${jobPostID} ID`);
@@ -150,7 +160,8 @@ export default class JobPost {
             delete payload.greenhouse_job_application[attr];
         });
 
-        await this.sendRequest(
+        await sendRequest(
+            this.page,
             joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapps`),
             {
                 "content-type": "application/json;charset=UTF-8",
@@ -160,7 +171,8 @@ export default class JobPost {
                 body: JSON.stringify(payload),
                 method: "POST",
             },
-            "Failed to create a new job post " + logName
+            "Failed to create a new job post " + logName,
+            this.isSuccessful
         );
 
         console.log(`${green("✓")} Created job post ${logName}`);
@@ -172,7 +184,8 @@ export default class JobPost {
         await this.page.goto(url);
 
         const csrfToken = await getCSRFToken(this.page);
-        await this.sendRequest(
+        await sendRequest(
+            this.page,
             joinURL(MAIN_URL, `/jobapps/${jobPost.id}/status`),
             {
                 "content-type":
@@ -186,48 +199,10 @@ export default class JobPost {
                 }`,
                 method: "POST",
             },
-            "Failed to update the status of the job post " + logName
+            "Failed to update the status of the job post " + logName,
+            this.isSuccessful
         );
 
         console.log(`${green("✓")} Changed the status ${logName}`);
-    }
-
-    private async sendRequest(
-        url: string,
-        headers: { [key: string]: string },
-        options: { [key: string]: string | null },
-        errorMessage: string
-    ) {
-        const response = await this.page.evaluate(
-            async ({ url, headers, options, csrfToken }) => {
-                try {
-                    return await (
-                        await fetch(url, {
-                            headers: {
-                                accept: "application/json, text/javascript, */*; q=0.01",
-                                "accept-language": "en-US,en;q=0.9,fr;q=0.8",
-                                "x-csrf-token": csrfToken,
-                                ...headers,
-                            },
-                            referrerPolicy: "strict-origin-when-cross-origin",
-                            mode: "cors",
-                            credentials: "include",
-                            ...options,
-                        })
-                    ).json();
-                } catch {
-                    return null;
-                }
-            },
-            {
-                url,
-                headers,
-                options,
-                csrfToken: await getCSRFToken(this.page),
-            }
-        );
-        if (!(response?.status === "success" || response?.success))
-            throw new Error(errorMessage);
-        return response;
     }
 }

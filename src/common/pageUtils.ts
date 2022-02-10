@@ -1,5 +1,3 @@
-import { BaseInfo } from "./types";
-import { MAIN_URL } from "./constants";
 import Puppeteer from "puppeteer";
 
 export function getInnerText(
@@ -20,9 +18,16 @@ export function joinURL(baseURL: string, relativeURL: string) {
     return new URL(relativeURL, baseURL).href;
 }
 
-export async function getBoards(page: Puppeteer.Page): Promise<BaseInfo[]> {
+export async function sendRequest(
+    page: Puppeteer.Page,
+    url: string,
+    headers: { [key: string]: string },
+    options: { [key: string]: string | null },
+    errorMessage: string,
+    isSuccessful: (response: { [key: string]: string }) => boolean
+) {
     const response = await page.evaluate(
-        async ({ url, csrfToken, referrer }) => {
+        async ({ url, headers, options, csrfToken }) => {
             try {
                 return await (
                     await fetch(url, {
@@ -30,31 +35,27 @@ export async function getBoards(page: Puppeteer.Page): Promise<BaseInfo[]> {
                             accept: "application/json, text/javascript, */*; q=0.01",
                             "accept-language": "en-US,en;q=0.9,fr;q=0.8",
                             "x-csrf-token": csrfToken,
+                            ...headers,
                         },
                         referrerPolicy: "strict-origin-when-cross-origin",
                         mode: "cors",
                         credentials: "include",
-                        referrer,
-                        body: null,
-                        method: "GET",
+                        ...options,
                     })
                 ).json();
-            } catch (e) {
-                console.log(e);
+            } catch {
                 return null;
             }
         },
         {
-            url: joinURL(MAIN_URL, "/jobboard/get_boards"),
+            url,
+            headers,
+            options,
             csrfToken: await getCSRFToken(page),
-            referrer: joinURL(MAIN_URL, "/jobboard"),
         }
     );
 
-    if (!response) throw new Error("Boards cannot be retrieved.");
+    if (isSuccessful(response)) throw new Error(errorMessage);
 
-    return response["job_boards"].map((board: any) => ({
-        id: board["id"],
-        name: board["company_name"],
-    }));
+    return response;
 }
