@@ -114,7 +114,7 @@ export default class JobPost {
             },
             `Failed to delete the job post with ${jobPostID} ID.`
         );
-        
+
         console.log(`${green("✓")} Deleted job post with ${jobPostID} ID`);
     }
 
@@ -162,7 +162,11 @@ export default class JobPost {
      * @param jobPost the original job post
      * @param location the location to duplicate to
      */
-    public async duplicate(jobPost: Post, location: string): Promise<void> {
+    public async duplicate(
+        jobPost: Post,
+        location: string,
+        boardID: number
+    ): Promise<void> {
         const logName = `"${blue(jobPost.name)}" at "${blue(location)}"`;
         const url = `https://canonical.greenhouse.io/plans/${jobPost.job.id}/jobapps/new?from=duplicate&greenhouse_job_application_id=${jobPost.id}`;
         await this.page.goto(url);
@@ -216,7 +220,7 @@ export default class JobPost {
         jobApplication.title = jobPost.name;
 
         const payload = {
-            external_or_internal_greenhouse_job_board_id: jobPost.boardInfo.id,
+            external_or_internal_greenhouse_job_board_id: boardID,
             greenhouse_job_application: jobApplication,
             template_application_id: jobPost.id,
         };
