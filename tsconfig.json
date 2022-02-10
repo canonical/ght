@@ -5,8 +5,7 @@
         "lib": [
             "es2016",
             "dom"
-        ],
-        "resolveJsonModule": true
+        ]
     },
     "include": ["src"],
     "exclude": ["node_modules"]
