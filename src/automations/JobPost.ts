@@ -92,7 +92,7 @@ export default class JobPost {
         if (!pageElements) throw new Error("Page information cannot be found");
 
         const pageLength = pageElements.length ? pageElements.length - 1 : 0;
-        const pageCount = +(await getInnerText(pageElements[pageLength]));
+        const pageCount = parseInt(await getInnerText(pageElements[pageLength]));
 
         for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
             await this.page.goto(`${jobappURL}?page=${currentPage}`);
@@ -150,6 +150,7 @@ export default class JobPost {
      * Create a copy of a given job post and move it to the given location
      * @param jobPost the original job post
      * @param location the location to duplicate to
+     * @param boardID the ID of the board that job post will be created with
      */
     public async duplicate(
         jobPost: Post,
