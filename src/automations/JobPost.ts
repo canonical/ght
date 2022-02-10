@@ -255,7 +255,7 @@ export default class JobPost {
             },
             "Failed to update the status of the job post " + logName
         );
-        
+
         console.log(`${green("✓")} Changed the status ${logName}`);
     }
 
