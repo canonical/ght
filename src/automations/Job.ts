@@ -80,7 +80,7 @@ export default class Job {
             }
         }
 
-        console.log(green("✓"), "Posts are created.");
+        console.log(green("✓"), "Job posts are created.");
     }
 
     public async markAsLive(jobID: number, oldPosts: PostInfo[]) {
