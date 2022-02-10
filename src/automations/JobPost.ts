@@ -91,7 +91,9 @@ export default class JobPost {
         const pageElements = await this.page.$$("*[aria-label*=Page]");
         if (!pageElements) throw new Error("Page information cannot be found");
 
-        const pageCount = pageElements.length ? pageElements.length : 1;
+        const pageLength = pageElements.length ? pageElements.length - 1 : 0;
+        const pageCount = +(await getInnerText(pageElements[pageLength]));
+
         for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
             await this.page.goto(`${jobappURL}?page=${currentPage}`);
             job.posts.push(...(await this.getJobPostData(job)));
@@ -99,6 +101,7 @@ export default class JobPost {
 
         return job;
     }
+
     private async deletePost(jobPostID: number, referrer: string) {
         const url = joinURL(MAIN_URL, `/jobapps/${jobPostID}`);
 
@@ -141,20 +144,6 @@ export default class JobPost {
         }
 
         console.log(`${green("✓")} Deleted posts of ${jobData.name}`);
-    }
-
-    // TODO delete this function
-    public printJobData(job: Job): void {
-        console.log(`Job: ${job.id} - ${job.name}`);
-        console.log("Posts: ");
-        job.posts.forEach((post: Post, i: number) => {
-            console.log(
-                `-- ${i + 1}) ${post.id} - ${post.name} - ${
-                    post.location
-                } - Board: ${post.boardInfo.name} - Live: ${post.isLive}`
-            );
-        });
-        console.log("==================");
     }
 
     /**
@@ -266,7 +255,7 @@ export default class JobPost {
             },
             "Failed to update the status of the job post " + logName
         );
-
+        
         console.log(`${green("✓")} Changed the status ${logName}`);
     }
 
