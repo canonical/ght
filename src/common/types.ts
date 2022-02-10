@@ -3,13 +3,13 @@ export interface BaseInfo {
     name: string;
 }
 
-export interface Post extends BaseInfo {
+export interface PostInfo extends BaseInfo {
     location: string;
     boardInfo: BaseInfo;
-    job: Job;
+    job: JobInfo;
     isLive: boolean;
 }
 
-export interface Job extends BaseInfo {
-    posts: Post[];
+export interface JobInfo extends BaseInfo {
+    posts: PostInfo[];
 }

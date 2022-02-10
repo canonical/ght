@@ -1,10 +1,6 @@
 import { getCSRFToken, getInnerText, joinURL } from "../common/pageUtils";
-import {
-    FILTERED_ATTRIBUTES,
-    MAIN_URL,
-    PROTECTED_JOB_BOARDS,
-} from "../common/constants";
-import { Job, Post } from "../common/types";
+import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
+import { PostInfo } from "../common/types";
 import Puppeteer, { ElementHandle } from "puppeteer";
 import { blue, green } from "colors";
 
@@ -26,85 +22,44 @@ export default class JobPost {
         return +urlParts[urlParts.length - 1];
     }
 
-    private async getJobPostData(job: Job) {
-        const jobPosts: Post[] = [];
-        const posts = await this.page.$$(".job-application");
-        if (!posts || !posts.length) throw new Error("No post found!");
+    public async getJobPostData(post: ElementHandle) {
+        const postTitle = await post.$(".job-application__name");
+        if (!postTitle) throw new Error("Post title cannot be found");
 
-        for (const post of posts) {
-            const postTitle = await post.$(".job-application__name");
-            if (!postTitle) throw new Error("Post title cannot be found");
+        const innerText = await getInnerText(postTitle);
+        const titleLocationInfo = innerText
+            .split("\n")
+            .map((e: string) => e.trim())
+            .filter((e: string) => !!e);
 
-            const innerText = await getInnerText(postTitle);
-            const titleLocationInfo = innerText
-                .split("\n")
-                .map((e: string) => e.trim())
-                .filter((e: string) => !!e);
-
-            const jobPostID = await this.getIDFromURL(
-                postTitle,
-                "a[href*='https://boards.greenhouse.io/']"
-            );
-
-            const postBoard = await post.$(".board-column");
-            if (!postBoard) throw new Error("Post board cannot be found");
-
-            const boardName = await getInnerText(postBoard);
-            const boardID = await this.getIDFromURL(postBoard, "a");
-
-            const postRowClassName: string = await (
-                await post.getProperty("className")
-            ).jsonValue();
-
-            jobPosts.push({
-                id: jobPostID,
-                name: titleLocationInfo[0],
-                location: titleLocationInfo[1],
-                boardInfo: {
-                    name: boardName,
-                    id: boardID,
-                },
-                job,
-                isLive: postRowClassName.includes("live"),
-            });
-        }
-        return jobPosts;
-    }
-
-    private async getJobName(): Promise<string> {
-        const jobTitleElement = await this.page.$(".job-name");
-        const jobAnchor = await jobTitleElement?.$("a");
-        if (!jobAnchor) throw new Error("job name not found");
-        return await getInnerText(jobAnchor);
-    }
-
-    public async getJobData(jobID: number): Promise<Job> {
-        const jobappURL = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
-        await this.page.goto(jobappURL);
-        const jobTitle = await this.getJobName();
-        const job: Job = {
-            name: jobTitle,
-            id: jobID,
-            posts: [],
-        };
-
-        const pageElements = await this.page.$$("*[aria-label*=Page]");
-        if (!pageElements) throw new Error("Page information cannot be found");
-
-        const pageLength = pageElements.length ? pageElements.length - 1 : 0;
-        const pageCount = parseInt(
-            await getInnerText(pageElements[pageLength])
+        const jobPostID = await this.getIDFromURL(
+            postTitle,
+            "a[href*='https://boards.greenhouse.io/']"
         );
 
-        for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
-            await this.page.goto(`${jobappURL}?page=${currentPage}`);
-            job.posts.push(...(await this.getJobPostData(job)));
-        }
+        const postBoard = await post.$(".board-column");
+        if (!postBoard) throw new Error("Post board cannot be found");
 
-        return job;
+        const boardName = await getInnerText(postBoard);
+        const boardID = await this.getIDFromURL(postBoard, "a");
+
+        const postRowClassName: string = await (
+            await post.getProperty("className")
+        ).jsonValue();
+
+        return {
+            id: jobPostID,
+            name: titleLocationInfo[0],
+            location: titleLocationInfo[1],
+            boardInfo: {
+                name: boardName,
+                id: boardID,
+            },
+            isLive: postRowClassName.includes("live"),
+        };
     }
 
-    private async deletePost(jobPostID: number, referrer: string) {
+    public async deletePost(jobPostID: number, referrer: string) {
         const url = joinURL(MAIN_URL, `/jobapps/${jobPostID}`);
 
         await this.sendRequest(
@@ -123,31 +78,6 @@ export default class JobPost {
         console.log(`${green("✓")} Deleted job post with ${jobPostID} ID`);
     }
 
-    public async deletePosts(jobData: Job) {
-        const jobID = jobData.id;
-        const referrer = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
-        const posts: Post[] = jobData.posts;
-
-        for (const post of posts) {
-            const jobPostID = post.id;
-            const isProtected = !!PROTECTED_JOB_BOARDS.find(
-                (protectedBoardName) =>
-                    protectedBoardName.match(
-                        new RegExp(post.boardInfo.name, "i")
-                    )
-            );
-
-            // if job is protected, do not delete it.
-            if (isProtected) continue;
-
-            post.isLive && (await this.setStatus(post, "offline"));
-            await this.deletePost(jobPostID, referrer);
-            await this.page.reload();
-        }
-
-        console.log(`${green("✓")} Deleted posts of ${jobData.name}`);
-    }
-
     /**
      * Create a copy of a given job post and move it to the given location
      * @param jobPost the original job post
@@ -155,7 +85,7 @@ export default class JobPost {
      * @param boardID the ID of the board that job post will be created with
      */
     public async duplicate(
-        jobPost: Post,
+        jobPost: PostInfo,
         location: string,
         boardID: number
     ): Promise<void> {
@@ -236,7 +166,7 @@ export default class JobPost {
         console.log(`${green("✓")} Created job post ${logName}`);
     }
 
-    public async setStatus(jobPost: Post, newStatus: "live" | "offline") {
+    public async setStatus(jobPost: PostInfo, newStatus: "live" | "offline") {
         const logName = `of "${blue(jobPost.name)}" to ${blue(newStatus)}`;
         const url = joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapp`);
         await this.page.goto(url);

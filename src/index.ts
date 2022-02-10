@@ -1,96 +1,10 @@
-import JobPost from "./automations/JobPost";
 import SSO from "./automations/SSO";
-import { Job, Post } from "./common/types";
-import { JOB_BOARD, PROTECTED_JOB_BOARDS } from "./common/constants";
-import { getBoards } from "./common/pageUtils";
+import { JobInfo } from "./common/types";
 import regions from "./common/regions";
+import Job from "./automations/Job";
 import Puppeteer from "puppeteer";
-import { green, yellow } from "colors";
+import { green } from "colors";
 import { Command, Argument, Option } from "commander";
-
-/**
- * Clone job posts of a job with given regions countires 
- * @param posts job's posts
- * @param regionsToPost region list that job posts will be sent to
- * @param postJobs instance of JobPost that includes job post related methods
- * @param page current page
- * @param sourceID id of the post which will be copied.
- */
-async function clonePost(
-    posts: Post[],
-    regionsToPost: string[],
-    postJobs: JobPost,
-    page: Puppeteer.Page,
-    sourceID: number
-) {
-    let protectedPosts: Post[];
-
-    // Check if a source post is provided.
-    if (sourceID) {
-        protectedPosts = posts.filter((post) => post.id === sourceID);
-        console.log(
-            yellow("-"),
-            `Posts are going to be cloned from ${sourceID}.`
-        );
-    } else {
-        // If a source post is not provided, use posts that are in the "Canonical" board.
-        protectedPosts = posts.filter(
-            (post) => post.boardInfo.name === PROTECTED_JOB_BOARDS[0]
-        );
-    }
-
-    if (!protectedPosts || !protectedPosts.length)
-        throw new Error(`There is no post to clone.`);
-
-    // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
-    const boards = await getBoards(page);
-    const boardToPost = boards.find((board) => board.name === JOB_BOARD);
-    if (!boardToPost) throw new Error(`Board cannot be found!.`);
-
-    for (const protectedPost of protectedPosts) {
-        const protectedJobName = protectedPost.name;
-
-        // Get existing posts' location that have same name with the current protected job.
-        const existingLocations = posts
-            .filter((post) => post.name === protectedJobName)
-            .map((post) => post.location);
-
-        for (const regionName of regionsToPost) {
-            const regionCities = regions[regionName];
-
-            // New posts' locations = Current region's locations - Existing locations
-            const locations = regionCities.filter(
-                (city) =>
-                    !existingLocations.find((existingLocation) =>
-                        existingLocation.match(new RegExp(city, "i"))
-                    )
-            );
-            for (const location of locations) {
-                await postJobs.duplicate(
-                    protectedPost,
-                    location,
-                    boardToPost.id
-                );
-            }
-        }
-    }
-
-    console.log(green("✓"), "Posts are created.");
-}
-
-async function markAsLive(postJobs: JobPost, jobID: number, oldPosts: Post[]) {
-    const jobData: Job = await postJobs.getJobData(jobID);
-
-    // Find posts that are newly added.
-    const newlyAddedPosts = jobData.posts.filter(
-        (post) => !oldPosts.find((oldPost) => post.id === oldPost.id)
-    );
-
-    for (const post of newlyAddedPosts) {
-        await postJobs.setStatus(post, "live");
-    }
-    console.log(green("✓"), "Posts are marked as live.");
-}
 
 async function main() {
     const program = new Command();
@@ -153,26 +67,25 @@ async function main() {
             const page = await browser.newPage();
             await sso.setCookies(page, loginCookies);
 
-            const postJobs = new JobPost(page);
+            const job = new Job(page);
 
-            let jobData: Job = await postJobs.getJobData(jobID);
+            let jobData: JobInfo = await job.getJobData(jobID);
 
             if (options.purge) {
-                postJobs.deletePosts(jobData);
-                jobData = await postJobs.getJobData(jobID);
+                job.deletePosts(jobData);
+                jobData = await job.getJobData(jobID);
             }
 
             // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
-            await clonePost(
+            await job.clonePost(
                 jobData.posts,
                 options.region,
-                postJobs,
                 page,
                 options.cloneFrom
             );
 
             // Mark all newly added job posts live
-            await markAsLive(postJobs, jobID, jobData.posts);
+            await job.markAsLive(jobID, jobData.posts);
 
             browser.close();
         });
