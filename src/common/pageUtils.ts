@@ -22,10 +22,10 @@ export function joinURL(baseURL: string, relativeURL: string) {
 
 export async function getBoards(page: Puppeteer.Page): Promise<BaseInfo[]> {
     const response = await page.evaluate(
-        async ({ csrfToken }) => {
+        async ({ url, csrfToken, referrer }) => {
             try {
                 return await (
-                    await fetch(joinURL(MAIN_URL, "/jobboard/get_boards"), {
+                    await fetch(url, {
                         headers: {
                             accept: "application/json, text/javascript, */*; q=0.01",
                             "accept-language": "en-US,en;q=0.9,fr;q=0.8",
@@ -34,17 +34,20 @@ export async function getBoards(page: Puppeteer.Page): Promise<BaseInfo[]> {
                         referrerPolicy: "strict-origin-when-cross-origin",
                         mode: "cors",
                         credentials: "include",
-                        referrer: joinURL(MAIN_URL, "/jobboard"),
+                        referrer,
                         body: null,
                         method: "GET",
                     })
                 ).json();
-            } catch {
+            } catch (e) {
+                console.log(e);
                 return null;
             }
         },
         {
+            url: joinURL(MAIN_URL, "/jobboard/get_boards"),
             csrfToken: await getCSRFToken(page),
+            referrer: joinURL(MAIN_URL, "/jobboard"),
         }
     );
 
