@@ -28,7 +28,6 @@ export default class Job {
     public async clonePost(
         posts: PostInfo[],
         regionsToPost: string[],
-        page: Puppeteer.Page,
         sourceID: number
     ) {
         let protectedPosts: PostInfo[];
@@ -38,7 +37,7 @@ export default class Job {
             protectedPosts = posts.filter((post) => post.id === sourceID);
             console.log(
                 yellow("-"),
-                `Posts are going to be cloned from ${sourceID}.`
+                `Clone job posts from ${sourceID}.`
             );
         } else {
             // If a source post is not provided, use posts that are in the "Canonical" board.
@@ -48,12 +47,12 @@ export default class Job {
         }
 
         if (!protectedPosts || !protectedPosts.length)
-            throw new Error(`There is no post to clone.`);
+            throw new Error(`Error: No post found to clone`);
 
         // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
         const boards = await this.board.getBoards();
         const boardToPost = boards.find((board) => board.name === JOB_BOARD);
-        if (!boardToPost) throw new Error(`Board cannot be found!.`);
+        if (!boardToPost) throw new Error(`Error: Cannot found ${JOB_BOARD} board`);
 
         for (const protectedPost of protectedPosts) {
             const protectedJobName = protectedPost.name;
@@ -83,7 +82,7 @@ export default class Job {
             }
         }
 
-        console.log(green("✓"), "Job posts are created.");
+        console.log(green("✓"), "Created job posts.");
     }
 
     public async markAsLive(jobID: number, oldPosts: PostInfo[]) {
@@ -97,7 +96,7 @@ export default class Job {
         for (const post of newlyAddedPosts) {
             await this.jobPost.setStatus(post, "live");
         }
-        console.log(green("✓"), "Posts are marked as live.");
+        console.log(green("✓"), `Changed the status of ${jobData.name}'s posts to live.`);
     }
 
     public async getJobData(jobID: number): Promise<JobInfo> {
@@ -111,7 +110,7 @@ export default class Job {
         };
 
         const pageElements = await this.page.$$("*[aria-label*=Page]");
-        if (!pageElements) throw new Error("Page information cannot be found");
+        if (!pageElements) throw new Error("Error: Cannot found page information.");
 
         const pageLength = pageElements.length ? pageElements.length - 1 : 0;
         const pageCount = parseInt(
@@ -132,7 +131,6 @@ export default class Job {
         const posts: PostInfo[] = jobData.posts;
 
         for (const post of posts) {
-            const jobPostID = post.id;
             const isProtected = !!PROTECTED_JOB_BOARDS.find(
                 (protectedBoardName) =>
                     protectedBoardName.match(
@@ -144,7 +142,7 @@ export default class Job {
             if (isProtected) continue;
 
             post.isLive && (await this.jobPost.setStatus(post, "offline"));
-            await this.jobPost.deletePost(jobPostID, referrer);
+            await this.jobPost.deletePost(post, referrer);
             await this.page.reload();
         }
 
@@ -170,7 +168,7 @@ export default class Job {
     private async getJobName(): Promise<string> {
         const jobTitleElement = await this.page.$(".job-name");
         const jobAnchor = await jobTitleElement?.$("a");
-        if (!jobAnchor) throw new Error("job name not found");
+        if (!jobAnchor) throw new Error("Error: Cannot found job name");
         return await getInnerText(jobAnchor);
     }
 }

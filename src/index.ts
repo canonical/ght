@@ -11,7 +11,7 @@ async function main() {
 
     const validateNumberParam = (param: string, fieldName: string) => {
         const intValue = parseInt(param);
-        if (isNaN(intValue)) throw new Error(`${fieldName} must be a number`);
+        if (isNaN(intValue)) throw new Error(`Error: ${fieldName} must be a number`);
         return intValue;
     };
 
@@ -49,9 +49,7 @@ async function main() {
                         )
                     )
                         throw new Error(
-                            `Invalid region is entered: "${enteredRegion}". It must be one of the predefined regions: ${regionNames.reduce(
-                                (str1, str2) => `${str1}, ${str2}`
-                            )}`
+                            `Error: Invalid region.`
                         );
                 });
 
@@ -80,7 +78,6 @@ async function main() {
             await job.clonePost(
                 jobData.posts,
                 options.region,
-                page,
                 options.cloneFrom
             );
 

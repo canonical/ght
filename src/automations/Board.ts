@@ -20,7 +20,7 @@ export default class Board {
                 body: null,
                 method: "GET",
             },
-            "Boards cannot be retrieved.",
+            "Error: Failed to get boards",
             (queryResult) => !queryResult
         );
 

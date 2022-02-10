@@ -67,8 +67,8 @@ export default class JobPost {
     public isSuccessful = (response: { [key: string]: string }) =>
         !(response?.status === "success" || response?.success);
 
-    public async deletePost(jobPostID: number, referrer: string) {
-        const url = joinURL(MAIN_URL, `/jobapps/${jobPostID}`);
+    public async deletePost(jobPost: PostInfo, referrer: string) {
+        const url = joinURL(MAIN_URL, `/jobapps/${jobPost.id}`);
 
         await sendRequest(
             this.page,
@@ -81,11 +81,11 @@ export default class JobPost {
                 body: null,
                 method: "DELETE",
             },
-            `Failed to delete the job post with ${jobPostID} ID.`,
+            `Error: Failed to delete ${jobPost.name} | ${jobPost.location}`,
             this.isSuccessful
         );
 
-        console.log(`${green("✓")} Deleted job post with ${jobPostID} ID`);
+        console.log(`${green("✓")} Deleted ${jobPost.name} | ${jobPost.location}`);
     }
 
     /**
@@ -99,14 +99,14 @@ export default class JobPost {
         location: string,
         boardID: number
     ): Promise<void> {
-        const logName = `"${blue(jobPost.name)}" at "${blue(location)}"`;
+        const logName = `${blue(jobPost.name)} | ${blue(location)}`;
         const url = `https://canonical.greenhouse.io/plans/${jobPost.job.id}/jobapps/new?from=duplicate&greenhouse_job_application_id=${jobPost.id}`;
         await this.page.goto(url);
 
         const element = await this.page.$("*[data-react-class='JobPostsForm']");
         if (!element)
             throw new Error(
-                "Failed to retrieve job post form details " + logName
+                "Error: Failed to retrieve job post form details of " + logName
             );
         const jobPostFormRaw = await element.evaluate((node) =>
             node.getAttribute("data-react-props")
@@ -171,15 +171,15 @@ export default class JobPost {
                 body: JSON.stringify(payload),
                 method: "POST",
             },
-            "Failed to create a new job post " + logName,
+            "Error: Failed to create " + logName,
             this.isSuccessful
         );
 
-        console.log(`${green("✓")} Created job post ${logName}`);
+        console.log(`${green("✓")} Created ${logName}`);
     }
 
     public async setStatus(jobPost: PostInfo, newStatus: "live" | "offline") {
-        const logName = `of "${blue(jobPost.name)}" to ${blue(newStatus)}`;
+        const logName = `${blue(jobPost.name)} | ${blue(jobPost.location)}`;
         const url = joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapp`);
         await this.page.goto(url);
 
@@ -199,10 +199,10 @@ export default class JobPost {
                 }`,
                 method: "POST",
             },
-            "Failed to update the status of the job post " + logName,
+            "Error: Failed to update the status of " + logName,
             this.isSuccessful
         );
 
-        console.log(`${green("✓")} Changed the status ${logName}`);
+        console.log(`${green("✓")} Changed the status of ${logName} to ${newStatus}`);
     }
 }
