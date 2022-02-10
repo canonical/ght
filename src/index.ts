@@ -8,6 +8,14 @@ import Puppeteer from "puppeteer";
 import { green, yellow } from "colors";
 import { Command, Argument, Option } from "commander";
 
+/**
+ * Clone job posts of a job with given regions countires 
+ * @param posts job's posts
+ * @param regionsToPost region list that job posts will be sent to
+ * @param postJobs instance of JobPost that includes job post related methods
+ * @param page current page
+ * @param sourceID id of the post which will be copied.
+ */
 async function clonePost(
     posts: Post[],
     regionsToPost: string[],
