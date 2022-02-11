@@ -11,7 +11,7 @@ async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
     const loginCookies = await sso.login();
     console.log(green("✓"), "Authentication complete");
 
-    const browser = await Puppeteer.launch();
+    const browser = await Puppeteer.launch({ args: ["--no-sandbox"] });
     const page = await browser.newPage();
     await sso.setCookies(page, loginCookies);
 
