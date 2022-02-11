@@ -11,7 +11,7 @@ async function main() {
 
     const validateNumberParam = (param: string, fieldName: string) => {
         const intValue = parseInt(param);
-        if (isNaN(intValue)) throw new Error(`Error: ${fieldName} must be a number`);
+        if (isNaN(intValue)) throw new Error(`${fieldName} must be a number`);
         return intValue;
     };
 
@@ -49,7 +49,7 @@ async function main() {
                         )
                     )
                         throw new Error(
-                            `Error: Invalid region.`
+                            `Invalid region.`
                         );
                 });
 

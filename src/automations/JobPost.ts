@@ -81,7 +81,7 @@ export default class JobPost {
                 body: null,
                 method: "DELETE",
             },
-            `Error: Failed to delete ${jobPost.name} | ${jobPost.location}`,
+            `Failed to delete ${jobPost.name} | ${jobPost.location}`,
             this.isSuccessful
         );
 
@@ -106,7 +106,7 @@ export default class JobPost {
         const element = await this.page.$("*[data-react-class='JobPostsForm']");
         if (!element)
             throw new Error(
-                "Error: Failed to retrieve job post form details of " + logName
+                "Failed to retrieve job post form details of " + logName
             );
         const jobPostFormRaw = await element.evaluate((node) =>
             node.getAttribute("data-react-props")
@@ -171,7 +171,7 @@ export default class JobPost {
                 body: JSON.stringify(payload),
                 method: "POST",
             },
-            "Error: Failed to create " + logName,
+            "Failed to create " + logName,
             this.isSuccessful
         );
 
@@ -199,7 +199,7 @@ export default class JobPost {
                 }`,
                 method: "POST",
             },
-            "Error: Failed to update the status of " + logName,
+            "Failed to update the status of " + logName,
             this.isSuccessful
         );
 

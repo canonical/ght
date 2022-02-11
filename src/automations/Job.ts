@@ -47,12 +47,12 @@ export default class Job {
         }
 
         if (!protectedPosts || !protectedPosts.length)
-            throw new Error(`Error: No post found to clone`);
+            throw new Error(`No post found to clone`);
 
         // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
         const boards = await this.board.getBoards();
         const boardToPost = boards.find((board) => board.name === JOB_BOARD);
-        if (!boardToPost) throw new Error(`Error: Cannot found ${JOB_BOARD} board`);
+        if (!boardToPost) throw new Error(`Cannot found ${JOB_BOARD} board`);
 
         for (const protectedPost of protectedPosts) {
             const protectedJobName = protectedPost.name;
@@ -110,7 +110,7 @@ export default class Job {
         };
 
         const pageElements = await this.page.$$("*[aria-label*=Page]");
-        if (!pageElements) throw new Error("Error: Cannot found page information.");
+        if (!pageElements) throw new Error("Cannot found page information.");
 
         const pageLength = pageElements.length ? pageElements.length - 1 : 0;
         const pageCount = parseInt(
@@ -168,7 +168,7 @@ export default class Job {
     private async getJobName(): Promise<string> {
         const jobTitleElement = await this.page.$(".job-name");
         const jobAnchor = await jobTitleElement?.$("a");
-        if (!jobAnchor) throw new Error("Error: Cannot found job name");
+        if (!jobAnchor) throw new Error("Cannot found job name");
         return await getInnerText(jobAnchor);
     }
 }
