@@ -37,7 +37,7 @@ async function main() {
             ).argParser((value) => validateNumberParam(value, "post-id"))
         )
         .requiredOption(
-            "--region <region-name>",
+            "-r, --region <region-name>",
             "Add job posts to given region/s",
             (value) => {
                 const enteredRegions: string[] = value.split(",");
