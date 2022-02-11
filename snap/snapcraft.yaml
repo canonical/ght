@@ -1,0 +1,72 @@
+name: greenhouse
+version: "1.0.0"
+summary: Perform actions in Canonical's Greenhouse automatically.
+description: An automated browser that does a set of tasks on Canonical's Greenhouse dashboard without the need of interaction with the UI.
+base: core20
+confinement: strict
+grade: stable
+issues: https://github.com/canonical/greenhouse-automations/issues
+source-code: https://github.com/canonical/greenhouse-automations
+
+parts:
+    node:
+        plugin: dump
+        source: https://nodejs.org/dist/v16.14.0/node-v16.14.0-linux-x64.tar.xz
+        stage:
+            - bin
+            - include
+            - lib
+    greenhouse:
+        after: [node]
+        plugin: nil
+        source: .
+        override-build: |
+            npm config set unsafe-perm true
+            npm install -g yarn
+            yarn install
+            yarn build
+            cp ./greenhouse.js ./dist/greenhouse
+            cp -a ./dist/. $SNAPCRAFT_PART_INSTALL/
+            cp -r ./node_modules $SNAPCRAFT_PART_INSTALL
+        stage-packages:
+            # dependencies required by chromium
+            - libasound2
+            - libatk-bridge2.0-0
+            - libatk1.0-0
+            - libatspi2.0-0
+            - libcairo2
+            - libcups2
+            - libdrm2
+            - libgbm1
+            - libnss3
+            - libpango-1.0-0
+            - libx11-6
+            - libxau6
+            - libxcb1
+            - libxcomposite1
+            - libxdamage1
+            - libxdmcp6
+            - libxext6
+            - libxfixes3
+            - libxkbcommon-x11-0
+            - libxrandr2
+apps:
+    greenhouse:
+        command: greenhouse
+        plugs:
+            - browser-sandbox
+            - desktop
+            - desktop-legacy
+            - home
+            - mount-observe
+            - network
+            - network-bind
+            - opengl
+            - unity7
+            - x11
+
+plugs:
+    browser-sandbox:
+        interface: browser-support
+        allow-sandbox: true
+
