@@ -35,10 +35,7 @@ export default class Job {
         // Check if a source post is provided.
         if (sourceID) {
             protectedPosts = posts.filter((post) => post.id === sourceID);
-            console.log(
-                yellow("-"),
-                `Clone job posts from ${sourceID}.`
-            );
+            console.log(yellow("-"), `Clone job posts from ${sourceID}.`);
         } else {
             // If a source post is not provided, use posts that are in the "Canonical" board.
             protectedPosts = posts.filter(
@@ -96,7 +93,10 @@ export default class Job {
         for (const post of newlyAddedPosts) {
             await this.jobPost.setStatus(post, "live");
         }
-        console.log(green("✓"), `Changed the status of ${jobData.name}'s posts to live.`);
+        console.log(
+            green("✓"),
+            `Changed the status of ${jobData.name}'s posts to live.`
+        );
     }
 
     public async getJobData(jobID: number): Promise<JobInfo> {

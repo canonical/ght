@@ -85,7 +85,9 @@ export default class JobPost {
             this.isSuccessful
         );
 
-        console.log(`${green("✓")} Deleted ${jobPost.name} | ${jobPost.location}`);
+        console.log(
+            `${green("✓")} Deleted ${jobPost.name} | ${jobPost.location}`
+        );
     }
 
     /**
@@ -203,6 +205,8 @@ export default class JobPost {
             this.isSuccessful
         );
 
-        console.log(`${green("✓")} Changed the status of ${logName} to ${newStatus}`);
+        console.log(
+            `${green("✓")} Changed the status of ${logName} to ${newStatus}`
+        );
     }
 }
