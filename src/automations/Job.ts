@@ -31,7 +31,6 @@ export default class Job {
         sourceID: number
     ) {
         let protectedPosts: PostInfo[];
-
         // Check if a source post is provided.
         if (sourceID) {
             protectedPosts = posts.filter((post) => post.id === sourceID);
@@ -110,12 +109,10 @@ export default class Job {
         };
 
         const pageElements = await this.page.$$("*[aria-label*=Page]");
-        if (!pageElements) throw new Error("Cannot found page information.");
-
-        const pageLength = pageElements.length ? pageElements.length - 1 : 0;
-        const pageCount = parseInt(
-            await getInnerText(pageElements[pageLength])
-        );
+        const pageElementCount = pageElements.length;
+        const pageCount = pageElementCount
+            ? parseInt(await getInnerText(pageElements[pageElementCount - 1]))
+            : 1;
 
         for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
             await this.page.goto(`${jobappURL}?page=${currentPage}`);

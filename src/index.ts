@@ -6,12 +6,7 @@ import Puppeteer from "puppeteer";
 import { green } from "colors";
 import { Command, Argument, Option } from "commander";
 
-async function addPosts(
-    jobID: number,
-    regions: string[],
-    cloneFrom: number,
-    purge: boolean
-) {
+async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
     const sso = new SSO();
     const loginCookies = await sso.login();
     console.log(green("✓"), "Authentication complete");
@@ -21,13 +16,7 @@ async function addPosts(
     await sso.setCookies(page, loginCookies);
 
     const job = new Job(page);
-
-    let jobData: JobInfo = await job.getJobData(jobID);
-
-    if (purge) {
-        job.deletePosts(jobData);
-        jobData = await job.getJobData(jobID);
-    }
+    const jobData: JobInfo = await job.getJobData(jobID);
 
     // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
     await job.clonePost(jobData.posts, regions, cloneFrom);
@@ -58,12 +47,6 @@ async function main() {
         )
         .addOption(
             new Option(
-                "-p, --purge",
-                "Delete job posts before creating job posts"
-            )
-        )
-        .addOption(
-            new Option(
                 "-c, --clone-from <job-post-id>",
                 "Clone job posts from the given post"
             ).argParser((value) => validateNumberParam(value, "post-id"))
@@ -84,7 +67,7 @@ async function main() {
             }
         )
         .action(async (jobID, options) => {
-            addPosts(jobID, options.regions, options.cloneFrom, options.purge);
+            addPosts(jobID, options.regions, options.cloneFrom);
         });
     await program.parseAsync(process.argv);
 }
