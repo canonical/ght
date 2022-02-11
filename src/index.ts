@@ -40,17 +40,12 @@ async function main() {
             "-r, --region <region-name>",
             "Add job posts to given region/s",
             (value) => {
-                const enteredRegions: string[] = [...new Set(value.split(",").map(value=>value.trim()))];
-                const regionNames = Object.keys(regions);
+                const enteredRegions: string[] = [
+                    ...new Set(value.split(",").map((value) => value.trim())),
+                ];
                 enteredRegions.forEach((enteredRegion) => {
-                    if (
-                        !regionNames.find((region) =>
-                            region.match(new RegExp(enteredRegion, "i"))
-                        )
-                    )
-                        throw new Error(
-                            `Invalid region.`
-                        );
+                    if (!regions[enteredRegion])
+                        throw new Error(`Invalid region.`);
                 });
 
                 return enteredRegions;
