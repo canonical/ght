@@ -6,6 +6,38 @@ import Puppeteer from "puppeteer";
 import { green } from "colors";
 import { Command, Argument, Option } from "commander";
 
+async function addPosts(
+    jobID: number,
+    regions: string[],
+    cloneFrom: number,
+    purge: boolean
+) {
+    const sso = new SSO();
+    const loginCookies = await sso.login();
+    console.log(green("✓"), "Authentication complete");
+
+    const browser = await Puppeteer.launch();
+    const page = await browser.newPage();
+    await sso.setCookies(page, loginCookies);
+
+    const job = new Job(page);
+
+    let jobData: JobInfo = await job.getJobData(jobID);
+
+    if (purge) {
+        job.deletePosts(jobData);
+        jobData = await job.getJobData(jobID);
+    }
+
+    // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
+    await job.clonePost(jobData.posts, regions, cloneFrom);
+
+    // Mark all newly added job posts as live
+    await job.markAsLive(jobID, jobData.posts);
+
+    browser.close();
+}
+
 async function main() {
     const program = new Command();
 
@@ -37,7 +69,7 @@ async function main() {
             ).argParser((value) => validateNumberParam(value, "post-id"))
         )
         .requiredOption(
-            "-r, --region <region-name>",
+            "-r, --regions <region-name>",
             "Add job posts to given region/s",
             (value) => {
                 const enteredRegions: string[] = [
@@ -52,34 +84,7 @@ async function main() {
             }
         )
         .action(async (jobID, options) => {
-            const sso = new SSO();
-            const loginCookies = await sso.login();
-            console.log(green("✓"), "Authentication complete");
-
-            const browser = await Puppeteer.launch();
-            const page = await browser.newPage();
-            await sso.setCookies(page, loginCookies);
-
-            const job = new Job(page);
-
-            let jobData: JobInfo = await job.getJobData(jobID);
-
-            if (options.purge) {
-                job.deletePosts(jobData);
-                jobData = await job.getJobData(jobID);
-            }
-
-            // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
-            await job.clonePost(
-                jobData.posts,
-                options.region,
-                options.cloneFrom
-            );
-
-            // Mark all newly added job posts live
-            await job.markAsLive(jobID, jobData.posts);
-
-            browser.close();
+            addPosts(jobID, options.regions, options.cloneFrom, options.purge);
         });
     await program.parseAsync(process.argv);
 }
