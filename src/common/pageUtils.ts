@@ -17,3 +17,45 @@ export function getCSRFToken(page: Puppeteer.Page): Promise<string> {
 export function joinURL(baseURL: string, relativeURL: string) {
     return new URL(relativeURL, baseURL).href;
 }
+
+export async function sendRequest(
+    page: Puppeteer.Page,
+    url: string,
+    headers: { [key: string]: string },
+    options: { [key: string]: string | null },
+    errorMessage: string,
+    isSuccessful: (response: { [key: string]: string }) => boolean
+) {
+    const response = await page.evaluate(
+        async ({ url, headers, options, csrfToken }) => {
+            try {
+                return await (
+                    await fetch(url, {
+                        headers: {
+                            accept: "application/json, text/javascript, */*; q=0.01",
+                            "accept-language": "en-US,en;q=0.9,fr;q=0.8",
+                            "x-csrf-token": csrfToken,
+                            ...headers,
+                        },
+                        referrerPolicy: "strict-origin-when-cross-origin",
+                        mode: "cors",
+                        credentials: "include",
+                        ...options,
+                    })
+                ).json();
+            } catch {
+                return null;
+            }
+        },
+        {
+            url,
+            headers,
+            options,
+            csrfToken: await getCSRFToken(page),
+        }
+    );
+
+    if (isSuccessful(response)) throw new Error(errorMessage);
+
+    return response;
+}

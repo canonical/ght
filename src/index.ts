@@ -1,37 +1,75 @@
-import JobPost from "./automations/JobPost";
 import SSO from "./automations/SSO";
-import { MAIN_URL } from "./common/constants";
-import { Job } from "./common/types";
+import { JobInfo } from "./common/types";
+import regions from "./common/regions";
+import Job from "./automations/Job";
 import Puppeteer from "puppeteer";
 import { green } from "colors";
+import { Command, Argument, Option } from "commander";
 
-(async () => {
+async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
     const sso = new SSO();
     const loginCookies = await sso.login();
     console.log(green("✓"), "Authentication complete");
-
-    const exampleJobID = 2044596;
-    const jobIDs = [exampleJobID];
 
     const browser = await Puppeteer.launch();
     const page = await browser.newPage();
     await sso.setCookies(page, loginCookies);
 
-    const postJobs = new JobPost(page);
-    await page.goto(MAIN_URL);
+    const job = new Job(page);
+    const jobData: JobInfo = await job.getJobData(jobID);
 
-    let jobData: Job;
-    for (const jobID of jobIDs) {
-        jobData = await postJobs.getJobData(jobID);
-        await page.goto(MAIN_URL);
-        postJobs.printJobData(jobData);
+    // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
+    await job.clonePost(jobData.posts, regions, cloneFrom);
 
-        await postJobs.deletePosts(jobData);
+    // Mark all newly added job posts as live
+    await job.markAsLive(jobID, jobData.posts);
 
-        await postJobs.duplicate(jobData.posts[0], "test");
-        await postJobs.setStatus(jobData.posts[2], "live");
-    }
-
-    // cleanup
     browser.close();
-})();
+}
+
+async function main() {
+    const program = new Command();
+
+    const validateNumberParam = (param: string, fieldName: string) => {
+        const intValue = parseInt(param);
+        if (isNaN(intValue)) throw new Error(`${fieldName} must be a number`);
+        return intValue;
+    };
+
+    program
+        .command("add-post")
+        .addArgument(
+            new Argument("<job-id>", "job to add job posts to")
+                .argRequired()
+                .argParser((value: string) =>
+                    validateNumberParam(value, "job-id")
+                )
+        )
+        .addOption(
+            new Option(
+                "-c, --clone-from <job-post-id>",
+                "Clone job posts from the given post"
+            ).argParser((value) => validateNumberParam(value, "post-id"))
+        )
+        .requiredOption(
+            "-r, --regions <region-name>",
+            "Add job posts to given region/s",
+            (value) => {
+                const enteredRegions: string[] = [
+                    ...new Set(value.split(",").map((value) => value.trim())),
+                ];
+                enteredRegions.forEach((enteredRegion) => {
+                    if (!regions[enteredRegion])
+                        throw new Error(`Invalid region.`);
+                });
+
+                return enteredRegions;
+            }
+        )
+        .action(async (jobID, options) => {
+            addPosts(jobID, options.regions, options.cloneFrom);
+        });
+    await program.parseAsync(process.argv);
+}
+
+main();
