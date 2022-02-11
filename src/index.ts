@@ -40,7 +40,7 @@ async function main() {
             "-r, --region <region-name>",
             "Add job posts to given region/s",
             (value) => {
-                const enteredRegions: string[] = value.split(",");
+                const enteredRegions: string[] = [...new Set(value.split(",").map(value=>value.trim()))];
                 const regionNames = Object.keys(regions);
                 enteredRegions.forEach((enteredRegion) => {
                     if (
