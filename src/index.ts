@@ -71,7 +71,7 @@ async function main() {
     program
         .command("delete-posts")
         .addArgument(
-            new Argument("<job-id>", "job to add job posts to")
+            new Argument("<job-id>", "Delete job posts of the given job")
                 .argRequired()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")
@@ -86,7 +86,7 @@ async function main() {
         .addOption(
             new Option(
                 "-r, --regions <region-name>",
-                "Add job posts to given region/s"
+                "Delete job posts that are in the given region"
             ).argParser(validateRegionParam)
         )
         .action(async (jobID, options) => {
