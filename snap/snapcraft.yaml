@@ -25,6 +25,8 @@ parts:
             npm install -g yarn
             yarn install
             yarn build
+            # this causes PROT_EXEC problem
+            rm ./node_modules/puppeteer/.local-chromium/linux-*/chrome-linux/nacl_irt_*.nexe
             cp ./greenhouse.js ./dist/greenhouse
             cp -a ./dist/. $SNAPCRAFT_PART_INSTALL/
             cp -r ./node_modules $SNAPCRAFT_PART_INSTALL
@@ -54,7 +56,6 @@ apps:
     greenhouse:
         command: greenhouse
         plugs:
-            - browser-sandbox
             - desktop
             - desktop-legacy
             - home
@@ -64,9 +65,4 @@ apps:
             - opengl
             - unity7
             - x11
-
-plugs:
-    browser-sandbox:
-        interface: browser-support
-        allow-sandbox: true
 
