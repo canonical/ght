@@ -1,3 +1,5 @@
+import SSO from "../automations/SSO";
+import { green } from "colors";
 import Puppeteer from "puppeteer";
 
 export function getInnerText(
@@ -16,6 +18,21 @@ export function getCSRFToken(page: Puppeteer.Page): Promise<string> {
 
 export function joinURL(baseURL: string, relativeURL: string) {
     return new URL(relativeURL, baseURL).href;
+}
+
+export async function authenticate() {
+    const sso = new SSO();
+    const loginCookies = await sso.login();
+    console.log(green("✓"), "Authentication complete");
+
+    const browser = await Puppeteer.launch({ args: ["--no-sandbox"] });
+    const page = await browser.newPage();
+    await sso.setCookies(page, loginCookies);
+
+    return {
+        browser,
+        page,
+    };
 }
 
 export async function sendRequest(

@@ -122,11 +122,26 @@ export default class Job {
         return job;
     }
 
-    public async deletePosts(jobData: JobInfo) {
-        const jobID = jobData.id;
-        const referrer = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
+    public async deletePosts(
+        jobID: number,
+        enteredRegions: string[],
+        similarPostID: number
+    ) {
+        const jobData = await this.getJobData(jobID);
         const posts: PostInfo[] = jobData.posts;
 
+        let similarPost;
+        if (similarPostID) {
+            similarPost = jobData.posts.find(
+                (post) => post.id === similarPostID
+            );
+            if (!similarPost) {
+                throw new Error(`Post cannot be found`);
+            }
+        }
+
+        const referrer = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
+        let count = 0;
         for (const post of posts) {
             const isProtected = !!PROTECTED_JOB_BOARDS.find(
                 (protectedBoardName) =>
@@ -135,15 +150,30 @@ export default class Job {
                     )
             );
 
+            const locationCheck =
+                !enteredRegions ||
+                !!enteredRegions.find((enteredRegion) => {
+                    const filteredLocations = regions[enteredRegion].filter(
+                        (location) =>
+                            post.location.match(new RegExp(location, "i"))
+                    );
+
+                    return filteredLocations.length > 0;
+                });
+
+            const nameCheck = !similarPost || similarPost.name === post.name;
+
             // if job is protected, do not delete it.
-            if (isProtected) continue;
+            if (isProtected || !locationCheck || !nameCheck) continue;
 
             post.isLive && (await this.jobPost.setStatus(post, "offline"));
             await this.jobPost.deletePost(post, referrer);
             await this.page.reload();
+            count++;
         }
-
-        console.log(`${green("✓")} Deleted posts of ${jobData.name}`);
+        console.log(
+            `${green("✓")} ${count} job posts of ${jobData.name} are deleted.`
+        );
     }
 
     private async getJobPosts(job: JobInfo) {

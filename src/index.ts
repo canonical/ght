@@ -1,20 +1,11 @@
-import SSO from "./automations/SSO";
 import { JobInfo } from "./common/types";
 import regions from "./common/regions";
 import Job from "./automations/Job";
-import Puppeteer from "puppeteer";
-import { green } from "colors";
+import { authenticate } from "./common/pageUtils";
 import { Command, Argument, Option } from "commander";
 
 async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
-    const sso = new SSO();
-    const loginCookies = await sso.login();
-    console.log(green("✓"), "Authentication complete");
-
-    const browser = await Puppeteer.launch({ args: ["--no-sandbox"] });
-    const page = await browser.newPage();
-    await sso.setCookies(page, loginCookies);
-
+    const { browser, page } = await authenticate();
     const job = new Job(page);
     const jobData: JobInfo = await job.getJobData(jobID);
 
@@ -27,13 +18,30 @@ async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
     browser.close();
 }
 
+async function deletePosts(jobID: number, regions: string[], similar: number) {
+    const { browser, page } = await authenticate();
+    const job = new Job(page);
+    await job.deletePosts(jobID, regions, similar);
+    browser.close();
+}
+
 async function main() {
     const program = new Command();
-
     const validateNumberParam = (param: string, fieldName: string) => {
         const intValue = parseInt(param);
         if (isNaN(intValue)) throw new Error(`${fieldName} must be a number`);
         return intValue;
+    };
+
+    const validateRegionParam = (param: string) => {
+        const enteredRegions: string[] = [
+            ...new Set(param.split(",").map((value) => value.trim())),
+        ];
+        enteredRegions.forEach((enteredRegion) => {
+            if (!regions[enteredRegion]) throw new Error(`Invalid region.`);
+        });
+
+        return enteredRegions;
     };
 
     program
@@ -54,20 +62,35 @@ async function main() {
         .requiredOption(
             "-r, --regions <region-name>",
             "Add job posts to given region/s",
-            (value) => {
-                const enteredRegions: string[] = [
-                    ...new Set(value.split(",").map((value) => value.trim())),
-                ];
-                enteredRegions.forEach((enteredRegion) => {
-                    if (!regions[enteredRegion])
-                        throw new Error(`Invalid region.`);
-                });
-
-                return enteredRegions;
-            }
+            validateRegionParam
         )
         .action(async (jobID, options) => {
             addPosts(jobID, options.regions, options.cloneFrom);
+        });
+
+    program
+        .command("delete-posts")
+        .addArgument(
+            new Argument("<job-id>", "job to add job posts to")
+                .argRequired()
+                .argParser((value: string) =>
+                    validateNumberParam(value, "job-id")
+                )
+        )
+        .addOption(
+            new Option(
+                "-s, --similar <job-post-id>",
+                "Delete job posts that have same name with the given post"
+            ).argParser((value) => validateNumberParam(value, "post-id"))
+        )
+        .addOption(
+            new Option(
+                "-r, --regions <region-name>",
+                "Add job posts to given region/s"
+            ).argParser(validateRegionParam)
+        )
+        .action(async (jobID, options) => {
+            deletePosts(jobID, options.regions, options.similar);
         });
     await program.parseAsync(process.argv);
 }
