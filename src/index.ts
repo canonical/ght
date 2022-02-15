@@ -1,11 +1,12 @@
 import { JobInfo } from "./common/types";
 import regions from "./common/regions";
 import Job from "./automations/Job";
-import { authenticate } from "./common/pageUtils";
 import { Command, Argument, Option } from "commander";
+import SSO from "./automations/SSO";
 
 async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
-    const { browser, page } = await authenticate();
+    const sso = new SSO();
+    const { browser, page } = await sso.authenticate();
     const job = new Job(page);
     const jobData: JobInfo = await job.getJobData(jobID);
 
@@ -19,7 +20,8 @@ async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
 }
 
 async function deletePosts(jobID: number, regions: string[], similar: number) {
-    const { browser, page } = await authenticate();
+    const sso = new SSO();
+    const { browser, page } = await sso.authenticate();
     const job = new Job(page);
     await job.deletePosts(jobID, regions, similar);
     browser.close();
@@ -65,7 +67,7 @@ async function main() {
             validateRegionParam
         )
         .action(async (jobID, options) => {
-            addPosts(jobID, options.regions, options.cloneFrom);
+            await addPosts(jobID, options.regions, options.cloneFrom);
         });
 
     program
@@ -90,7 +92,7 @@ async function main() {
             ).argParser(validateRegionParam)
         )
         .action(async (jobID, options) => {
-            deletePosts(jobID, options.regions, options.similar);
+            await deletePosts(jobID, options.regions, options.similar);
         });
     await program.parseAsync(process.argv);
 }

@@ -5,8 +5,9 @@ import { JSDOM } from "jsdom";
 import fetch, { RequestInit, Response } from "node-fetch";
 import { CookieJar } from "tough-cookie";
 import Enquirer = require("enquirer");
-import { Page } from "puppeteer";
+import Puppeteer from "puppeteer";
 import { existsSync, readFileSync, writeFileSync } from "fs";
+import { green } from "colors";
 
 export type SSOCookies = {
     sessionId: string;
@@ -64,7 +65,7 @@ export default class SSO {
         writeFileSync(CONFIG_PATH, JSON.stringify(this.jar));
     }
 
-    public setCookies(page: Page, ssoCookies: SSOCookies) {
+    public setCookies(page: Puppeteer.Page, ssoCookies: SSOCookies) {
         return page.setCookie({
             name: "sessionid",
             value: ssoCookies.sessionId,
@@ -162,5 +163,19 @@ export default class SSO {
             ?.getAttribute("value");
         if (!csrfToken) throw new Error("Failed to get the CSRF token");
         return csrfToken;
+    }
+
+    public async authenticate() {
+        const loginCookies = await this.login();
+        console.log(green("✓"), "Authentication complete");
+    
+        const browser = await Puppeteer.launch({ args: ["--no-sandbox"] });
+        const page = await browser.newPage();
+        await this.setCookies(page, loginCookies);
+    
+        return {
+            browser,
+            page,
+        };
     }
 }
