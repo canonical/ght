@@ -6,7 +6,7 @@ import { Command, Argument, Option } from "commander";
 import { red } from "colors";
 import ora from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
-import { Select } from "enquirer";
+import { Select, MultiSelect } from "enquirer";
 
 async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     spinner.start("Fetching your jobs.");
@@ -64,6 +64,18 @@ async function getJobPostInteractive(
     };
 }
 
+async function getRegionsInteractive(message: string) {
+    const regionNames = Object.keys(regions);
+    const prompt = new MultiSelect({
+        name: "Regions",
+        message,
+        choices: regionNames,
+        validate: (value: string[]) => value.length > 0,
+    });
+    const region = await prompt.run();
+    return region;
+}
+
 async function addPosts(
     isInteractive: boolean,
     jobID: number,
@@ -91,8 +103,12 @@ async function addPosts(
                 spinner,
                 "What job post should be copied?"
             );
+
+            const region = await getRegionsInteractive(
+                "What region should those job posts be?"
+            );
             console.log(
-                `Job post name: ${jobPostName}, Job post ID: ${jobPostID}`
+                `Job post name: ${jobPostName}, Job post ID: ${jobPostID}, Region: ${region}`
             );
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
@@ -147,8 +163,11 @@ async function deletePosts(
                 spinner,
                 "Which job posts should be deleted?"
             );
+            const region = await getRegionsInteractive(
+                "What region should the job posts be deleted from?"
+            );
             console.log(
-                `Job post name: ${jobPostName}, Job post ID: ${jobPostID}`
+                `Job post name: ${jobPostName}, Job post ID: ${jobPostID}, Region: ${region}`
             );
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
