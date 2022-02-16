@@ -3,28 +3,40 @@ import regions from "./common/regions";
 import Job from "./automations/Job";
 import { Command, Argument, Option } from "commander";
 import SSO from "./automations/SSO";
+import { red } from "colors";
 
 async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
     const job = new Job(page);
-    const jobData: JobInfo = await job.getJobData(jobID);
 
-    // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
-    await job.clonePost(jobData.posts, regions, cloneFrom);
+    try {
+        const jobData: JobInfo = await job.getJobData(jobID);
 
-    // Mark all newly added job posts as live
-    await job.markAsLive(jobID, jobData.posts);
+        // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
+        await job.clonePost(jobData.posts, regions, cloneFrom);
 
-    browser.close();
+        // Mark all newly added job posts as live
+        await job.markAsLive(jobID, jobData.posts);
+    } catch(error) {
+        console.log(`${red("x")} ${(<Error> error).message}`)
+    } finally {
+        browser.close();
+    }
 }
 
 async function deletePosts(jobID: number, regions: string[], similar: number) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
     const job = new Job(page);
-    await job.deletePosts(jobID, regions, similar);
-    browser.close();
+
+    try {
+        await job.deletePosts(jobID, regions, similar);
+    } catch(error) {
+        console.log(`${red("x")} ${(<Error> error).message}`)
+    } finally {
+        browser.close();
+    }
 }
 
 async function main() {
