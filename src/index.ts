@@ -9,7 +9,7 @@ import ora from "ora";
 import { Select } from "enquirer";
 
 async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
-    // display UI
+    spinner.start("Fetching your jobs.");
     const jobs = await job.getJobs();
     spinner.succeed();
     if (jobs.size === 0)
@@ -24,7 +24,44 @@ async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     });
 
     const jobName = await prompt.run();
-    return jobs.get(jobName);
+    return {
+        name: jobName,
+        id: jobs.get(jobName),
+    };
+}
+
+async function getJobPostInteractive(
+    jobName: string,
+    jobID: number,
+    job: Job,
+    spinner: ora.Ora,
+    message: string
+) {
+    spinner.start(`Fetching job posts for ${jobName}.`);
+    const jobData: JobInfo = await job.getJobData(jobID);
+    if (jobData.posts.length === 0)
+        throw Error(
+            "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
+        );
+
+    const uniqueNames = new Set(jobData.posts.map((post) => post.name));
+    spinner.succeed();
+    const prompt = new Select({
+        name: "Job Post",
+        message,
+        choices: [...uniqueNames],
+    });
+    const jobPostName = await prompt.run();
+    // Get one of job posts whose name matches with the chosen name. It doesn not matter which one.
+    const matchedJobPost = jobData.posts.find(
+        (post) => post.name === jobPostName
+    );
+    if (!matchedJobPost) throw Error(`No job post found with given name.`);
+
+    return {
+        jobPostID: matchedJobPost.id,
+        jobPostName: matchedJobPost.name,
+    };
 }
 
 async function addPosts(
@@ -40,13 +77,23 @@ async function addPosts(
 
     try {
         if (isInteractive) {
-            spinner.start("Fetching your jobs.");
-            const id = await getJobInteractive(
+            const { name, id } = await getJobInteractive(
                 job,
                 "What job would you like to create job posts for?",
                 spinner
             );
-            console.log(`Job ID: ${id}`);
+
+            if (!id) throw Error(`Job ID cannot be found.`);
+            const { jobPostName, jobPostID } = await getJobPostInteractive(
+                name,
+                id,
+                job,
+                spinner,
+                "What job post should be copied?"
+            );
+            console.log(
+                `Job post name: ${jobPostName}, Job post ID: ${jobPostID}`
+            );
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
             if (!regions) throw Error(`Region parameter is missing.`);
@@ -86,16 +133,25 @@ async function deletePosts(
 
     try {
         if (isInteractive) {
-            spinner.start("Fetching your jobs.");
-            const id = await getJobInteractive(
+            const { name, id } = await getJobInteractive(
                 job,
                 "What job would you like to delete job posts from?",
                 spinner
             );
-            console.log(`Job ID: ${id}`);
+
+            if (!id) throw Error(`Job ID cannot be found.`);
+            const { jobPostName, jobPostID } = await getJobPostInteractive(
+                name,
+                id,
+                job,
+                spinner,
+                "Which job posts should be deleted?"
+            );
+            console.log(
+                `Job post name: ${jobPostName}, Job post ID: ${jobPostID}`
+            );
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
-
             spinner.start("Deleting job posts.");
             await job.deletePosts(jobID, regions, similar);
             spinner.succeed();

@@ -27,11 +27,11 @@ export default class JobPost {
             .map((e: string) => e.trim())
             .filter((e: string) => !!e);
 
-        const jobPostID = await getIDFromURL(
-            postTitle,
-            "a[href*='https://boards.greenhouse.io/']"
+        const triggerBox = await post.$(".js-trigger-box");
+        const jobPostID = await this.page.evaluate(
+            (el) => el.getAttribute("data-job-id"),
+            triggerBox
         );
-
         const postBoard = await post.$(".board-column");
         if (!postBoard) throw new Error("Post board cannot be found");
 
