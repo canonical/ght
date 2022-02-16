@@ -1,40 +1,109 @@
 import { JobInfo } from "./common/types";
 import regions from "./common/regions";
 import Job from "./automations/Job";
-import { Command, Argument, Option } from "commander";
 import SSO from "./automations/SSO";
+import { Command, Argument, Option } from "commander";
 import { red } from "colors";
+import ora from "ora";
+// @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
+import { Select } from "enquirer";
 
-async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
+async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
+    // display UI
+    const jobs = await job.getJobs();
+    spinner.succeed();
+    if (jobs.size === 0)
+        throw Error(
+            "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
+        );
+
+    const prompt = new Select({
+        name: "Job",
+        message,
+        choices: [...jobs.keys()],
+    });
+
+    const jobName = await prompt.run();
+    return jobs.get(jobName);
+}
+
+async function addPosts(
+    isInteractive: boolean,
+    jobID: number,
+    regions: string[],
+    cloneFrom: number
+) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
     const job = new Job(page);
+    const spinner = ora();
 
     try {
-        const jobData: JobInfo = await job.getJobData(jobID);
+        if (isInteractive) {
+            spinner.start("Fetching your jobs.");
+            const id = await getJobInteractive(
+                job,
+                "What job would you like to create job posts for?",
+                spinner
+            );
+            console.log(`Job ID: ${id}`);
+        } else {
+            if (!jobID) throw Error(`Job ID argument is missing.`);
+            if (!regions) throw Error(`Region parameter is missing.`);
 
-        // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
-        await job.clonePost(jobData.posts, regions, cloneFrom);
+            spinner.start("Fetching your jobs.");
+            const jobData: JobInfo = await job.getJobData(jobID);
+            spinner.succeed();
 
-        // Mark all newly added job posts as live
-        await job.markAsLive(jobID, jobData.posts);
-    } catch(error) {
-        console.log(`${red("x")} ${(<Error> error).message}`)
+            spinner.start("Cloning the posts.");
+            // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
+            await job.clonePost(jobData.posts, regions, cloneFrom);
+            spinner.succeed();
+
+            spinner.start("Marking posts as live.");
+            // Mark all newly added job posts as live
+            await job.markAsLive(jobID, jobData.posts);
+            spinner.succeed();
+        }
+    } catch (error) {
+        console.log(`${red("x")} ${(<Error>error).message}`);
     } finally {
+        spinner.stop();
         browser.close();
     }
 }
 
-async function deletePosts(jobID: number, regions: string[], similar: number) {
+async function deletePosts(
+    isInteractive: boolean,
+    jobID: number,
+    regions: string[],
+    similar: number
+) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
     const job = new Job(page);
+    const spinner = ora();
 
     try {
-        await job.deletePosts(jobID, regions, similar);
-    } catch(error) {
-        console.log(`${red("x")} ${(<Error> error).message}`)
+        if (isInteractive) {
+            spinner.start("Fetching your jobs.");
+            const id = await getJobInteractive(
+                job,
+                "What job would you like to delete job posts from?",
+                spinner
+            );
+            console.log(`Job ID: ${id}`);
+        } else {
+            if (!jobID) throw Error(`Job ID argument is missing.`);
+
+            spinner.start("Deleting job posts.");
+            await job.deletePosts(jobID, regions, similar);
+            spinner.succeed();
+        }
+    } catch (error) {
+        console.log(`${red("x")} ${(<Error>error).message}`);
     } finally {
+        spinner.stop();
         browser.close();
     }
 }
@@ -62,7 +131,7 @@ async function main() {
         .command("add-post")
         .addArgument(
             new Argument("<job-id>", "job to add job posts to")
-                .argRequired()
+                .argOptional()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")
                 )
@@ -73,20 +142,29 @@ async function main() {
                 "Clone job posts from the given post"
             ).argParser((value) => validateNumberParam(value, "post-id"))
         )
-        .requiredOption(
-            "-r, --regions <region-name>",
-            "Add job posts to given region/s",
-            validateRegionParam
+        .addOption(
+            new Option(
+                "-r, --regions <region-name>",
+                "Add job posts to given region/s"
+            ).argParser(validateRegionParam)
+        )
+        .addOption(
+            new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobID, options) => {
-            await addPosts(jobID, options.regions, options.cloneFrom);
+            await addPosts(
+                options.interactive,
+                jobID,
+                options.regions,
+                options.cloneFrom
+            );
         });
 
     program
         .command("delete-posts")
         .addArgument(
             new Argument("<job-id>", "Delete job posts of the given job")
-                .argRequired()
+                .argOptional()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")
                 )
@@ -103,9 +181,18 @@ async function main() {
                 "Delete job posts that are in the given region"
             ).argParser(validateRegionParam)
         )
+        .addOption(
+            new Option("-i, --interactive", "Enable interactive interface")
+        )
         .action(async (jobID, options) => {
-            await deletePosts(jobID, options.regions, options.similar);
+            await deletePosts(
+                options.interactive,
+                jobID,
+                options.regions,
+                options.similar
+            );
         });
+
     await program.parseAsync(process.argv);
 }
 

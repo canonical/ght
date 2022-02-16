@@ -1,7 +1,12 @@
 import JobPost from "./JobPost";
 import Board from "./Board";
-import { JOB_BOARD, MAIN_URL, PROTECTED_JOB_BOARDS } from "../common/constants";
-import { getInnerText, joinURL } from "../common/pageUtils";
+import {
+    JOB_BOARD,
+    MAIN_URL,
+    PROTECTED_JOB_BOARDS,
+    RECUITER,
+} from "../common/constants";
+import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import regions from "../common/regions";
 import { JobInfo, PostInfo } from "../common/types";
 import Puppeteer from "puppeteer";
@@ -108,12 +113,7 @@ export default class Job {
             posts: [],
         };
 
-        const pageElements = await this.page.$$("*[aria-label*=Page]");
-        const pageElementCount = pageElements.length;
-        const pageCount = pageElementCount
-            ? parseInt(await getInnerText(pageElements[pageElementCount - 1]))
-            : 1;
-
+        const pageCount = await this.getPageCount();
         for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
             await this.page.goto(`${jobappURL}?page=${currentPage}`);
             job.posts.push(...(await this.getJobPosts(job)));
@@ -195,7 +195,58 @@ export default class Job {
     private async getJobName(): Promise<string> {
         const jobTitleElement = await this.page.$(".job-name");
         const jobAnchor = await jobTitleElement?.$("a");
-        if (!jobAnchor) throw new Error("Cannot found the job");
+        if (!jobAnchor) throw new Error("Cannot find the job's name.");
         return await getInnerText(jobAnchor);
+    }
+
+    private async getPageCount() {
+        const pageElements = await this.page.$$("*[aria-label*=Page]");
+        const pageElementCount = pageElements.length;
+        return pageElementCount
+            ? parseInt(await getInnerText(pageElements[pageElementCount - 1]))
+            : 1;
+    }
+
+    private async isRecruiter(parentElement: Puppeteer.ElementHandle) {
+        let isRecuiter = false;
+        const tags = await parentElement.$$(".job-tag");
+        for (const tag of tags) {
+            const tagText = await getInnerText(tag);
+            if (RECUITER === tagText.toLocaleUpperCase()) {
+                isRecuiter = true;
+                break;
+            }
+        }
+        return isRecuiter;
+    }
+
+    public async getJobs() {
+        const jobs = new Map<string, number>();
+        const pageCount = await this.getPageCount();
+        const url = joinURL(MAIN_URL, "/alljobs");
+        for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
+            await this.page.goto(`${url}?page=${currentPage}`);
+            await this.page.waitForSelector(".job");
+            const jobElements = await this.page.$$(".job");
+
+            if (!jobElements || !jobElements.length)
+                throw new Error("No job found.");
+
+            for (const jobElement of jobElements) {
+                const jobNameElement = await jobElement.$(".job-label-name");
+                if (!jobNameElement) throw new Error("Cannot get job name");
+
+                const isRecuiter = await this.isRecruiter(jobElement);
+                if (!isRecuiter) continue;
+
+                const nameCell = await jobElement.$(".job-name");
+                if (!nameCell) throw new Error("Cannot get job name cell.");
+
+                const jobID = await getIDFromURL(nameCell, "a");
+                const jobName = await getInnerText(jobNameElement);
+                jobs.set(jobName, jobID);
+            }
+        }
+        return jobs;
     }
 }

@@ -6,8 +6,8 @@ import fetch, { RequestInit, Response } from "node-fetch";
 import { CookieJar } from "tough-cookie";
 import Enquirer = require("enquirer");
 import Puppeteer from "puppeteer";
-import { existsSync, readFileSync, writeFileSync } from "fs";
 import { green } from "colors";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 
 export type SSOCookies = {
     sessionId: string;
@@ -168,11 +168,11 @@ export default class SSO {
     public async authenticate() {
         const loginCookies = await this.login();
         console.log(green("✓"), "Authentication complete");
-    
+
         const browser = await Puppeteer.launch({ args: ["--no-sandbox"] });
         const page = await browser.newPage();
         await this.setCookies(page, loginCookies);
-    
+
         return {
             browser,
             page,

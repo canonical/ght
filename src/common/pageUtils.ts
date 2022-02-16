@@ -59,3 +59,15 @@ export async function sendRequest(
 
     return response;
 }
+
+export async function getIDFromURL(
+    element: Puppeteer.ElementHandle,
+    selector: string
+): Promise<number> {
+    const url = await element.$eval(selector, (anchor: Element) =>
+        anchor.getAttribute("href")
+    );
+    if (!url) throw new Error("Cannot get ID.");
+    const urlParts: string[] = url.split("/");
+    return parseInt(urlParts[urlParts.length - 1]);
+}

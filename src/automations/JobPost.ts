@@ -1,5 +1,6 @@
 import {
     getCSRFToken,
+    getIDFromURL,
     getInnerText,
     joinURL,
     sendRequest,
@@ -16,17 +17,6 @@ export default class JobPost {
         this.page = page;
     }
 
-    private async getIDFromURL(
-        element: ElementHandle,
-        selector: string
-    ): Promise<number> {
-        const url = await element.$eval(selector, (anchor: Element) =>
-            anchor.getAttribute("href")
-        );
-        const urlParts: string[] = ("" + url).split("/");
-        return +urlParts[urlParts.length - 1];
-    }
-
     public async getJobPostData(post: ElementHandle) {
         const postTitle = await post.$(".job-application__name");
         if (!postTitle) throw new Error("Post title cannot be found");
@@ -37,7 +27,7 @@ export default class JobPost {
             .map((e: string) => e.trim())
             .filter((e: string) => !!e);
 
-        const jobPostID = await this.getIDFromURL(
+        const jobPostID = await getIDFromURL(
             postTitle,
             "a[href*='https://boards.greenhouse.io/']"
         );
@@ -46,7 +36,7 @@ export default class JobPost {
         if (!postBoard) throw new Error("Post board cannot be found");
 
         const boardName = await getInnerText(postBoard);
-        const boardID = await this.getIDFromURL(postBoard, "a");
+        const boardID = await getIDFromURL(postBoard, "a");
 
         const postRowClassName: string = await (
             await post.getProperty("className")
