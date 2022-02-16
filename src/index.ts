@@ -38,6 +38,11 @@ async function getJobPostInteractive(
 ) {
     spinner.start(`Fetching job posts for ${jobName}.`);
     const jobData: JobInfo = await job.getJobData(jobID);
+    if (jobData.posts.length === 0)
+        throw Error(
+            "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
+        );
+
     const uniqueNames = new Set(jobData.posts.map((post) => post.name));
     spinner.succeed();
     const prompt = new Select({
