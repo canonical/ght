@@ -195,7 +195,7 @@ export default class Job {
     private async getJobName(): Promise<string> {
         const jobTitleElement = await this.page.$(".job-name");
         const jobAnchor = await jobTitleElement?.$("a");
-        if (!jobAnchor) throw new Error("Cannot found the job");
+        if (!jobAnchor) throw new Error("Cannot find the job's name.");
         return await getInnerText(jobAnchor);
     }
 

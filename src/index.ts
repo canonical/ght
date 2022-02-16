@@ -8,7 +8,7 @@ import ora from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select } from "enquirer";
 
-async function getJobFromCLI(job: Job, message: string, spinner: ora.Ora) {
+async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     // display UI
     const jobs = await job.getJobs();
     spinner.succeed();
@@ -36,31 +36,39 @@ async function addPosts(
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
     const job = new Job(page);
-    const spinner = ora("Fetching your jobs.").start();
+    const spinner = ora();
 
     try {
         if (isInteractive) {
-            const id = await getJobFromCLI(
+            spinner.start("Fetching your jobs.");
+            const id = await getJobInteractive(
                 job,
                 "What job would you like to create job posts for?",
                 spinner
             );
             console.log(`Job ID: ${id}`);
-            // TODO add posts
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
             if (!regions) throw Error(`Region parameter is missing.`);
-            const jobData: JobInfo = await job.getJobData(jobID);
 
+            spinner.start("Fetching your jobs.");
+            const jobData: JobInfo = await job.getJobData(jobID);
+            spinner.succeed();
+
+            spinner.start("Cloning the posts.");
             // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
             await job.clonePost(jobData.posts, regions, cloneFrom);
+            spinner.succeed();
+
+            spinner.start("Marking posts as live.");
             // Mark all newly added job posts as live
             await job.markAsLive(jobID, jobData.posts);
+            spinner.succeed();
         }
     } catch (error) {
-        spinner.stop();
         console.log(`${red("x")} ${(<Error>error).message}`);
     } finally {
+        spinner.stop();
         browser.close();
     }
 }
@@ -74,25 +82,28 @@ async function deletePosts(
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
     const job = new Job(page);
-    const spinner = ora("Fetching your jobs.").start();
+    const spinner = ora();
 
     try {
         if (isInteractive) {
-            const id = await getJobFromCLI(
+            spinner.start("Fetching your jobs.");
+            const id = await getJobInteractive(
                 job,
                 "What job would you like to delete job posts from?",
                 spinner
             );
             console.log(`Job ID: ${id}`);
-            // TODO delete posts
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
+
+            spinner.start("Deleting job posts.");
             await job.deletePosts(jobID, regions, similar);
+            spinner.succeed();
         }
     } catch (error) {
-        spinner.stop();
         console.log(`${red("x")} ${(<Error>error).message}`);
     } finally {
+        spinner.stop();
         browser.close();
     }
 }

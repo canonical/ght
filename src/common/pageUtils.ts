@@ -68,5 +68,5 @@ export async function getIDFromURL(
         anchor.getAttribute("href")
     );
     const urlParts: string[] = ("" + url).split("/");
-    return +urlParts[urlParts.length - 1];
+    return parseInt(urlParts[urlParts.length - 1]);
 }
