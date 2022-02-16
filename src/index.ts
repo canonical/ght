@@ -11,8 +11,12 @@ import { Select } from "enquirer";
 async function getJobFromCLI(job: Job, message: string, spinner: ora.Ora) {
     // display UI
     const jobs = await job.getJobs();
-
     spinner.succeed();
+    if (jobs.size === 0)
+        throw Error(
+            `Only hiring leads can create job posts, make sure you are one or contact HR.`
+        );
+
     const prompt = new Select({
         name: "Job",
         message,
