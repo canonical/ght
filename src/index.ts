@@ -74,7 +74,7 @@ async function addPosts(
             if (!id) throw Error(`Job ID cannot be found.`);
             const {jobPostName, jobPostID} = await getJobPostFromCLI(name, id, job, spinner);
             console.log(`Job post name: ${jobPostName}, Job post ID: ${jobPostID}`);
-            // TODO add posts
+            
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
             if (!regions) throw Error(`Region parameter is missing.`);
