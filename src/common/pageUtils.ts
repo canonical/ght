@@ -67,6 +67,7 @@ export async function getIDFromURL(
     const url = await element.$eval(selector, (anchor: Element) =>
         anchor.getAttribute("href")
     );
-    const urlParts: string[] = ("" + url).split("/");
+    if (!url) throw new Error("Cannot get ID.");
+    const urlParts: string[] = url.split("/");
     return parseInt(urlParts[urlParts.length - 1]);
 }
