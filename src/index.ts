@@ -1,39 +1,93 @@
 import { JobInfo } from "./common/types";
 import regions from "./common/regions";
 import Job from "./automations/Job";
-import { Command, Argument, Option } from "commander";
 import SSO from "./automations/SSO";
+import { Command, Argument, Option } from "commander";
 import { red } from "colors";
+import ora from "ora";
+// @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
+import { Select } from "enquirer";
 
-async function addPosts(jobID: number, regions: string[], cloneFrom: number) {
+async function getJobFromCLI(job: Job, message: string, spinner: ora.Ora) {
+    // display UI
+    const jobs = await job.getJobs();
+
+    spinner.succeed();
+    const prompt = new Select({
+        name: "Job",
+        message,
+        choices: [...jobs.keys()],
+    });
+
+    const jobName = await prompt.run();
+    return jobs.get(jobName);
+}
+
+async function addPosts(
+    isInteractive: boolean,
+    jobID: number,
+    regions: string[],
+    cloneFrom: number
+) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
     const job = new Job(page);
+    const spinner = ora("Fetching your jobs.").start();
 
     try {
-        const jobData: JobInfo = await job.getJobData(jobID);
+        if (isInteractive) {
+            const id = await getJobFromCLI(
+                job,
+                "What job would you like to create job posts for?",
+                spinner
+            );
+            console.log(`Job ID: ${id}`);
+            // TODO add posts
+        } else {
+            if (!jobID) throw Error(`Job ID argument is missing.`);
+            if (!regions) throw Error(`Region parameter is missing.`);
+            const jobData: JobInfo = await job.getJobData(jobID);
 
-        // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
-        await job.clonePost(jobData.posts, regions, cloneFrom);
-
-        // Mark all newly added job posts as live
-        await job.markAsLive(jobID, jobData.posts);
-    } catch(error) {
-        console.log(`${red("x")} ${(<Error> error).message}`)
+            // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
+            await job.clonePost(jobData.posts, regions, cloneFrom);
+            // Mark all newly added job posts as live
+            await job.markAsLive(jobID, jobData.posts);
+        }
+    } catch (error) {
+        spinner.stop();
+        console.log(`${red("x")} ${(<Error>error).message}`);
     } finally {
         browser.close();
     }
 }
 
-async function deletePosts(jobID: number, regions: string[], similar: number) {
+async function deletePosts(
+    isInteractive: boolean,
+    jobID: number,
+    regions: string[],
+    similar: number
+) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
     const job = new Job(page);
+    const spinner = ora("Fetching your jobs.").start();
 
     try {
-        await job.deletePosts(jobID, regions, similar);
-    } catch(error) {
-        console.log(`${red("x")} ${(<Error> error).message}`)
+        if (isInteractive) {
+            const id = await getJobFromCLI(
+                job,
+                "What job would you like to delete job posts from?",
+                spinner
+            );
+            console.log(`Job ID: ${id}`);
+            // TODO delete posts
+        } else {
+            if (!jobID) throw Error(`Job ID argument is missing.`);
+            await job.deletePosts(jobID, regions, similar);
+        }
+    } catch (error) {
+        spinner.stop();
+        console.log(`${red("x")} ${(<Error>error).message}`);
     } finally {
         browser.close();
     }
@@ -62,7 +116,7 @@ async function main() {
         .command("add-post")
         .addArgument(
             new Argument("<job-id>", "job to add job posts to")
-                .argRequired()
+                .argOptional()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")
                 )
@@ -73,20 +127,29 @@ async function main() {
                 "Clone job posts from the given post"
             ).argParser((value) => validateNumberParam(value, "post-id"))
         )
-        .requiredOption(
-            "-r, --regions <region-name>",
-            "Add job posts to given region/s",
-            validateRegionParam
+        .addOption(
+            new Option(
+                "-r, --regions <region-name>",
+                "Add job posts to given region/s"
+            ).argParser(validateRegionParam)
+        )
+        .addOption(
+            new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobID, options) => {
-            await addPosts(jobID, options.regions, options.cloneFrom);
+            await addPosts(
+                options.interactive,
+                jobID,
+                options.regions,
+                options.cloneFrom
+            );
         });
 
     program
         .command("delete-posts")
         .addArgument(
             new Argument("<job-id>", "Delete job posts of the given job")
-                .argRequired()
+                .argOptional()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")
                 )
@@ -103,9 +166,18 @@ async function main() {
                 "Delete job posts that are in the given region"
             ).argParser(validateRegionParam)
         )
+        .addOption(
+            new Option("-i, --interactive", "Enable interactive interface")
+        )
         .action(async (jobID, options) => {
-            await deletePosts(jobID, options.regions, options.similar);
+            await deletePosts(
+                options.interactive,
+                jobID,
+                options.regions,
+                options.similar
+            );
         });
+
     await program.parseAsync(process.argv);
 }
 
