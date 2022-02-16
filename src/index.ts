@@ -34,7 +34,8 @@ async function getJobPostInteractive(
     jobName: string,
     jobID: number,
     job: Job,
-    spinner: ora.Ora
+    spinner: ora.Ora,
+    message: string
 ) {
     spinner.start(`Fetching job posts for ${jobName}.`);
     const jobData: JobInfo = await job.getJobData(jobID);
@@ -47,7 +48,7 @@ async function getJobPostInteractive(
     spinner.succeed();
     const prompt = new Select({
         name: "Job Post",
-        message: "What job post should be copied?",
+        message,
         choices: [...uniqueNames],
     });
     const jobPostName = await prompt.run();
@@ -87,7 +88,8 @@ async function addPosts(
                 name,
                 id,
                 job,
-                spinner
+                spinner,
+                "What job post should be copied?"
             );
             console.log(
                 `Job post name: ${jobPostName}, Job post ID: ${jobPostID}`
@@ -142,7 +144,8 @@ async function deletePosts(
                 name,
                 id,
                 job,
-                spinner
+                spinner,
+                "Which job posts should be deleted?"
             );
             console.log(
                 `Job post name: ${jobPostName}, Job post ID: ${jobPostID}`
