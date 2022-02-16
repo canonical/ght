@@ -14,7 +14,7 @@ async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     spinner.succeed();
     if (jobs.size === 0)
         throw Error(
-            `Only hiring leads can create job posts, make sure you are one or contact HR.`
+            "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
         );
 
     const prompt = new Select({
