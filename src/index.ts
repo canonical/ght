@@ -1,12 +1,14 @@
-import { JobInfo } from "./common/types";
+import { JobInfo, PostInfo } from "./common/types";
 import regions from "./common/regions";
 import Job from "./automations/Job";
 import SSO from "./automations/SSO";
+import { MAIN_URL } from "./common/constants";
+import { joinURL } from "./common/pageUtils";
 import { Command, Argument, Option } from "commander";
-import { red } from "colors";
+import { green, red } from "colors";
 import ora from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
-import { Select } from "enquirer";
+import { Select, MultiSelect } from "enquirer";
 
 async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     spinner.start("Fetching your jobs.");
@@ -30,22 +32,8 @@ async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     };
 }
 
-async function getJobPostInteractive(
-    jobName: string,
-    jobID: number,
-    job: Job,
-    spinner: ora.Ora,
-    message: string
-) {
-    spinner.start(`Fetching job posts for ${jobName}.`);
-    const jobData: JobInfo = await job.getJobData(jobID);
-    if (jobData.posts.length === 0)
-        throw Error(
-            "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
-        );
-
-    const uniqueNames = new Set(jobData.posts.map((post) => post.name));
-    spinner.succeed();
+async function getJobPostInteractive(posts: PostInfo[], message: string) {
+    const uniqueNames = new Set(posts.map((post) => post.name));
     const prompt = new Select({
         name: "Job Post",
         message,
@@ -53,22 +41,29 @@ async function getJobPostInteractive(
     });
     const jobPostName = await prompt.run();
     // Get one of job posts whose name matches with the chosen name. It doesn not matter which one.
-    const matchedJobPost = jobData.posts.find(
-        (post) => post.name === jobPostName
-    );
+    const matchedJobPost = posts.find((post) => post.name === jobPostName);
     if (!matchedJobPost) throw Error(`No job post found with given name.`);
 
-    return {
-        jobPostID: matchedJobPost.id,
-        jobPostName: matchedJobPost.name,
-    };
+    return matchedJobPost.id;
+}
+
+async function getRegionsInteractive(message: string) {
+    const regionNames = Object.keys(regions);
+    const prompt = new MultiSelect({
+        name: "Regions",
+        message,
+        choices: regionNames,
+        validate: (value: string[]) => value.length > 0,
+    });
+    const region = await prompt.run();
+    return region;
 }
 
 async function addPosts(
     isInteractive: boolean,
-    jobID: number,
-    regions: string[],
-    cloneFrom: number
+    jobIDArg: number,
+    regionsArg: string[],
+    cloneFromArg: number
 ) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
@@ -76,42 +71,74 @@ async function addPosts(
     const spinner = ora();
 
     try {
+        let jobID = jobIDArg;
+        let jobInfo: JobInfo;
+        let regionNames = regionsArg;
+        let cloneFrom = cloneFromArg;
         if (isInteractive) {
             const { name, id } = await getJobInteractive(
                 job,
                 "What job would you like to create job posts for?",
                 spinner
             );
-
             if (!id) throw Error(`Job ID cannot be found.`);
-            const { jobPostName, jobPostID } = await getJobPostInteractive(
-                name,
-                id,
-                job,
-                spinner,
+            jobID = id;
+            spinner.start(`Fetching job posts for ${name}.`);
+            jobInfo = await job.getJobData(jobID);
+            spinner.succeed();
+            if (jobInfo.posts.length === 0)
+                throw Error(
+                    "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
+                );
+
+            const jobPostID = await getJobPostInteractive(
+                jobInfo.posts,
                 "What job post should be copied?"
             );
-            console.log(
-                `Job post name: ${jobPostName}, Job post ID: ${jobPostID}`
+            cloneFrom = jobPostID;
+
+            regionNames = await getRegionsInteractive(
+                "What region should those job posts be?"
             );
+
+            console.log("Thank you.");
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
-            if (!regions) throw Error(`Region parameter is missing.`);
+            if (!regionNames) throw Error(`Region parameter is missing.`);
 
-            spinner.start("Fetching your jobs.");
-            const jobData: JobInfo = await job.getJobData(jobID);
-            spinner.succeed();
+            await page.goto(joinURL(MAIN_URL, `/plans/${jobID}`));
 
-            spinner.start("Cloning the posts.");
-            // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
-            await job.clonePost(jobData.posts, regions, cloneFrom);
+            const name = await job.getJobName();
+            spinner.start(`Fetching job posts for ${name}.`);
+            jobInfo = await job.getJobData(jobID);
             spinner.succeed();
-
-            spinner.start("Marking posts as live.");
-            // Mark all newly added job posts as live
-            await job.markAsLive(jobID, jobData.posts);
-            spinner.succeed();
+            if (jobInfo.posts.length === 0)
+                throw Error(
+                    "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
+                );
         }
+
+        spinner.start("Processing.");
+        // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
+        const clonedJobPosts = await job.clonePost(
+            jobInfo.posts,
+            regionNames,
+            cloneFrom
+        );
+        // Mark all newly added job posts as live
+        const processedJobCount = await job.markAsLive(jobID, jobInfo.posts);
+        spinner.succeed();
+
+        console.log(
+            green("✓"),
+            `${processedJobCount} job posts for ${clonedJobPosts
+                .map((post) => post.name)
+                .reduce(
+                    (previousValue, currentValue) =>
+                        previousValue + ", " + currentValue
+                )} of ${jobInfo.name} were created in ${regionNames}`
+        );
+        console.log("Happy hiring!");
     } catch (error) {
         console.log(`${red("x")} ${(<Error>error).message}`);
     } finally {
@@ -122,9 +149,9 @@ async function addPosts(
 
 async function deletePosts(
     isInteractive: boolean,
-    jobID: number,
-    regions: string[],
-    similar: number
+    jobIDArg: number,
+    regionsArg: string[],
+    similarArg: number
 ) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
@@ -132,6 +159,11 @@ async function deletePosts(
     const spinner = ora();
 
     try {
+        let jobID = jobIDArg;
+        let jobInfo: JobInfo;
+        let regionNames = regionsArg;
+        let similar = similarArg;
+
         if (isInteractive) {
             const { name, id } = await getJobInteractive(
                 job,
@@ -140,22 +172,47 @@ async function deletePosts(
             );
 
             if (!id) throw Error(`Job ID cannot be found.`);
-            const { jobPostName, jobPostID } = await getJobPostInteractive(
-                name,
-                id,
-                job,
-                spinner,
+            jobID = id;
+
+            spinner.start(`Fetching job posts for ${name}.`);
+            jobInfo = await job.getJobData(jobID);
+            spinner.succeed();
+
+            if (jobInfo.posts.length === 0)
+                throw Error(
+                    "Only hiring leads can delete job posts. If you are not sure about your hiring role please contact HR."
+                );
+
+            const jobPostID = await getJobPostInteractive(
+                jobInfo.posts,
                 "Which job posts should be deleted?"
             );
-            console.log(
-                `Job post name: ${jobPostName}, Job post ID: ${jobPostID}`
+            similar = jobPostID;
+
+            regionNames = await getRegionsInteractive(
+                "What region should the job posts be deleted from?"
             );
+            console.log("Thank you.");
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
-            spinner.start("Deleting job posts.");
-            await job.deletePosts(jobID, regions, similar);
+
+            await page.goto(joinURL(MAIN_URL, `/plans/${jobID}`));
+            const name = await job.getJobName();
+            spinner.start(`Fetching job posts for ${name}.`);
+            jobInfo = await job.getJobData(jobID);
             spinner.succeed();
+
+            if (jobInfo.posts.length === 0)
+                throw Error(
+                    "Only hiring leads can delete job posts. If you are not sure about your hiring role please contact HR."
+                );
         }
+
+        spinner.start("Processing.");
+        await job.deletePosts(jobID, regionNames, similar);
+        spinner.succeed();
+
+        console.log("Happy hiring!");
     } catch (error) {
         console.log(`${red("x")} ${(<Error>error).message}`);
     } finally {
