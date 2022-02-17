@@ -8,7 +8,7 @@ import {
 import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
 import { PostInfo } from "../common/types";
 import Puppeteer, { ElementHandle } from "puppeteer";
-import { blue, green } from "colors";
+import { blue } from "colors";
 
 export default class JobPost {
     private page: Puppeteer.Page;
@@ -43,7 +43,7 @@ export default class JobPost {
         ).jsonValue();
 
         return {
-            id: jobPostID,
+            id: parseInt(jobPostID),
             name: titleLocationInfo[0],
             location: titleLocationInfo[1],
             boardInfo: {
@@ -73,10 +73,6 @@ export default class JobPost {
             },
             `Failed to delete ${jobPost.name} | ${jobPost.location}`,
             this.isSuccessful
-        );
-
-        console.log(
-            `${green("✓")} Deleted ${jobPost.name} | ${jobPost.location}`
         );
     }
 
@@ -166,8 +162,6 @@ export default class JobPost {
             "Failed to create " + logName,
             this.isSuccessful
         );
-
-        console.log(`${green("✓")} Created ${logName}`);
     }
 
     public async setStatus(jobPost: PostInfo, newStatus: "live" | "offline") {
@@ -193,10 +187,6 @@ export default class JobPost {
             },
             "Failed to update the status of " + logName,
             this.isSuccessful
-        );
-
-        console.log(
-            `${green("✓")} Changed the status of ${logName} to ${newStatus}`
         );
     }
 }

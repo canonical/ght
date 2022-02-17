@@ -10,7 +10,7 @@ import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import regions from "../common/regions";
 import { JobInfo, PostInfo } from "../common/types";
 import Puppeteer from "puppeteer";
-import { green, yellow } from "colors";
+import { green } from "colors";
 
 export default class Job {
     private page: Puppeteer.Page;
@@ -27,8 +27,8 @@ export default class Job {
      * Clone job posts of a job with given regions countires
      * @param posts job's posts
      * @param regionsToPost region list that job posts will be sent to
-     * @param page current page
      * @param sourceID id of the post which will be copied.
+     * @returns posts that are cloned from
      */
     public async clonePost(
         posts: PostInfo[],
@@ -39,7 +39,6 @@ export default class Job {
         // Check if a source post is provided.
         if (sourceID) {
             protectedPosts = posts.filter((post) => post.id === sourceID);
-            console.log(yellow("-"), `Clone job posts from ${sourceID}.`);
         } else {
             // If a source post is not provided, use posts that are in the "Canonical" board.
             protectedPosts = posts.filter(
@@ -83,24 +82,24 @@ export default class Job {
             }
         }
 
-        console.log(green("✓"), "Created job posts.");
+        return protectedPosts;
     }
 
     public async markAsLive(jobID: number, oldPosts: PostInfo[]) {
         const jobData: JobInfo = await this.getJobData(jobID);
 
         // Find posts that are newly added.
-        const newlyAddedPosts = jobData.posts.filter(
+        let postsToMakeLive = jobData.posts.filter(
             (post) => !oldPosts.find((oldPost) => post.id === oldPost.id)
         );
 
-        for (const post of newlyAddedPosts) {
+        if (postsToMakeLive.length === 0)
+            postsToMakeLive = jobData.posts.filter((post) => !post.isLive);
+
+        for (const post of postsToMakeLive) {
             await this.jobPost.setStatus(post, "live");
         }
-        console.log(
-            green("✓"),
-            `Changed the status of ${jobData.name}'s posts to live.`
-        );
+        return postsToMakeLive.length;
     }
 
     public async getJobData(jobID: number): Promise<JobInfo> {
@@ -118,7 +117,6 @@ export default class Job {
             await this.page.goto(`${jobappURL}?page=${currentPage}`);
             job.posts.push(...(await this.getJobPosts(job)));
         }
-
         return job;
     }
 
@@ -171,6 +169,7 @@ export default class Job {
             await this.page.reload();
             count++;
         }
+
         console.log(
             `${green("✓")} ${count} job posts of ${jobData.name} are deleted.`
         );
@@ -192,7 +191,7 @@ export default class Job {
         return jobPosts;
     }
 
-    private async getJobName(): Promise<string> {
+    public async getJobName(): Promise<string> {
         const jobTitleElement = await this.page.$(".job-name");
         const jobAnchor = await jobTitleElement?.$("a");
         if (!jobAnchor) throw new Error("Cannot find the job's name.");
