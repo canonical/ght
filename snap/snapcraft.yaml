@@ -5,8 +5,6 @@ description: An automated browser that does a set of tasks on Canonical's Greenh
 base: core20
 confinement: strict
 grade: stable
-issues: https://github.com/canonical/greenhouse-automations/issues
-source-code: https://github.com/canonical/greenhouse-automations
 
 parts:
     node:
