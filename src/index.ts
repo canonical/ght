@@ -2,7 +2,7 @@ import { JobInfo, PostInfo } from "./common/types";
 import regions from "./common/regions";
 import Job from "./automations/Job";
 import SSO from "./automations/SSO";
-import { MAIN_URL } from "./common/constants";
+import { MAIN_URL, PROTECTED_JOB_BOARDS } from "./common/constants";
 import { joinURL } from "./common/pageUtils";
 import { Command, Argument, Option } from "commander";
 import { green, red } from "colors";
@@ -33,7 +33,19 @@ async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
 }
 
 async function getJobPostInteractive(posts: PostInfo[], message: string) {
-    const uniqueNames = new Set(posts.map((post) => post.name));
+    // Only job posts in the "Canonical" board should be displayed
+    const board = PROTECTED_JOB_BOARDS[0].toUpperCase();
+    const uniqueNames = new Set(
+        posts
+            .filter(
+                (post) =>
+                    post.boardInfo.name.toUpperCase() === board 
+            )
+            .map((post) => post.name)
+    );
+
+    if (!uniqueNames.size) throw Error(`No job post found in the Canonical board.`);
+
     const prompt = new Select({
         name: "Job Post",
         message,
@@ -41,7 +53,7 @@ async function getJobPostInteractive(posts: PostInfo[], message: string) {
     });
     const jobPostName = await prompt.run();
     // Get one of job posts whose name matches with the chosen name. It doesn not matter which one.
-    const matchedJobPost = posts.find((post) => post.name === jobPostName);
+    const matchedJobPost = posts.find((post) => post.name === jobPostName && post.boardInfo.name.toUpperCase() === board);
     if (!matchedJobPost) throw Error(`No job post found with given name.`);
 
     return matchedJobPost.id;
