@@ -4,13 +4,21 @@
   ],
   "packageRules": [
     {
-      "matchPackageNames": ["node-fetch"],
+      "matchPackageNames": [
+        "node-fetch"
+      ],
       "allowedVersions": "<=2.6.7"
-    }, {
-      "matchPackageNames": ["@types/node-fetch"],
+    },
+    {
+      "matchPackageNames": [
+        "@types/node-fetch"
+      ],
       "allowedVersions": "<=2.6.1"
-    }, {
-      "matchPackageNames": ["ora"],
+    },
+    {
+      "matchPackageNames": [
+        "ora"
+      ],
       "allowedVersions": "<=5.4.1"
     }
   ]
