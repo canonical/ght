@@ -98,10 +98,8 @@ async function addPosts(
             cloneFrom = jobPostID;
 
             regionNames = await getRegionsInteractive(
-                "What region should those job posts be?"
+                "What region should those job posts be? Use space to make a selection."
             );
-
-            console.log("Thank you.");
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
             if (!regionNames) throw Error(`Region parameter is missing.`);
@@ -117,8 +115,6 @@ async function addPosts(
                     "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
                 );
         }
-
-        spinner.start("Processing.");
         // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
         const clonedJobPosts = await job.clonePost(
             jobInfo.posts,
@@ -127,10 +123,9 @@ async function addPosts(
         );
         // Mark all newly added job posts as live
         const processedJobCount = await job.markAsLive(jobID, jobInfo.posts);
-        spinner.succeed();
 
         console.log(
-            green("✓"),
+            green("✔"),
             `${processedJobCount} job posts for ${clonedJobPosts
                 .map((post) => post.name)
                 .reduce(
@@ -190,9 +185,8 @@ async function deletePosts(
             similar = jobPostID;
 
             regionNames = await getRegionsInteractive(
-                "What region should the job posts be deleted from?"
+                "What region should the job posts be deleted from? Use space to make a selection."
             );
-            console.log("Thank you.");
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
 
@@ -207,10 +201,7 @@ async function deletePosts(
                     "Only hiring leads can delete job posts. If you are not sure about your hiring role please contact HR."
                 );
         }
-
-        spinner.start("Processing.");
-        await job.deletePosts(jobID, regionNames, similar);
-        spinner.succeed();
+        await job.deletePosts(jobInfo, regionNames, similar);
 
         console.log("Happy hiring!");
     } catch (error) {

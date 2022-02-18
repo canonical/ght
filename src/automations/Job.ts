@@ -10,7 +10,7 @@ import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import regions from "../common/regions";
 import { JobInfo, PostInfo } from "../common/types";
 import Puppeteer from "puppeteer";
-import { green } from "colors";
+import ora from "ora";
 
 export default class Job {
     private page: Puppeteer.Page;
@@ -35,6 +35,7 @@ export default class Job {
         regionsToPost: string[],
         sourceID: number
     ) {
+        const spinner = ora().start(`Starting to create job posts.`);
         let protectedPosts: PostInfo[];
         // Check if a source post is provided.
         if (sourceID) {
@@ -54,17 +55,48 @@ export default class Job {
         const boardToPost = boards.find((board) => board.name === JOB_BOARD);
         if (!boardToPost) throw new Error(`Cannot found ${JOB_BOARD} board`);
 
+        const locationsToCreate = this.filterLocationsToClone(
+            protectedPosts,
+            regionsToPost
+        );
+        const locationNumber = [...locationsToCreate.values()]
+            .map((locationList) => locationList.length)
+            .reduce((pValue, nValue) => pValue + nValue);
+        const totalJobsToBeCloned = protectedPosts.length * locationNumber;
+        let count = 1;
         for (const protectedPost of protectedPosts) {
-            const protectedJobName = protectedPost.name;
+            const locations = locationsToCreate.get(protectedPost.id);
+            if (!locations)
+                throw new Error(`Location cannot be found for the post.`);
 
+            for (const location of locations) {
+                await this.jobPost.duplicate(
+                    protectedPost,
+                    location,
+                    boardToPost.id
+                );
+                spinner.text = `${count} of ${totalJobsToBeCloned} job posts are created.`;
+                count++;
+            }
+        }
+        spinner.stop();
+        return protectedPosts;
+    }
+
+    private filterLocationsToClone(
+        postList: PostInfo[],
+        enteredRegions: string[]
+    ): Map<number, string[]> {
+        const locationsToCreate = new Map<number, string[]>();
+        for (const protectedPost of postList) {
             // Get existing post's location that have same name with the current protected job.
-            const existingLocations = posts
-                .filter((post) => post.name === protectedJobName)
+            const existingLocations = postList
+                .filter((post) => post.name === protectedPost.name)
                 .map((post) => post.location);
 
-            for (const regionName of regionsToPost) {
+            const postLocations = [];
+            for (const regionName of enteredRegions) {
                 const regionCities = regions[regionName];
-
                 // New posts' locations = Current region's locations - Existing locations
                 const locations = regionCities.filter(
                     (city) =>
@@ -72,20 +104,15 @@ export default class Job {
                             existingLocation.match(new RegExp(city, "i"))
                         )
                 );
-                for (const location of locations) {
-                    await this.jobPost.duplicate(
-                        protectedPost,
-                        location,
-                        boardToPost.id
-                    );
-                }
+                postLocations.push(...locations);
             }
+            locationsToCreate.set(protectedPost.id, postLocations);
         }
-
-        return protectedPosts;
+        return locationsToCreate;
     }
 
     public async markAsLive(jobID: number, oldPosts: PostInfo[]) {
+        const spinner = ora().start(`Starting to set job posts as live.`);
         const jobData: JobInfo = await this.getJobData(jobID);
 
         // Find posts that are newly added.
@@ -96,9 +123,14 @@ export default class Job {
         if (postsToMakeLive.length === 0)
             postsToMakeLive = jobData.posts.filter((post) => !post.isLive);
 
+        let count = 1;
+        const totalJobsToBeUpdated = postsToMakeLive.length;
         for (const post of postsToMakeLive) {
             await this.jobPost.setStatus(post, "live");
+            spinner.text = `${count} of ${totalJobsToBeUpdated} job posts are set live.`;
+            count++;
         }
+        spinner.stop();
         return postsToMakeLive.length;
     }
 
@@ -120,26 +152,20 @@ export default class Job {
         return job;
     }
 
-    public async deletePosts(
-        jobID: number,
+    private filterPostsToDelete(
+        similarPostID: number,
         enteredRegions: string[],
-        similarPostID: number
+        posts: PostInfo[]
     ) {
-        const jobData = await this.getJobData(jobID);
-        const posts: PostInfo[] = jobData.posts;
-
         let similarPost;
         if (similarPostID) {
-            similarPost = jobData.posts.find(
-                (post) => post.id === similarPostID
-            );
+            similarPost = posts.find((post) => post.id === similarPostID);
             if (!similarPost) {
                 throw new Error(`Post cannot be found`);
             }
         }
 
-        const referrer = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
-        let count = 0;
+        const postToDelete = [];
         for (const post of posts) {
             const isProtected = !!PROTECTED_JOB_BOARDS.find(
                 (protectedBoardName) =>
@@ -160,18 +186,39 @@ export default class Job {
                 });
 
             const nameCheck = !similarPost || similarPost.name === post.name;
+            if (!isProtected && locationCheck && nameCheck)
+                postToDelete.push(post);
+        }
+        return postToDelete;
+    }
 
-            // if job is protected, do not delete it.
-            if (isProtected || !locationCheck || !nameCheck) continue;
+    public async deletePosts(
+        jobData: JobInfo,
+        enteredRegions: string[],
+        similarPostID: number
+    ) {
+        const spinner = ora().start(`Starting to delete job posts.`);
+        const posts: PostInfo[] = jobData.posts;
 
+        const postToDelete = this.filterPostsToDelete(
+            similarPostID,
+            enteredRegions,
+            posts
+        );
+
+        const referrer = joinURL(MAIN_URL, `/plans/${jobData.id}/jobapp`);
+        let count = 1;
+        const totalJobsToDelete = postToDelete.length;
+        for (const post of postToDelete) {
             post.isLive && (await this.jobPost.setStatus(post, "offline"));
             await this.jobPost.deletePost(post, referrer);
             await this.page.reload();
+
+            spinner.text = `${count} of ${totalJobsToDelete} job posts were deleted.`;
             count++;
         }
-
-        console.log(
-            `${green("✓")} ${count} job posts of ${jobData.name} are deleted.`
+        spinner.succeed(
+            `${totalJobsToDelete} job posts of ${jobData.name} were deleted.`
         );
     }
 
