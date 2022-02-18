@@ -67,8 +67,8 @@ async function addPosts(
 ) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
-    const job = new Job(page);
     const spinner = ora();
+    const job = new Job(page, spinner);
 
     try {
         let jobID = jobIDArg;
@@ -135,7 +135,7 @@ async function addPosts(
         );
         console.log("Happy hiring!");
     } catch (error) {
-        console.log(`${red("x")} ${(<Error>error).message}`);
+        spinner.fail(`${(<Error>error).message}`);
     } finally {
         spinner.stop();
         browser.close();
@@ -150,8 +150,8 @@ async function deletePosts(
 ) {
     const sso = new SSO();
     const { browser, page } = await sso.authenticate();
-    const job = new Job(page);
     const spinner = ora();
+    const job = new Job(page, spinner);
 
     try {
         let jobID = jobIDArg;
@@ -205,7 +205,7 @@ async function deletePosts(
 
         console.log("Happy hiring!");
     } catch (error) {
-        console.log(`${red("x")} ${(<Error>error).message}`);
+        spinner.fail(`${(<Error>error).message}`);
     } finally {
         spinner.stop();
         browser.close();
