@@ -232,7 +232,7 @@ async function main() {
     };
 
     program
-        .command("add-post")
+        .command("add-posts")
         .addArgument(
             new Argument("<job-id>", "job to add job posts to")
                 .argOptional()
