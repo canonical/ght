@@ -52,8 +52,7 @@ export default class Job {
 
         // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
         const boards = await this.board.getBoards();
-        // const boardToPost = boards.find((board) => board.name === JOB_BOARD);
-        const boardToPost = boards.find((board) => board.name === "Test Board");
+        const boardToPost = boards.find((board) => board.name === JOB_BOARD);
         if (!boardToPost) throw new Error(`Cannot found ${JOB_BOARD} board`);
 
         const locationsToCreate = this.filterLocationsToClone(
