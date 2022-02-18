@@ -17,7 +17,7 @@
         "http-cookie-agent": "1.0.4",
         "jsdom": "19.0.0",
         "node-fetch": "2.6.7",
-        "ora": "5.4.1",
+        "ora": "6.0.1",
         "puppeteer": "13.3.2",
         "tough-cookie": "4.0.0"
     },
