@@ -50,7 +50,7 @@ export default class Job {
             );
         }
 
-        if (!protectedPosts || !protectedPosts.length) {
+        if (!protectedPosts?.length) {
             const errorMessage =  sourceID ? `Job post ID: ${sourceID} not found in the Canonical Board.` : `No post found to clone`; 
             throw new Error(errorMessage);
         }
