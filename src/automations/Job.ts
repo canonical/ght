@@ -10,17 +10,19 @@ import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import regions from "../common/regions";
 import { JobInfo, PostInfo } from "../common/types";
 import Puppeteer from "puppeteer";
-import ora from "ora";
+import { Ora } from "ora";
 
 export default class Job {
     private page: Puppeteer.Page;
     private jobPost: JobPost;
     private board: Board;
+    private spinner: Ora;
 
-    constructor(page: Puppeteer.Page) {
+    constructor(page: Puppeteer.Page, spinner: Ora) {
         this.page = page;
         this.jobPost = new JobPost(page);
         this.board = new Board(page);
+        this.spinner = spinner;
     }
 
     /**
@@ -33,22 +35,25 @@ export default class Job {
     public async clonePost(
         posts: PostInfo[],
         regionsToPost: string[],
-        sourceID: number
+        sourceID: number,
     ) {
-        const spinner = ora().start(`Starting to create job posts.`);
+        this.spinner.start(`Starting to create job posts.`);
+        const board =  PROTECTED_JOB_BOARDS[0];
         let protectedPosts: PostInfo[];
         // Check if a source post is provided.
         if (sourceID) {
-            protectedPosts = posts.filter((post) => post.id === sourceID);
+            protectedPosts = posts.filter((post) => post.id === sourceID && post.boardInfo.name === board);
         } else {
             // If a source post is not provided, use posts that are in the "Canonical" board.
             protectedPosts = posts.filter(
-                (post) => post.boardInfo.name === PROTECTED_JOB_BOARDS[0]
+                (post) => post.boardInfo.name === board
             );
         }
 
-        if (!protectedPosts || !protectedPosts.length)
-            throw new Error(`No post found to clone`);
+        if (!protectedPosts?.length) {
+            const errorMessage =  sourceID ? `Job post ID: ${sourceID} not found in the Canonical Board.` : `No post found to clone`; 
+            throw new Error(errorMessage);
+        }
 
         // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
         const boards = await this.board.getBoards();
@@ -75,11 +80,11 @@ export default class Job {
                     location,
                     boardToPost.id
                 );
-                spinner.text = `${count} of ${totalJobsToBeCloned} job posts are created.`;
+                this.spinner.text = `${count} of ${totalJobsToBeCloned} job posts are created.`;
                 count++;
             }
         }
-        spinner.stop();
+        this.spinner.stop();
         return protectedPosts;
     }
 
@@ -112,7 +117,7 @@ export default class Job {
     }
 
     public async markAsLive(jobID: number, oldPosts: PostInfo[]) {
-        const spinner = ora().start(`Starting to set job posts as live.`);
+        this.spinner.start(`Starting to set job posts as live.`);
         const jobData: JobInfo = await this.getJobData(jobID);
 
         // Find posts that are newly added.
@@ -127,10 +132,10 @@ export default class Job {
         const totalJobsToBeUpdated = postsToMakeLive.length;
         for (const post of postsToMakeLive) {
             await this.jobPost.setStatus(post, "live");
-            spinner.text = `${count} of ${totalJobsToBeUpdated} job posts are set live.`;
+            this.spinner.text = `${count} of ${totalJobsToBeUpdated} job posts are set live.`;
             count++;
         }
-        spinner.stop();
+        this.spinner.stop();
         return postsToMakeLive.length;
     }
 
@@ -197,7 +202,7 @@ export default class Job {
         enteredRegions: string[],
         similarPostID: number
     ) {
-        const spinner = ora().start(`Starting to delete job posts.`);
+        this.spinner.start(`Starting to delete job posts.`);
         const posts: PostInfo[] = jobData.posts;
 
         const postToDelete = this.filterPostsToDelete(
@@ -214,10 +219,10 @@ export default class Job {
             await this.jobPost.deletePost(post, referrer);
             await this.page.reload();
 
-            spinner.text = `${count} of ${totalJobsToDelete} job posts were deleted.`;
+            this.spinner.text = `${count} of ${totalJobsToDelete} job posts were deleted.`;
             count++;
         }
-        spinner.succeed(
+        this.spinner.succeed(
             `${totalJobsToDelete} job posts of ${jobData.name} were deleted.`
         );
     }
