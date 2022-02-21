@@ -8,7 +8,7 @@ import { Command, Argument, Option } from "commander";
 import { green, red } from "colors";
 import ora from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
-import { Select, MultiSelect } from "enquirer";
+import { Select, MultiSelect, Toggle } from "enquirer";
 
 async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     spinner.start("Fetching your jobs.");
@@ -71,6 +71,19 @@ async function getRegionsInteractive(message: string) {
     return region;
 }
 
+async function deletePostsInteractive(job: Job, jobInfo: JobInfo, regionNames: string[], similar: number) {
+    const prompt = new Toggle({
+        message: "Do you want to delete job posts?",
+        enabled: "Yes",
+        disabled: "No"
+      });
+       
+    const shouldDelete = await prompt.run();
+    if (shouldDelete) {
+        await job.deletePosts(jobInfo, regionNames, similar);
+    }
+}
+
 async function addPosts(
     isInteractive: boolean,
     jobIDArg: number,
@@ -112,6 +125,8 @@ async function addPosts(
             regionNames = await getRegionsInteractive(
                 "What region should those job posts be? Use space to make a selection."
             );
+
+            await deletePostsInteractive(job, jobInfo, regionNames, cloneFrom);
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
             if (!regionNames) throw Error(`Region parameter is missing.`);
