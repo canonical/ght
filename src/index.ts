@@ -91,12 +91,15 @@ async function addPosts(
     regionsArg: string[],
     cloneFromArg: number
 ) {
-    const sso = new SSO();
-    const { browser, page } = await sso.authenticate();
     const spinner = ora();
-    const job = new Job(page, spinner);
+    let currentBrowser;
 
     try {
+        const sso = new SSO(spinner);
+        const { browser, page } = await sso.authenticate();
+        currentBrowser = browser;
+        const job = new Job(page, spinner);
+
         let jobID = jobIDArg;
         let jobInfo: JobInfo;
         let regionNames = regionsArg;
@@ -166,7 +169,7 @@ async function addPosts(
         spinner.fail(`${(<Error>error).message}`);
     } finally {
         spinner.stop();
-        browser.close();
+        currentBrowser && currentBrowser.close();
     }
 }
 
@@ -176,12 +179,15 @@ async function deletePosts(
     regionsArg: string[],
     similarArg: number
 ) {
-    const sso = new SSO();
-    const { browser, page } = await sso.authenticate();
     const spinner = ora();
-    const job = new Job(page, spinner);
+    const sso = new SSO(spinner);
+    let currentBrowser;
 
     try {
+        const { browser, page } = await sso.authenticate();
+        currentBrowser = browser;
+
+        const job = new Job(page, spinner);
         let jobID = jobIDArg;
         let jobInfo: JobInfo;
         let regionNames = regionsArg;
@@ -236,7 +242,7 @@ async function deletePosts(
         spinner.fail(`${(<Error>error).message}`);
     } finally {
         spinner.stop();
-        browser.close();
+        currentBrowser && currentBrowser.close();
     }
 }
 

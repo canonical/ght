@@ -8,6 +8,7 @@ import Enquirer = require("enquirer");
 import Puppeteer from "puppeteer";
 import { green } from "colors";
 import { existsSync, readFileSync, writeFileSync } from "fs";
+import { Ora } from "ora";
 
 export type SSOCookies = {
     sessionId: string;
@@ -34,7 +35,9 @@ export default class SSO {
         "Referrer-Policy": "strict-origin-when-cross-origin",
     };
     private defaultFetchOptions: RequestInit;
-    constructor() {
+    private spinner: Ora;
+
+    constructor(spinner: Ora) {
         if (existsSync(CONFIG_PATH)) {
             this.jar = CookieJar.deserializeSync(this.parseUserSettings());
         } else {
@@ -51,6 +54,7 @@ export default class SSO {
             method: "GET",
             redirect: "follow",
         };
+        this.spinner = spinner;
     }
 
     private parseUserSettings() {
@@ -74,11 +78,16 @@ export default class SSO {
     }
 
     public async login(): Promise<SSOCookies> {
-        console.log("SSO authentication...");
+        this.spinner.start("Checking authentication...");
         let sessionId = await this.currentSessionId();
-        if ((await this.isLoggedIn()) && sessionId)
+        if ((await this.isLoggedIn()) && sessionId) {
+            this.spinner.succeed("Using the saved creadentials.");
             return { sessionId: sessionId };
+        }
+        this.spinner.stop();
         const credentials = await this.prompt();
+
+        this.spinner.start("Logging in...")
         let response: Response = await fetch(
             joinURL(SSO_URL, "/+login"),
             this.defaultFetchOptions
@@ -112,6 +121,7 @@ export default class SSO {
         if (!(await this.isLoggedIn()) || !sessionId)
             throw new Error("Invalid 2FA");
         this.saveUserSettings();
+        this.spinner.succeed("Authentication completed.");
         return { sessionId: sessionId };
     }
 
@@ -167,12 +177,12 @@ export default class SSO {
 
     public async authenticate() {
         const loginCookies = await this.login();
-        console.log(green("✓"), "Authentication complete");
-
+        this.spinner.start("Setting up...")
         const browser = await Puppeteer.launch({ args: ["--no-sandbox"] });
         const page = await browser.newPage();
         await this.setCookies(page, loginCookies);
 
+        this.spinner.succeed("Setup is completed.");
         return {
             browser,
             page,
