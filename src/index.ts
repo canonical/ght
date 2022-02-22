@@ -4,8 +4,9 @@ import Job from "./automations/Job";
 import SSO from "./automations/SSO";
 import { MAIN_URL, PROTECTED_JOB_BOARDS } from "./common/constants";
 import { joinURL } from "./common/pageUtils";
+import { ADD_POSTS_DESCRIPTION, ADD_POSTS_REGIONS_DESCRIPTION, ADD_POSTS_USAGE, CLONE_FROM_DESCRIPTION, DELETE_POSTS_DESCRIPTION, DELETE_POSTS_REGIONS_DESCRIPTION, DELETE_POSTS_USAGE, GENERAL_DESCRIPTION, INTERACTIVE_DESCRIPTION, JOB_ID_DESCRIPTION, SIMILAR_DESCRIPTION } from "./common/commandDescriptios";
 import { Command, Argument, Option } from "commander";
-import { green, red } from "colors";
+import { green } from "colors";
 import ora from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
@@ -272,9 +273,12 @@ async function main() {
     };
 
     program
+        .description(GENERAL_DESCRIPTION)
         .command("add-posts")
+        .usage(ADD_POSTS_USAGE)
+        .description(ADD_POSTS_DESCRIPTION)
         .addArgument(
-            new Argument("<job-id>", "job to add job posts to")
+            new Argument("<job-id>", JOB_ID_DESCRIPTION)
                 .argOptional()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")
@@ -283,17 +287,17 @@ async function main() {
         .addOption(
             new Option(
                 "-c, --clone-from <job-post-id>",
-                "Clone job posts from the given post"
+                CLONE_FROM_DESCRIPTION
             ).argParser((value) => validateNumberParam(value, "post-id"))
         )
         .addOption(
             new Option(
                 "-r, --regions <region-name>",
-                "Add job posts to given region/s"
+                ADD_POSTS_REGIONS_DESCRIPTION
             ).argParser(validateRegionParam)
         )
         .addOption(
-            new Option("-i, --interactive", "Enable interactive interface")
+            new Option("-i, --interactive", INTERACTIVE_DESCRIPTION)
         )
         .action(async (jobID, options) => {
             await addPosts(
@@ -306,8 +310,10 @@ async function main() {
 
     program
         .command("delete-posts")
+        .usage(DELETE_POSTS_USAGE)
+        .description(DELETE_POSTS_DESCRIPTION)
         .addArgument(
-            new Argument("<job-id>", "Delete job posts of the given job")
+            new Argument("<job-id>", JOB_ID_DESCRIPTION)
                 .argOptional()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")
@@ -316,17 +322,17 @@ async function main() {
         .addOption(
             new Option(
                 "-s, --similar <job-post-id>",
-                "Delete job posts that have same name with the given post"
+                SIMILAR_DESCRIPTION
             ).argParser((value) => validateNumberParam(value, "post-id"))
         )
         .addOption(
             new Option(
                 "-r, --regions <region-name>",
-                "Delete job posts that are in the given region"
+                DELETE_POSTS_REGIONS_DESCRIPTION
             ).argParser(validateRegionParam)
         )
         .addOption(
-            new Option("-i, --interactive", "Enable interactive interface")
+            new Option("-i, --interactive", INTERACTIVE_DESCRIPTION)
         )
         .action(async (jobID, options) => {
             await deletePosts(

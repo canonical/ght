@@ -6,9 +6,8 @@ import fetch, { RequestInit, Response } from "node-fetch";
 import { CookieJar } from "tough-cookie";
 import Enquirer = require("enquirer");
 import Puppeteer from "puppeteer";
-import { green } from "colors";
-import { existsSync, readFileSync, writeFileSync } from "fs";
 import { Ora } from "ora";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 
 export type SSOCookies = {
     sessionId: string;
