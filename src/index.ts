@@ -73,9 +73,10 @@ async function getRegionsInteractive(message: string) {
 
 async function deletePostsInteractive(job: Job, jobInfo: JobInfo, regionNames: string[], similar: number) {
     const prompt = new Toggle({
-        message: "Do you want to delete job posts?",
+        message: "Do you want to remove existing job posts?",
         enabled: "Yes",
-        disabled: "No"
+        disabled: "No",
+        initial: true
       });
        
     const shouldDelete = await prompt.run();
