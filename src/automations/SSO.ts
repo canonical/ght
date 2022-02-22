@@ -104,7 +104,7 @@ export default class SSO {
         });
         const html = await response.text();
         if (!html.match(/type your verification code/i))
-            throw new Error("Failed to reach the 2FA page");
+            throw new Error("Authorization failed. Please check your e-mail and password.");
         CSRFToken = this.getCSRFToken(html);
         response = await fetch(joinURL(SSO_URL, "/two_factor_auth"), {
             ...this.defaultFetchOptions,

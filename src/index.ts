@@ -166,10 +166,13 @@ async function addPosts(
         );
         console.log("Happy hiring!");
     } catch (error) {
-        spinner.fail(`${(<Error>error).message}`);
+        const errorMessage = (<Error>error).message;
+        errorMessage ?
+            spinner.fail(`${errorMessage}`) :
+            spinner.fail("An error occurred.");
     } finally {
         spinner.stop();
-        currentBrowser && currentBrowser.close();
+        currentBrowser?.close();
     }
 }
 
@@ -239,10 +242,13 @@ async function deletePosts(
 
         console.log("Happy hiring!");
     } catch (error) {
-        spinner.fail(`${(<Error>error).message}`);
+        const errorMessage = (<Error>error).message;
+        errorMessage ?
+            spinner.fail(`${errorMessage}`) :
+            spinner.fail("An error occurred.")
     } finally {
         spinner.stop();
-        currentBrowser && currentBrowser.close();
+        currentBrowser?.close();
     }
 }
 
