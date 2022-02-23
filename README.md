@@ -114,7 +114,7 @@ The regions and their cities are predefined. Possible regions that can be entere
 - emea
 - apac
 
-To add new regions or add cities to an existing regions please create [an issue](https://github.com/canonical/greenhouse-automations/issues/new).
+To add new regions or add cities to an existing region please create [an issue](https://github.com/canonical/greenhouse-automations/issues/new).
 
 Example:
 ```
@@ -164,7 +164,7 @@ greenhouse delete-posts --interactive
     - Only job posts with UNIQUE names will be displayed. For example, if there is two job post with name "Job Post - 1" in the "Canonical" board only one of them will be displayed.  
 
 - **Selecting regions**: A job posts will be deleted if it's locatin value is one of the entered regions' cities. Mutliple regions can be selected.
-    - To add new regions please create [an issue](https://github.com/canonical/greenhouse-automations/issues/new).
+    - To add new regions or add cities to an existing region please create [an issue](https://github.com/canonical/greenhouse-automations/issues/new).
     - To select a region use space, to confirm the selections use enter key.
 
 **job-id**: This argument is the ID of a job whose job posts will be deleted. It's a mandatory argument if the interactive mode is not activated. Only one job can be entered.
@@ -192,7 +192,7 @@ The regions and their cities are predefined. Possible regions that can be entere
 - emea
 - apac
 
-To add new regions or add cities to an existing regions please create [an issue](https://github.com/canonical/greenhouse-automations/issues/new).
+To add new regions or add cities to an existing region please create [an issue](https://github.com/canonical/greenhouse-automations/issues/new).
 
 Example:
 ```
