@@ -6,9 +6,8 @@ import fetch, { RequestInit, Response } from "node-fetch";
 import { CookieJar } from "tough-cookie";
 import Enquirer = require("enquirer");
 import Puppeteer from "puppeteer";
-import { green } from "colors";
-import { existsSync, readFileSync, writeFileSync } from "fs";
 import { Ora } from "ora";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 
 export type SSOCookies = {
     sessionId: string;
@@ -87,7 +86,7 @@ export default class SSO {
         this.spinner.stop();
         const credentials = await this.prompt();
 
-        this.spinner.start("Logging in...")
+        this.spinner.start("Logging in...");
         let response: Response = await fetch(
             joinURL(SSO_URL, "/+login"),
             this.defaultFetchOptions
@@ -104,7 +103,9 @@ export default class SSO {
         });
         const html = await response.text();
         if (!html.match(/type your verification code/i))
-            throw new Error("Authorization failed. Please check your e-mail and password.");
+            throw new Error(
+                "Authorization failed. Please check your e-mail and password."
+            );
         CSRFToken = this.getCSRFToken(html);
         response = await fetch(joinURL(SSO_URL, "/two_factor_auth"), {
             ...this.defaultFetchOptions,
@@ -177,7 +178,7 @@ export default class SSO {
 
     public async authenticate() {
         const loginCookies = await this.login();
-        this.spinner.start("Setting up...")
+        this.spinner.start("Setting up...");
         const browser = await Puppeteer.launch({ args: ["--no-sandbox"] });
         const page = await browser.newPage();
         await this.setCookies(page, loginCookies);

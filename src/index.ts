@@ -5,7 +5,7 @@ import SSO from "./automations/SSO";
 import { MAIN_URL, PROTECTED_JOB_BOARDS } from "./common/constants";
 import { joinURL } from "./common/pageUtils";
 import { Command, Argument, Option } from "commander";
-import { green, red } from "colors";
+import { green } from "colors";
 import ora from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
@@ -37,14 +37,12 @@ async function getJobPostInteractive(posts: PostInfo[], message: string) {
     const board = PROTECTED_JOB_BOARDS[0].toUpperCase();
     const uniqueNames = new Set(
         posts
-            .filter(
-                (post) =>
-                    post.boardInfo.name.toUpperCase() === board 
-            )
+            .filter((post) => post.boardInfo.name.toUpperCase() === board)
             .map((post) => post.name)
     );
 
-    if (!uniqueNames.size) throw Error(`No job post found in the Canonical board.`);
+    if (!uniqueNames.size)
+        throw Error(`No job post found in the Canonical board.`);
 
     const prompt = new Select({
         name: "Job Post",
@@ -53,7 +51,11 @@ async function getJobPostInteractive(posts: PostInfo[], message: string) {
     });
     const jobPostName = await prompt.run();
     // Get one of job posts whose name matches with the chosen name. It doesn not matter which one.
-    const matchedJobPost = posts.find((post) => post.name === jobPostName && post.boardInfo.name.toUpperCase() === board);
+    const matchedJobPost = posts.find(
+        (post) =>
+            post.name === jobPostName &&
+            post.boardInfo.name.toUpperCase() === board
+    );
     if (!matchedJobPost) throw Error(`No job post found with given name.`);
 
     return matchedJobPost.id;
@@ -71,14 +73,19 @@ async function getRegionsInteractive(message: string) {
     return region;
 }
 
-async function deletePostsInteractive(job: Job, jobInfo: JobInfo, regionNames: string[], similar: number) {
+async function deletePostsInteractive(
+    job: Job,
+    jobInfo: JobInfo,
+    regionNames: string[],
+    similar: number
+) {
     const prompt = new Toggle({
         message: "Do you want to remove existing job posts?",
         enabled: "Yes",
         disabled: "No",
-        initial: true
-      });
-       
+        initial: true,
+    });
+
     const shouldDelete = await prompt.run();
     if (shouldDelete) {
         await job.deletePosts(jobInfo, regionNames, similar);
@@ -167,9 +174,9 @@ async function addPosts(
         console.log("Happy hiring!");
     } catch (error) {
         const errorMessage = (<Error>error).message;
-        errorMessage ?
-            spinner.fail(`${errorMessage}`) :
-            spinner.fail("An error occurred.");
+        errorMessage
+            ? spinner.fail(`${errorMessage}`)
+            : spinner.fail("An error occurred.");
     } finally {
         spinner.stop();
         currentBrowser?.close();
@@ -243,9 +250,9 @@ async function deletePosts(
         console.log("Happy hiring!");
     } catch (error) {
         const errorMessage = (<Error>error).message;
-        errorMessage ?
-            spinner.fail(`${errorMessage}`) :
-            spinner.fail("An error occurred.")
+        errorMessage
+            ? spinner.fail(`${errorMessage}`)
+            : spinner.fail("An error occurred.");
     } finally {
         spinner.stop();
         currentBrowser?.close();
@@ -272,9 +279,26 @@ async function main() {
     };
 
     program
+        .description(
+            "Greenhouse is a command-line tool that provides helpers to automate " +
+                "interactions with the Canonical Greenhouse website."
+        )
         .command("add-posts")
+        .usage(
+            "([-i | --interactive] | <job-id> --regions=<region-name>[, <region-name-2>...]" +
+                " [--clone-from=<job-post-id>]) \n\n Examples: \n\t greenhouse add-posts --interactive " +
+                "\n \t greenhouse add-posts 1234 --regions=emea,americas \n \t greenhouse add-posts 1234" +
+                " --regions=emea --clone-from=1123"
+        )
+        .description(
+            "Create job post for a specific job in the specified regions from all existing " +
+                "job posts in the Canonical Board"
+        )
         .addArgument(
-            new Argument("<job-id>", "job to add job posts to")
+            new Argument(
+                "<job-id>",
+                "ID of a job that job posts will be created to"
+            )
                 .argOptional()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")
@@ -305,9 +329,23 @@ async function main() {
         });
 
     program
+        .description(
+            "Greenhouse is a command-line tool that provides helpers to automate " +
+                "interactions with the Canonical Greenhouse website."
+        )
         .command("delete-posts")
+        .usage(
+            "([-i | --interactive] | <job-id> --regions=<region-name>[, <region-name-2>...]" +
+                " [--similar=<job-post-id>]) \n\n Examples: \n\t greenhouse delete-posts --interactive " +
+                "\n\t greenhouse delete-posts 1234 --regions=emea,americas \n\t greenhouse delete-posts " +
+                "1234 --regions=emea --similar=1123"
+        )
+        .description("Delete job posts of the given job")
         .addArgument(
-            new Argument("<job-id>", "Delete job posts of the given job")
+            new Argument(
+                "<job-id>",
+                "ID of a job that job posts will be deleted from"
+            )
                 .argOptional()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")

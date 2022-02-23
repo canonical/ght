@@ -137,7 +137,9 @@ export default class JobPost {
         // set the new location
         jobApplication.job_post_location.text_value = location;
         jobApplication.job_post_location.job_post_location_type = {
-            id: 1, name: 'Free Text', key: 'FREE_TEXT'
+            id: 1,
+            name: "Free Text",
+            key: "FREE_TEXT",
         };
 
         jobApplication.job_post_location.custom_location = null;
