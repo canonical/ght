@@ -35,14 +35,16 @@ export default class Job {
     public async clonePost(
         posts: PostInfo[],
         regionsToPost: string[],
-        sourceID: number,
+        sourceID: number
     ) {
         this.spinner.start(`Starting to create job posts.`);
-        const board =  PROTECTED_JOB_BOARDS[0];
+        const board = PROTECTED_JOB_BOARDS[0];
         let protectedPosts: PostInfo[];
         // Check if a source post is provided.
         if (sourceID) {
-            protectedPosts = posts.filter((post) => post.id === sourceID && post.boardInfo.name === board);
+            protectedPosts = posts.filter(
+                (post) => post.id === sourceID && post.boardInfo.name === board
+            );
         } else {
             // If a source post is not provided, use posts that are in the "Canonical" board.
             protectedPosts = posts.filter(
@@ -51,7 +53,9 @@ export default class Job {
         }
 
         if (!protectedPosts?.length) {
-            const errorMessage =  sourceID ? `Job post ID: ${sourceID} not found in the Canonical Board.` : `No post found to clone`; 
+            const errorMessage = sourceID
+                ? `Job post ID: ${sourceID} not found in the Canonical Board.`
+                : `No post found to clone`;
             throw new Error(errorMessage);
         }
 
