@@ -1,4 +1,4 @@
-name: greenhouse
+name: ghtctl
 version: "1.0.0"
 summary: Perform actions in Canonical's Greenhouse automatically.
 description: An automated browser that does a set of tasks on Canonical's Greenhouse dashboard without the need of interaction with the UI.
@@ -51,7 +51,7 @@ parts:
             - libxkbcommon-x11-0
             - libxrandr2
 apps:
-    greenhouse:
+    ghtctl:
         command: greenhouse
         plugs:
             - desktop
@@ -63,4 +63,3 @@ apps:
             - opengl
             - unity7
             - x11
-
