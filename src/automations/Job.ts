@@ -277,31 +277,35 @@ export default class Job {
 
     public async getJobs() {
         const jobs = new Map<string, number>();
-        const pageCount = await this.getPageCount();
         const url = joinURL(MAIN_URL, "/alljobs");
-        for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
-            await this.page.goto(`${url}?page=${currentPage}`);
-            await this.page.waitForSelector(".job");
-            const jobElements = await this.page.$$(".job");
-
-            if (!jobElements || !jobElements.length)
-                throw new Error("No job found.");
-
-            for (const jobElement of jobElements) {
-                const jobNameElement = await jobElement.$(".job-label-name");
-                if (!jobNameElement) throw new Error("Cannot get job name");
-
-                const isRecuiter = await this.isRecruiter(jobElement);
-                if (!isRecuiter) continue;
-
-                const nameCell = await jobElement.$(".job-name");
-                if (!nameCell) throw new Error("Cannot get job name cell.");
-
-                const jobID = await getIDFromURL(nameCell, "a");
-                const jobName = await getInnerText(jobNameElement);
-                jobs.set(jobName, jobID);
-            }
+        await this.page.goto(`${url}`);
+        await this.page.waitForSelector(".job");
+        let morePageButton = await this.page.$("#show_more_jobs");
+        while (morePageButton) {
+            morePageButton.click();
+            await this.page.waitForNetworkIdle();
+            morePageButton = await this.page.$("#show_more_jobs");
         }
+
+        const jobElements = await this.page.$$(".job");
+        if (!jobElements || !jobElements.length)
+            throw new Error("No job found.");
+
+        for (const jobElement of jobElements) {
+            const jobNameElement = await jobElement.$(".job-label-name");
+            if (!jobNameElement) throw new Error("Cannot get job name");
+
+            const isRecuiter = await this.isRecruiter(jobElement);
+            if (!isRecuiter) continue;
+
+            const nameCell = await jobElement.$(".job-name");
+            if (!nameCell) throw new Error("Cannot get job name cell.");
+
+            const jobID = await getIDFromURL(nameCell, "a");
+            const jobName = await getInnerText(jobNameElement);
+            jobs.set(jobName, jobID);
+        }
+
         return jobs;
     }
 }
