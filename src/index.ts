@@ -283,11 +283,11 @@ async function main() {
             "Greenhouse is a command-line tool that provides helpers to automate " +
                 "interactions with the Canonical Greenhouse website."
         )
-        .command("add-posts")
+        .command("replicate")
         .usage(
             "([-i | --interactive] | <job-id> --regions=<region-name>[, <region-name-2>...]" +
-                " [--clone-from=<job-post-id>]) \n\n Examples: \n\t greenhouse add-posts --interactive " +
-                "\n \t greenhouse add-posts 1234 --regions=emea,americas \n \t greenhouse add-posts 1234" +
+                " [--clone-from=<job-post-id>]) \n\n Examples: \n\t greenhouse replicate --interactive " +
+                "\n \t greenhouse replicate 1234 --regions=emea,americas \n \t greenhouse replicate 1234" +
                 " --regions=emea --clone-from=1123"
         )
         .description(
