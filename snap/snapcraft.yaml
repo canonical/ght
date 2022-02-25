@@ -14,7 +14,7 @@ parts:
             - bin
             - include
             - lib
-    greenhouse:
+    ghtctl:
         after: [node]
         plugin: nil
         source: .
@@ -25,7 +25,7 @@ parts:
             yarn build
             # this causes PROT_EXEC problem
             rm ./node_modules/puppeteer/.local-chromium/linux-*/chrome-linux/nacl_irt_*.nexe
-            cp ./greenhouse.js ./dist/greenhouse
+            cp ./greenhouse.js ./dist/ghtctl
             cp -a ./dist/. $SNAPCRAFT_PART_INSTALL/
             cp -r ./node_modules $SNAPCRAFT_PART_INSTALL
         stage-packages:
@@ -52,7 +52,7 @@ parts:
             - libxrandr2
 apps:
     ghtctl:
-        command: greenhouse
+        command: ghtctl
         plugs:
             - desktop
             - desktop-legacy
