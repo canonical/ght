@@ -80,7 +80,7 @@ export default class SSO {
         this.spinner.start("Checking authentication...");
         let sessionId = await this.currentSessionId();
         if ((await this.isLoggedIn()) && sessionId) {
-            this.spinner.succeed("Using the saved creadentials.");
+            this.spinner.succeed("Using the saved credentials.");
             return { sessionId: sessionId };
         }
         this.spinner.stop();
