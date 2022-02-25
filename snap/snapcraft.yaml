@@ -1,4 +1,4 @@
-name: greenhouse
+name: ghtctl
 version: "1.0.0"
 summary: Perform actions in Canonical's Greenhouse automatically.
 description: An automated browser that does a set of tasks on Canonical's Greenhouse dashboard without the need of interaction with the UI.
@@ -14,7 +14,7 @@ parts:
             - bin
             - include
             - lib
-    greenhouse:
+    ghtctl:
         after: [node]
         plugin: nil
         source: .
@@ -25,7 +25,7 @@ parts:
             yarn build
             # this causes PROT_EXEC problem
             rm ./node_modules/puppeteer/.local-chromium/linux-*/chrome-linux/nacl_irt_*.nexe
-            cp ./greenhouse.js ./dist/greenhouse
+            cp ./greenhouse.js ./dist/ghtctl
             cp -a ./dist/. $SNAPCRAFT_PART_INSTALL/
             cp -r ./node_modules $SNAPCRAFT_PART_INSTALL
         stage-packages:
@@ -51,8 +51,8 @@ parts:
             - libxkbcommon-x11-0
             - libxrandr2
 apps:
-    greenhouse:
-        command: greenhouse
+    ghtctl:
+        command: ghtctl
         plugs:
             - desktop
             - desktop-legacy
@@ -63,4 +63,3 @@ apps:
             - opengl
             - unity7
             - x11
-
