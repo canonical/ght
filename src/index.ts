@@ -2,8 +2,7 @@ import { JobInfo, PostInfo } from "./common/types";
 import regions from "./common/regions";
 import Job from "./automations/Job";
 import SSO from "./automations/SSO";
-import { MAIN_URL, PROTECTED_JOB_BOARDS } from "./common/constants";
-import { joinURL } from "./common/pageUtils";
+import { PROTECTED_JOB_BOARDS } from "./common/constants";
 import { Command, Argument, Option } from "commander";
 import { green } from "colors";
 import ora from "ora";
@@ -94,7 +93,7 @@ async function deletePostsInteractive(
 
 async function addPosts(
     isInteractive: boolean,
-    jobIDArg: number,
+    postIDArg: number,
     regionsArg: string[],
     cloneFromArg: number
 ) {
@@ -107,7 +106,7 @@ async function addPosts(
         currentBrowser = browser;
         const job = new Job(page, spinner);
 
-        let jobID = jobIDArg;
+        let jobID;
         let jobInfo: JobInfo;
         let regionNames = regionsArg;
         let cloneFrom = cloneFromArg;
@@ -139,15 +138,15 @@ async function addPosts(
 
             await deletePostsInteractive(job, jobInfo, regionNames, cloneFrom);
         } else {
-            if (!jobID) throw Error(`Job ID argument is missing.`);
+            if (!postIDArg) throw Error(`Job post ID argument is missing.`);
             if (!regionNames) throw Error(`Region parameter is missing.`);
+            cloneFrom = postIDArg;
 
-            await page.goto(joinURL(MAIN_URL, `/plans/${jobID}`));
-
-            const name = await job.getJobName();
-            spinner.start(`Fetching job posts for ${name}.`);
+            spinner.start(`Fetching thejob information.`);
+            jobID = await job.getJobIDFromPost(postIDArg);
             jobInfo = await job.getJobData(jobID);
             spinner.succeed();
+
             if (jobInfo.posts.length === 0)
                 throw Error(
                     "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
@@ -234,8 +233,7 @@ async function deletePosts(
         } else {
             if (!jobID) throw Error(`Job ID argument is missing.`);
 
-            await page.goto(joinURL(MAIN_URL, `/plans/${jobID}`));
-            const name = await job.getJobName();
+            const name = await job.getJobName(jobID);
             spinner.start(`Fetching job posts for ${name}.`);
             jobInfo = await job.getJobData(jobID);
             spinner.succeed();
