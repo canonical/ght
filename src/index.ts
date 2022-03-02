@@ -94,8 +94,7 @@ async function deletePostsInteractive(
 async function addPosts(
     isInteractive: boolean,
     postIDArg: number,
-    regionsArg: string[],
-    cloneFromArg: number
+    regionsArg: string[]
 ) {
     const spinner = ora();
     let currentBrowser;
@@ -109,7 +108,7 @@ async function addPosts(
         let jobID;
         let jobInfo: JobInfo;
         let regionNames = regionsArg;
-        let cloneFrom = cloneFromArg;
+        let cloneFrom;
         if (isInteractive) {
             const { name, id } = await getJobInteractive(
                 job,
@@ -283,10 +282,9 @@ async function main() {
         )
         .command("replicate")
         .usage(
-            "([-i | --interactive] | <job-id> --regions=<region-name>[, <region-name-2>...]" +
-                " [--clone-from=<job-post-id>]) \n\n Examples: \n\t greenhouse replicate --interactive " +
-                "\n \t greenhouse replicate 1234 --regions=emea,americas \n \t greenhouse replicate 1234" +
-                " --regions=emea --clone-from=1123"
+            "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
+                "\n\n Examples: \n\t greenhouse replicate --interactive " +
+                "\n \t greenhouse replicate 1234 --regions=emea,americas"
         )
         .description(
             "Create job post for a specific job in the specified regions from all existing " +
@@ -294,19 +292,13 @@ async function main() {
         )
         .addArgument(
             new Argument(
-                "<job-id>",
-                "ID of a job that job posts will be created to"
+                "<job-post-id>",
+                "ID of a job post that will be cloned from"
             )
                 .argOptional()
                 .argParser((value: string) =>
-                    validateNumberParam(value, "job-id")
+                    validateNumberParam(value, "job post id")
                 )
-        )
-        .addOption(
-            new Option(
-                "-c, --clone-from <job-post-id>",
-                "Clone job posts from the given post"
-            ).argParser((value) => validateNumberParam(value, "post-id"))
         )
         .addOption(
             new Option(
@@ -317,12 +309,11 @@ async function main() {
         .addOption(
             new Option("-i, --interactive", "Enable interactive interface")
         )
-        .action(async (jobID, options) => {
+        .action(async (jobPostID, options) => {
             await addPosts(
                 options.interactive,
-                jobID,
-                options.regions,
-                options.cloneFrom
+                jobPostID,
+                options.regions
             );
         });
 
