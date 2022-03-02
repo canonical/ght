@@ -144,15 +144,15 @@ export default class Job {
     }
 
     public async getJobData(jobID: number): Promise<JobInfo> {
-        const jobappURL = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
-        await this.page.goto(jobappURL);
-        const jobTitle = await this.getJobName();
+        const jobTitle = await this.getJobName(jobID);
         const job: JobInfo = {
             name: jobTitle,
             id: jobID,
             posts: [],
         };
 
+        const jobappURL = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
+        await this.page.goto(jobappURL);
         const pageCount = await this.getPageCount();
         for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
             await this.page.goto(`${jobappURL}?page=${currentPage}`);
@@ -247,7 +247,9 @@ export default class Job {
         return jobPosts;
     }
 
-    public async getJobName(): Promise<string> {
+    public async getJobName(jobID: number): Promise<string> {
+        await this.page.goto(joinURL(MAIN_URL, `/plans/${jobID}`));
+
         const jobTitleElement = await this.page.$(".job-name");
         const jobAnchor = await jobTitleElement?.$("a");
         if (!jobAnchor) throw new Error("Cannot find the job's name.");
@@ -307,5 +309,12 @@ export default class Job {
         }
 
         return jobs;
+    }
+
+    public async getJobIDFromPost(postID: number) {
+        await this.page.goto(joinURL(MAIN_URL, `/jobapps/${postID}/edit`));
+        const jobElement = await this.page.$(".job-name");
+        if (!jobElement) throw new Error("Job cannot be found.");
+        return await getIDFromURL(jobElement, "a");
     }
 }
