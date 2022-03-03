@@ -242,6 +242,10 @@ export default class JobPost {
         const locationInfo = await this.getLocationInfo(location, jobPost.id);
         jobApplication["job_board_feed_location_attributes"] = locationInfo;
 
+        FILTERED_ATTRIBUTES.forEach((attr) => {
+            delete payload.greenhouse_job_application[attr];
+        });
+
         await sendRequest(
             this.page,
             joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapps`),
