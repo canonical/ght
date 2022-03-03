@@ -77,6 +77,71 @@ export default class JobPost {
         );
     }
 
+    public async getLocationInfo(location: string, jobPostID: number) {
+        const cityName = location.split(",")[1];
+
+        await this.page.goto(joinURL(MAIN_URL, `/jobapps/${jobPostID}/edit`));
+        const accessTokenElement = await this.page.$(
+            "*[data-key='LocationControl.Providers.Mapbox.apiKey']"
+        );
+        if (!accessTokenElement)
+            throw new Error(
+                "Data key to retrieve location information cannot be found."
+            );
+        const accessToken = await accessTokenElement.evaluate((node) =>
+            node.getAttribute("data-value")
+        );
+
+        const response = await this.page.evaluate(
+            async ({ url, referrer }) => {
+                try {
+                    return await (
+                        await fetch(url, {
+                            headers: {
+                                accept: "*/*",
+                                "accept-language": "en-US,en;q=0.9",
+                            },
+                            referrerPolicy: "strict-origin-when-cross-origin",
+                            mode: "cors",
+                            body: null,
+                            method: "GET",
+                            credentials: "omit",
+                            referrer,
+                        })
+                    ).json();
+                } catch {
+                    return null;
+                }
+            },
+            {
+                url:
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${cityName}.json?access_token=${accessToken}` +
+                    `&language=en&autocomplete=true&types=place%2Clocality&limit=10`,
+                referrer: MAIN_URL,
+            }
+        );
+
+        const locationInfoList = response["features"];
+        if (!locationInfoList || !locationInfoList.length)
+            throw new Error("Location infomation cannot be found.");
+        const locationInfo = locationInfoList[0];
+        const countryInfo = locationInfo["context"].find((info: any) =>
+            info["id"].includes("country")
+        );
+        return {
+            city: locationInfo["text"],
+            country_long_name: countryInfo["text"],
+            country_short_name: countryInfo["short_code"].toUpperCase(),
+            country: countryInfo["text"],
+            latitude: locationInfo["center"][1],
+            location: locationInfo["place_name"],
+            longitude: locationInfo["center"][0],
+            state_long_name: locationInfo["text"],
+            state_short_name: "",
+            allow_remote: true,
+        };
+    }
+
     /**
      * Create a copy of a given job post and move it to the given location
      * @param jobPost the original job post
@@ -89,7 +154,10 @@ export default class JobPost {
         boardID: number
     ): Promise<void> {
         const logName = `${blue(jobPost.name)} | ${blue(location)}`;
-        const url = `https://canonical.greenhouse.io/plans/${jobPost.job.id}/jobapps/new?from=duplicate&greenhouse_job_application_id=${jobPost.id}`;
+        const url = joinURL(
+            MAIN_URL,
+            `/plans/${jobPost.job.id}/jobapps/new?from=duplicate&greenhouse_job_application_id=${jobPost.id}`
+        );
         await this.page.goto(url);
 
         const element = await this.page.$("*[data-react-class='JobPostsForm']");
@@ -161,6 +229,18 @@ export default class JobPost {
         FILTERED_ATTRIBUTES.forEach((attr) => {
             delete payload.greenhouse_job_application[attr];
         });
+
+        // Fill free job post board information, enable Indeed posts
+        jobApplication["job_board_feed_settings_attributes"] = [
+            {
+                id: null,
+                source_id: 7,
+                include_in_feed: true,
+            },
+        ];
+        // Set location information for free job post board section.
+        const locationInfo = await this.getLocationInfo(location, jobPost.id);
+        jobApplication["job_board_feed_location_attributes"] = locationInfo;
 
         await sendRequest(
             this.page,
