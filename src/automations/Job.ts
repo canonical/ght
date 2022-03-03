@@ -7,7 +7,7 @@ import {
     RECUITER,
 } from "../common/constants";
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
-import regions from "../common/regions";
+import { regions } from "../common/regions";
 import { JobInfo, PostInfo } from "../common/types";
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
