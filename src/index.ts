@@ -1,5 +1,5 @@
 import { JobInfo, PostInfo } from "./common/types";
-import regions from "./common/regions";
+import { regions } from "./common/regions";
 import Job from "./automations/Job";
 import SSO from "./automations/SSO";
 import { PROTECTED_JOB_BOARDS } from "./common/constants";

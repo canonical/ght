@@ -9,6 +9,7 @@ import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
 import { PostInfo } from "../common/types";
 import Puppeteer, { ElementHandle } from "puppeteer";
 import { blue } from "colors";
+import { usaCities } from "../common/regions";
 
 export default class JobPost {
     private page: Puppeteer.Page;
@@ -145,6 +146,13 @@ export default class JobPost {
         jobApplication.job_post_location.custom_location = null;
         // set the title
         jobApplication.title = jobPost.name;
+
+        // set the eeoc value if the location is in the USA
+        const isInUSA = usaCities.find((city: string) => location === city);
+        if (isInUSA) {
+            jobApplication["enable_eeoc"] = true;
+        }
+
         const payload = {
             external_or_internal_greenhouse_job_board_id: boardID,
             greenhouse_job_application: jobApplication,
