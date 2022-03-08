@@ -310,11 +310,7 @@ async function main() {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobPostID, options) => {
-            await addPosts(
-                options.interactive,
-                jobPostID,
-                options.regions
-            );
+            await addPosts(options.interactive, jobPostID, options.regions);
         });
 
     program
