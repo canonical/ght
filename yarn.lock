@@ -1060,10 +1060,10 @@ html-encoding-sniffer@^3.0.0:
   dependencies:
     whatwg-encoding "^2.0.0"
 
-http-cookie-agent@1.0.4:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/http-cookie-agent/-/http-cookie-agent-1.0.4.tgz#5b18eb126c4a5f00160d3b4f264836489e9a0003"
-  integrity sha512-2gSYSE3m38/QMKPPbbS/6lEIm8OTbGA5sY3aBLtr/BUTNOFNeL4WqkdNQM6WmIBT7AWKC20aYfU3uq+cgR+Byg==
+http-cookie-agent@1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/http-cookie-agent/-/http-cookie-agent-1.0.5.tgz#afb569f6e31f46b6ffc97a0616769add3395445d"
+  integrity sha512-X8QM/rGPu/cb7A37uNLuz+PZfkmlQ9PycDD+/QsmqICXBd9grKWdWKMzg/BDkzxIbV+P/FYTsKZn08KcXgbLsQ==
   dependencies:
     agent-base "^6.0.2"
 
