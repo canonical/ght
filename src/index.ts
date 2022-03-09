@@ -141,7 +141,7 @@ async function addPosts(
             if (!regionNames) throw Error(`Region parameter is missing.`);
             cloneFrom = postIDArg;
 
-            spinner.start(`Fetching thejob information.`);
+            spinner.start(`Fetching the job information.`);
             jobID = await job.getJobIDFromPost(postIDArg);
             jobInfo = await job.getJobData(jobID);
             spinner.succeed();
@@ -183,9 +183,8 @@ async function addPosts(
 
 async function deletePosts(
     isInteractive: boolean,
-    jobIDArg: number,
+    jobPostIDArg: number,
     regionsArg: string[],
-    similarArg: number
 ) {
     const spinner = ora();
     const sso = new SSO(spinner);
@@ -196,10 +195,10 @@ async function deletePosts(
         currentBrowser = browser;
 
         const job = new Job(page, spinner);
-        let jobID = jobIDArg;
+        let jobID;
         let jobInfo: JobInfo;
         let regionNames = regionsArg;
-        let similar = similarArg;
+        let postID = jobPostIDArg;
 
         if (isInteractive) {
             const { name, id } = await getJobInteractive(
@@ -224,16 +223,14 @@ async function deletePosts(
                 jobInfo.posts,
                 "Which job posts should be deleted?"
             );
-            similar = jobPostID;
+            postID = jobPostID;
 
             regionNames = await getRegionsInteractive(
                 "What region should the job posts be deleted from? Use space to make a selection."
             );
         } else {
-            if (!jobID) throw Error(`Job ID argument is missing.`);
-
-            const name = await job.getJobName(jobID);
-            spinner.start(`Fetching job posts for ${name}.`);
+            spinner.start(`Fetching the job information.`);
+            jobID = await job.getJobIDFromPost(postID);
             jobInfo = await job.getJobData(jobID);
             spinner.succeed();
 
@@ -242,7 +239,7 @@ async function deletePosts(
                     "Only hiring leads can delete job posts. If you are not sure about your hiring role please contact HR."
                 );
         }
-        await job.deletePosts(jobInfo, regionNames, similar);
+        await job.deletePosts(jobInfo, regionNames, postID);
 
         console.log("Happy hiring!");
     } catch (error) {
@@ -340,19 +337,13 @@ async function main() {
         .description("Delete job posts of the given job")
         .addArgument(
             new Argument(
-                "<job-id>",
-                "ID of a job that job posts will be deleted from"
+                "<job-post-id>",
+                "Delete job posts that have same name with the given post"
             )
                 .argOptional()
                 .argParser((value: string) =>
-                    validateNumberParam(value, "job-id")
+                    validateNumberParam(value, "job-post-id")
                 )
-        )
-        .addOption(
-            new Option(
-                "-s, --similar <job-post-id>",
-                "Delete job posts that have same name with the given post"
-            ).argParser((value) => validateNumberParam(value, "post-id"))
         )
         .addOption(
             new Option(
@@ -363,12 +354,11 @@ async function main() {
         .addOption(
             new Option("-i, --interactive", "Enable interactive interface")
         )
-        .action(async (jobID, options) => {
+        .action(async (jobPostID, options) => {
             await deletePosts(
                 options.interactive,
-                jobID,
+                jobPostID,
                 options.regions,
-                options.similar
             );
         });
 
