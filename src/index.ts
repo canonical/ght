@@ -256,6 +256,21 @@ async function deletePosts(
     }
 }
 
+async function login() {
+    const spinner = ora();
+    const sso = new SSO(spinner);
+    try {
+        await sso.login();
+    } catch (error) {
+        const errorMessage = (<Error>error).message;
+        errorMessage
+            ? spinner.fail(`${errorMessage}`)
+            : spinner.fail("An error occurred.");
+    } finally {
+        spinner.stop();
+    }
+}
+
 async function main() {
     const program = new Command();
     const validateNumberParam = (param: string, fieldName: string) => {
@@ -275,11 +290,12 @@ async function main() {
         return enteredRegions;
     };
 
+    program.description(
+        "Greenhouse is a command-line tool that provides helpers to automate " +
+            "interactions with the Canonical Greenhouse website."
+    );
+
     program
-        .description(
-            "Greenhouse is a command-line tool that provides helpers to automate " +
-                "interactions with the Canonical Greenhouse website."
-        )
         .command("replicate")
         .usage(
             "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
@@ -314,10 +330,6 @@ async function main() {
         });
 
     program
-        .description(
-            "Greenhouse is a command-line tool that provides helpers to automate " +
-                "interactions with the Canonical Greenhouse website."
-        )
         .command("delete-posts")
         .usage(
             "([-i | --interactive] | <job-id> --regions=<region-name>[, <region-name-2>...]" +
@@ -358,6 +370,13 @@ async function main() {
                 options.regions,
                 options.similar
             );
+        });
+
+    program
+        .command("login")
+        .description("Login and save credentials")
+        .action(async () => {
+            await login();
         });
 
     await program.parseAsync(process.argv);
