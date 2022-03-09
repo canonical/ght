@@ -123,7 +123,7 @@ export default class JobPost {
 
         const locationInfoList = response["features"];
         if (!locationInfoList || !locationInfoList.length)
-            throw new Error("Location infomation cannot be found.");
+            throw new Error(`Location infomation cannot be found fo ${cityName}.`);
         const locationInfo = locationInfoList[0];
         const countryInfo = locationInfo["context"].find((info: any) =>
             info["id"].includes("country")
