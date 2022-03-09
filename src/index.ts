@@ -184,7 +184,7 @@ async function addPosts(
 async function deletePosts(
     isInteractive: boolean,
     jobPostIDArg: number,
-    regionsArg: string[],
+    regionsArg: string[]
 ) {
     const spinner = ora();
     const sso = new SSO(spinner);
@@ -355,11 +355,7 @@ async function main() {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobPostID, options) => {
-            await deletePosts(
-                options.interactive,
-                jobPostID,
-                options.regions,
-            );
+            await deletePosts(options.interactive, jobPostID, options.regions);
         });
 
     program
