@@ -7,7 +7,7 @@ import { CookieJar } from "tough-cookie";
 import Enquirer = require("enquirer");
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 
 export type SSOCookies = {
     sessionId: string;
@@ -124,6 +124,16 @@ export default class SSO {
         this.saveUserSettings();
         this.spinner.succeed("Authentication completed.");
         return { sessionId: sessionId };
+    }
+
+    public logout() {
+        this.spinner.start("Logging out...");
+        if(existsSync(CONFIG_PATH)) {
+            unlinkSync(CONFIG_PATH);
+            this.spinner.succeed("Logout completed.");
+        } else {
+            this.spinner.succeed("Already logged out.");
+        } 
     }
 
     public async isLoggedIn() {

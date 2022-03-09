@@ -268,6 +268,21 @@ async function login() {
     }
 }
 
+function logout() {
+    const spinner = ora();
+    const sso = new SSO(spinner);
+    try {
+        sso.logout();
+    } catch (error) {
+        const errorMessage = (<Error>error).message;
+        errorMessage
+            ? spinner.fail(`${errorMessage}`)
+            : spinner.fail("An error occurred.");
+    } finally {
+        spinner.stop();
+    }
+}
+
 async function main() {
     const program = new Command();
     const validateNumberParam = (param: string, fieldName: string) => {
@@ -362,6 +377,13 @@ async function main() {
         .description("Login and save credentials")
         .action(async () => {
             await login();
+        });
+
+    program
+        .command("logout")
+        .description("Remove saved credentials")
+        .action(() => {
+            logout();
         });
 
     await program.parseAsync(process.argv);
