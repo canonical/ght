@@ -329,10 +329,9 @@ async function main() {
     program
         .command("delete-posts")
         .usage(
-            "([-i | --interactive] | <job-id> --regions=<region-name>[, <region-name-2>...]" +
-                " [--similar=<job-post-id>]) \n\n Examples: \n\t ght delete-posts --interactive " +
-                "\n\t ght delete-posts 1234 --regions=emea,americas \n\t ght delete-posts " +
-                "1234 --regions=emea --similar=1123"
+            "([-i | --interactive] | <job-id> --regions=<region-name>[, <region-name-2>...])" +
+                " \n\n Examples: \n\t greenhouse delete-posts --interactive " +
+                "\n\t greenhouse delete-posts 1234 --regions=emea,americas"
         )
         .description("Delete job posts of the given job")
         .addArgument(
