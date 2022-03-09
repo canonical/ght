@@ -112,7 +112,7 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Europe, Lyon",
         "Home based - Europe, Madrid",
         "Home based - Europe, Manchester",
-        "Home based - Europe, Marousi # Athens",
+        "Home based - Europe, Marousi",
         "Home based - Europe, Milan",
         "Home based - Europe, Moscow",
         "Home based - Europe, Munich",
