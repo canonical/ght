@@ -277,10 +277,7 @@ export default class Job {
         return isRecuiter;
     }
 
-    public async getJobs() {
-        const jobs = new Map<string, number>();
-        const url = joinURL(MAIN_URL, "/alljobs");
-        await this.page.goto(`${url}`);
+    private async loadAllJobs() {
         await this.page.waitForSelector(".job");
         let morePageButton = await this.page.$("#show_more_jobs");
         while (morePageButton) {
@@ -288,6 +285,14 @@ export default class Job {
             await this.page.waitForNetworkIdle();
             morePageButton = await this.page.$("#show_more_jobs");
         }
+    }
+
+    public async getJobs() {
+        const jobs = new Map<string, number>();
+        const url = joinURL(MAIN_URL, "/alljobs");
+        await this.page.goto(url);
+
+        await this.loadAllJobs();
 
         const jobElements = await this.page.$$(".job");
         if (!jobElements || !jobElements.length)
@@ -309,6 +314,28 @@ export default class Job {
         }
 
         return jobs;
+    }
+
+    public async hasAccess(jobID: number) {
+        const url = joinURL(MAIN_URL, "/alljobs");
+        await this.page.goto(url);
+
+        await this.loadAllJobs();
+        const jobElements = await this.page.$$(".job");
+        if (!jobElements || !jobElements.length)
+            throw new Error("No job found.");
+
+        for (const jobElement of jobElements) {
+            const nameCell = await jobElement.$(".job-name");
+            if (!nameCell) throw new Error("Cannot get job name cell.");
+
+            const jobIDFromCell = await getIDFromURL(nameCell, "a");
+            if (jobIDFromCell === jobID) {
+                const isRecuiter = await this.isRecruiter(jobElement);
+                return isRecuiter;
+            }
+        }
+        return false;
     }
 
     public async getJobIDFromPost(postID: number) {
