@@ -265,16 +265,14 @@ export default class Job {
     }
 
     private async isRecruiter(parentElement: Puppeteer.ElementHandle) {
-        let isRecruiter = false;
         const tags = await parentElement.$$(".job-tag");
         for (const tag of tags) {
             const tagText = await getInnerText(tag);
             if (RECRUITER === tagText.toLocaleUpperCase()) {
-                isRecruiter = true;
-                break;
+                return true
             }
         }
-        return isRecruiter;
+        return false;
     }
 
     private async loadAllJobs() {
