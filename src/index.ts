@@ -314,8 +314,8 @@ async function main() {
 
     program.configureHelp({
         visibleCommands: () => {
-            return [replicateCommand, loginCommand, logoutCommand]
-        }
+            return [replicateCommand, loginCommand, logoutCommand];
+        },
     });
 
     replicateCommand
@@ -381,17 +381,13 @@ async function main() {
             await deletePosts(options.interactive, jobPostID, options.regions);
         });
 
-    loginCommand
-        .description("Login and save credentials")
-        .action(async () => {
-            await login();
-        });
+    loginCommand.description("Login and save credentials").action(async () => {
+        await login();
+    });
 
-    logoutCommand
-        .description("Remove saved credentials")
-        .action(() => {
-            logout();
-        });
+    logoutCommand.description("Remove saved credentials").action(() => {
+        logout();
+    });
 
     await program.parseAsync(process.argv);
 }
