@@ -307,8 +307,18 @@ async function main() {
             "interactions with the Canonical Greenhouse website."
     );
 
-    program
-        .command("replicate")
+    const replicateCommand = program.command("replicate");
+    const deletePostsCommand = program.command("delete-posts");
+    const loginCommand = program.command("login");
+    const logoutCommand = program.command("logout");
+
+    program.configureHelp({
+        visibleCommands: () => {
+            return [replicateCommand, loginCommand, logoutCommand];
+        },
+    });
+
+    replicateCommand
         .usage(
             "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
                 "\n\n Examples: \n\t ght replicate --interactive " +
@@ -341,8 +351,7 @@ async function main() {
             await addPosts(options.interactive, jobPostID, options.regions);
         });
 
-    program
-        .command("delete-posts")
+    deletePostsCommand
         .usage(
             "([-i | --interactive] | <job-id> --regions=<region-name>[, <region-name-2>...])" +
                 " \n\n Examples: \n\t greenhouse delete-posts --interactive " +
@@ -372,19 +381,13 @@ async function main() {
             await deletePosts(options.interactive, jobPostID, options.regions);
         });
 
-    program
-        .command("login")
-        .description("Login and save credentials")
-        .action(async () => {
-            await login();
-        });
+    loginCommand.description("Login and save credentials").action(async () => {
+        await login();
+    });
 
-    program
-        .command("logout")
-        .description("Remove saved credentials")
-        .action(() => {
-            logout();
-        });
+    logoutCommand.description("Remove saved credentials").action(() => {
+        logout();
+    });
 
     await program.parseAsync(process.argv);
 }
