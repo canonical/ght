@@ -4,7 +4,7 @@ import {
     JOB_BOARD,
     MAIN_URL,
     PROTECTED_JOB_BOARDS,
-    RECUITER,
+    RECRUITER,
 } from "../common/constants";
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import { regions } from "../common/regions";
@@ -265,16 +265,16 @@ export default class Job {
     }
 
     private async isRecruiter(parentElement: Puppeteer.ElementHandle) {
-        let isRecuiter = false;
+        let isRecruiter = false;
         const tags = await parentElement.$$(".job-tag");
         for (const tag of tags) {
             const tagText = await getInnerText(tag);
-            if (RECUITER === tagText.toLocaleUpperCase()) {
-                isRecuiter = true;
+            if (RECRUITER === tagText.toLocaleUpperCase()) {
+                isRecruiter = true;
                 break;
             }
         }
-        return isRecuiter;
+        return isRecruiter;
     }
 
     private async loadAllJobs() {
@@ -302,8 +302,8 @@ export default class Job {
             const jobNameElement = await jobElement.$(".job-label-name");
             if (!jobNameElement) throw new Error("Cannot get job name");
 
-            const isRecuiter = await this.isRecruiter(jobElement);
-            if (!isRecuiter) continue;
+            const isRecruiter = await this.isRecruiter(jobElement);
+            if (!isRecruiter) continue;
 
             const nameCell = await jobElement.$(".job-name");
             if (!nameCell) throw new Error("Cannot get job name cell.");
@@ -331,8 +331,8 @@ export default class Job {
 
             const jobIDFromCell = await getIDFromURL(nameCell, "a");
             if (jobIDFromCell === jobID) {
-                const isRecuiter = await this.isRecruiter(jobElement);
-                return isRecuiter;
+                const isRecruiter = await this.isRecruiter(jobElement);
+                return isRecruiter;
             }
         }
         return false;
