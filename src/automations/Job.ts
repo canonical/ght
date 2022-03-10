@@ -269,7 +269,7 @@ export default class Job {
         for (const tag of tags) {
             const tagText = await getInnerText(tag);
             if (RECRUITER === tagText.toLocaleUpperCase()) {
-                return true
+                return true;
             }
         }
         return false;
@@ -329,8 +329,7 @@ export default class Job {
 
             const jobIDFromCell = await getIDFromURL(nameCell, "a");
             if (jobIDFromCell === jobID) {
-                const isRecruiter = await this.isRecruiter(jobElement);
-                return isRecruiter;
+                return await this.isRecruiter(jobElement);
             }
         }
         return false;
