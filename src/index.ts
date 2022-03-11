@@ -143,13 +143,16 @@ async function addPosts(
 
             spinner.start(`Fetching the job information.`);
             jobID = await job.getJobIDFromPost(postIDArg);
-            jobInfo = await job.getJobData(jobID);
-            spinner.succeed();
 
-            if (jobInfo.posts.length === 0)
+            const hasAccess = await job.hasAccess(jobID);
+            if (!hasAccess)
                 throw Error(
                     "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
                 );
+            jobInfo = await job.getJobData(jobID);
+            spinner.succeed();
+
+            if (jobInfo.posts.length === 0) throw Error("No job post found.");
         }
         // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
         const clonedJobPosts = await job.clonePost(
@@ -231,13 +234,13 @@ async function deletePosts(
         } else {
             spinner.start(`Fetching the job information.`);
             jobID = await job.getJobIDFromPost(postID);
-            jobInfo = await job.getJobData(jobID);
-            spinner.succeed();
-
-            if (jobInfo.posts.length === 0)
+            const hasAccess = await job.hasAccess(jobID);
+            if (!hasAccess)
                 throw Error(
                     "Only hiring leads can delete job posts. If you are not sure about your hiring role please contact HR."
                 );
+            jobInfo = await job.getJobData(jobID);
+            spinner.succeed();
         }
         await job.deletePosts(jobInfo, regionNames, postID);
 

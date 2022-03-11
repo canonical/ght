@@ -4,7 +4,7 @@ import {
     JOB_BOARD,
     MAIN_URL,
     PROTECTED_JOB_BOARDS,
-    RECUITER,
+    RECRUITER,
 } from "../common/constants";
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import { regions } from "../common/regions";
@@ -265,22 +265,17 @@ export default class Job {
     }
 
     private async isRecruiter(parentElement: Puppeteer.ElementHandle) {
-        let isRecuiter = false;
         const tags = await parentElement.$$(".job-tag");
         for (const tag of tags) {
             const tagText = await getInnerText(tag);
-            if (RECUITER === tagText.toLocaleUpperCase()) {
-                isRecuiter = true;
-                break;
+            if (RECRUITER === tagText.toLocaleUpperCase()) {
+                return true;
             }
         }
-        return isRecuiter;
+        return false;
     }
 
-    public async getJobs() {
-        const jobs = new Map<string, number>();
-        const url = joinURL(MAIN_URL, "/alljobs");
-        await this.page.goto(`${url}`);
+    private async loadAllJobs() {
         await this.page.waitForSelector(".job");
         let morePageButton = await this.page.$("#show_more_jobs");
         while (morePageButton) {
@@ -288,6 +283,14 @@ export default class Job {
             await this.page.waitForNetworkIdle();
             morePageButton = await this.page.$("#show_more_jobs");
         }
+    }
+
+    public async getJobs() {
+        const jobs = new Map<string, number>();
+        const url = joinURL(MAIN_URL, "/alljobs");
+        await this.page.goto(url);
+
+        await this.loadAllJobs();
 
         const jobElements = await this.page.$$(".job");
         if (!jobElements || !jobElements.length)
@@ -297,8 +300,8 @@ export default class Job {
             const jobNameElement = await jobElement.$(".job-label-name");
             if (!jobNameElement) throw new Error("Cannot get job name");
 
-            const isRecuiter = await this.isRecruiter(jobElement);
-            if (!isRecuiter) continue;
+            const isRecruiter = await this.isRecruiter(jobElement);
+            if (!isRecruiter) continue;
 
             const nameCell = await jobElement.$(".job-name");
             if (!nameCell) throw new Error("Cannot get job name cell.");
@@ -309,6 +312,27 @@ export default class Job {
         }
 
         return jobs;
+    }
+
+    public async hasAccess(jobID: number) {
+        const url = joinURL(MAIN_URL, "/alljobs");
+        await this.page.goto(url);
+
+        await this.loadAllJobs();
+        const jobElements = await this.page.$$(".job");
+        if (!jobElements || !jobElements.length)
+            throw new Error("No job found.");
+
+        for (const jobElement of jobElements) {
+            const nameCell = await jobElement.$(".job-name");
+            if (!nameCell) throw new Error("Cannot get job name cell.");
+
+            const jobIDFromCell = await getIDFromURL(nameCell, "a");
+            if (jobIDFromCell === jobID) {
+                return await this.isRecruiter(jobElement);
+            }
+        }
+        return false;
     }
 
     public async getJobIDFromPost(postID: number) {
