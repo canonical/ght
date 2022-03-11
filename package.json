@@ -18,7 +18,7 @@
         "jsdom": "19.0.0",
         "node-fetch": "2.6.7",
         "ora": "5.4.1",
-        "puppeteer": "13.5.0",
+        "puppeteer": "13.5.1",
         "tough-cookie": "4.0.0"
     },
     "devDependencies": {
