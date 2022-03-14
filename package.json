@@ -30,7 +30,7 @@
         "@types/tough-cookie": "4.0.1",
         "@typescript-eslint/eslint-plugin": "5.14.0",
         "@typescript-eslint/parser": "5.14.0",
-        "eslint": "8.10.0",
+        "eslint": "8.11.0",
         "eslint-plugin-import": "2.25.4",
         "prettier": "2.5.1",
         "ts-node": "10.7.0",
