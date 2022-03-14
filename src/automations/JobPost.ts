@@ -125,20 +125,27 @@ export default class JobPost {
         if (!locationInfoList || !locationInfoList.length)
             throw new Error(`Location infomation cannot be found fo ${cityName}.`);
         const locationInfo = locationInfoList[0];
-        const countryInfo = locationInfo["context"].find((info: any) =>
+        const contextInformation = locationInfo["context"]?.find((info: any) =>
             info["id"].includes("country")
         );
+        const countryInfo = contextInformation ? {
+            country_long_name: contextInformation["text"],
+            country_short_name: contextInformation["short_code"].toUpperCase(),
+        } : {
+            country_long_name: locationInfo["text"],
+            country_short_name: locationInfo["properties"]["short_code"].toUpperCase(),
+        };
+            
         return {
             city: locationInfo["text"],
-            country_long_name: countryInfo["text"],
-            country_short_name: countryInfo["short_code"].toUpperCase(),
-            country: countryInfo["text"],
+            ...countryInfo,
             latitude: locationInfo["center"][1],
             location: locationInfo["place_name"],
             longitude: locationInfo["center"][0],
             state_long_name: locationInfo["text"],
             state_short_name: "",
             allow_remote: true,
+            county:""
         };
     }
 
