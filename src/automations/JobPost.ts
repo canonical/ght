@@ -124,7 +124,7 @@ export default class JobPost {
         const locationInfoList = response["features"];
         if (!locationInfoList || !locationInfoList.length)
             throw new Error(
-                `Location infomation cannot be found fo ${cityName}.`
+                `Location infomation cannot be found for ${cityName}.`
             );
         const locationInfo = locationInfoList[0];
         const countryInfo = locationInfo["context"].find((info: any) =>
@@ -197,14 +197,11 @@ export default class JobPost {
 
         // the questions field needs a weird transformation
         // transform the array to object ({0: .., 1: .., ...})
-        jobApplication.questions_attributes.map((question: any) => {
+        jobApplication.questions_attributes.forEach((question: any) => {
             question.answer_type_key = question.answer_type.key;
             delete question.answer_type;
             question.id = null;
-            if (
-                question["question_options"] &&
-                question["question_options"].length > 0
-            ) {
+            if (question["question_options"]?.length > 0) {
                 const options = question["question_options"]
                     .map((question: { label: string }) => question.label)
                     .reduce((str1: string, str2: string) => str1 + "\n" + str2);
