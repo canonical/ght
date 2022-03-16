@@ -123,7 +123,9 @@ export default class JobPost {
 
         const locationInfoList = response["features"];
         if (!locationInfoList || !locationInfoList.length)
-            throw new Error(`Location infomation cannot be found fo ${cityName}.`);
+            throw new Error(
+                `Location infomation cannot be found for ${cityName}.`
+            );
         const locationInfo = locationInfoList[0];
         const countryInfo = locationInfo["context"].find((info: any) =>
             info["id"].includes("country")
@@ -170,9 +172,11 @@ export default class JobPost {
         );
         if (!jobPostFormRaw)
             throw new Error("Failed to retrieve job post form data " + logName);
+
         const jobPostForm = JSON.parse(jobPostFormRaw);
         // the pre filled job application that need modifications
         const jobApplication = jobPostForm["job_application"];
+
         // matching the expected payload for the POST request
         // rename attributes (old name: job_board_feed_settings)
         delete Object.assign(jobApplication, {
@@ -193,11 +197,32 @@ export default class JobPost {
 
         // the questions field needs a weird transformation
         // transform the array to object ({0: .., 1: .., ...})
-        jobApplication.questions_attributes.map((question: any) => {
+        jobApplication.questions_attributes.forEach((question: any) => {
             question.answer_type_key = question.answer_type.key;
             delete question.answer_type;
             question.id = null;
+            if (question["question_options"]?.length > 0) {
+                const options = question["question_options"]
+                    .map((question: { label: string }) => question.label)
+                    .reduce((str1: string, str2: string) => str1 + "\n" + str2);
+                delete Object.assign(question, {
+                    question_options_text: options,
+                })["question_options"];
+            }
+            if (question["linked_candidate_field"]) {
+                delete question["linked_candidate_field"]["id"];
+                delete question["linked_candidate_field"]["question_id"];
+                delete question["linked_candidate_field"]["name"];
+
+                delete Object.assign(question, {
+                    linked_candidate_field_attributes:
+                        question["linked_candidate_field"],
+                })["linked_candidate_field"];
+            } else {
+                delete question["linked_candidate_field"];
+            }
         });
+
         jobApplication.questions_attributes = Object.assign(
             {},
             jobApplication.questions_attributes
@@ -221,15 +246,6 @@ export default class JobPost {
             jobApplication["enable_eeoc"] = true;
         }
 
-        const payload = {
-            external_or_internal_greenhouse_job_board_id: boardID,
-            greenhouse_job_application: jobApplication,
-            template_application_id: jobPost.id,
-        };
-        FILTERED_ATTRIBUTES.forEach((attr) => {
-            delete payload.greenhouse_job_application[attr];
-        });
-
         // Fill free job post board information, enable Indeed posts
         jobApplication["job_board_feed_settings_attributes"] = [
             {
@@ -242,6 +258,11 @@ export default class JobPost {
         const locationInfo = await this.getLocationInfo(location, jobPost.id);
         jobApplication["job_board_feed_location_attributes"] = locationInfo;
 
+        const payload = {
+            external_or_internal_greenhouse_job_board_id: boardID,
+            greenhouse_job_application: jobApplication,
+            template_application_id: jobPost.id,
+        };
         FILTERED_ATTRIBUTES.forEach((attr) => {
             delete payload.greenhouse_job_application[attr];
         });
