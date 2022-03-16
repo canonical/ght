@@ -64,24 +64,14 @@ export default class Job {
         const boardToPost = boards.find((board) => board.name === JOB_BOARD);
         if (!boardToPost) throw new Error(`Cannot found ${JOB_BOARD} board`);
 
-        const locationsToCreate = this.filterLocationsToClone(
-            protectedPosts,
-            regionsToPost
-        );
-        const locationNumber = [...locationsToCreate.values()]
-            .map((locationList) => locationList.length)
-            .reduce((pValue, nValue) => pValue + nValue);
-        const totalJobsToBeCloned = protectedPosts.length * locationNumber;
+        const cities = this.getCities(regionsToPost);
+        const totalJobsToBeCloned = protectedPosts.length * cities.length;
         let count = 1;
         for (const protectedPost of protectedPosts) {
-            const locations = locationsToCreate.get(protectedPost.id);
-            if (!locations)
-                throw new Error(`Location cannot be found for the post.`);
-
-            for (const location of locations) {
+            for (const city of cities) {
                 await this.jobPost.duplicate(
                     protectedPost,
-                    location,
+                    city,
                     boardToPost.id
                 );
                 this.spinner.text = `${count} of ${totalJobsToBeCloned} job posts are created.`;
@@ -92,32 +82,12 @@ export default class Job {
         return protectedPosts;
     }
 
-    private filterLocationsToClone(
-        postList: PostInfo[],
-        enteredRegions: string[]
-    ): Map<number, string[]> {
-        const locationsToCreate = new Map<number, string[]>();
-        for (const protectedPost of postList) {
-            // Get existing post's location that have same name with the current protected job.
-            const existingLocations = postList
-                .filter((post) => post.name === protectedPost.name)
-                .map((post) => post.location);
-
-            const postLocations = [];
-            for (const regionName of enteredRegions) {
-                const regionCities = regions[regionName];
-                // New posts' locations = Current region's locations - Existing locations
-                const locations = regionCities.filter(
-                    (city) =>
-                        !existingLocations.find((existingLocation) =>
-                            existingLocation.match(new RegExp(city, "i"))
-                        )
-                );
-                postLocations.push(...locations);
-            }
-            locationsToCreate.set(protectedPost.id, postLocations);
-        }
-        return locationsToCreate;
+    private getCities(enteredRegions: string[]): string[] {
+        const postLocations: string[] = [];
+        enteredRegions.forEach((regionName: string) => {
+            postLocations.push(...regions[regionName]);
+        });
+        return postLocations;
     }
 
     public async markAsLive(jobID: number, oldPosts: PostInfo[]) {
