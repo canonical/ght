@@ -128,12 +128,12 @@ export default class SSO {
 
     public logout() {
         this.spinner.start("Logging out...");
-        if(existsSync(CONFIG_PATH)) {
+        if (existsSync(CONFIG_PATH)) {
             unlinkSync(CONFIG_PATH);
             this.spinner.succeed("Logout completed.");
         } else {
             this.spinner.succeed("Already logged out.");
-        } 
+        }
     }
 
     public async isLoggedIn() {

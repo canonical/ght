@@ -5,6 +5,7 @@ import {
     MAIN_URL,
     PROTECTED_JOB_BOARDS,
     RECRUITER,
+    TEST_JOB_BOARD,
 } from "../common/constants";
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import { regions } from "../common/regions";
@@ -61,8 +62,13 @@ export default class Job {
 
         // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
         const boards = await this.board.getBoards();
-        const boardToPost = boards.find((board) => board.name === JOB_BOARD);
-        if (!boardToPost) throw new Error(`Cannot found ${JOB_BOARD} board`);
+        const validBoardToPost =
+            process.env.NODE_ENV === "development" ? TEST_JOB_BOARD : JOB_BOARD;
+        const boardToPost = boards.find(
+            (board) => board.name === validBoardToPost
+        );
+        if (!boardToPost)
+            throw new Error(`Cannot found ${validBoardToPost} board`);
 
         const cities = this.getCities(regionsToPost);
         const totalJobsToBeCloned = protectedPosts.length * cities.length;

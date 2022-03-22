@@ -6,6 +6,7 @@ export const MAIN_URL = "https://canonical.greenhouse.io/";
 export const SSO_DOMAIN = "login.ubuntu.com";
 export const SSO_URL = "https://login.ubuntu.com";
 export const JOB_BOARD = "Canonical - Jobs";
+export const TEST_JOB_BOARD = "Test Board";
 
 // remove unnecessary fields that could introduce
 // unwanted behavior from the new job post
