@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "scripts": {
         "build": "tsc",
-        "dev": "ts-node ./src/index.ts",
+        "dev": "NODE_ENV=development ts-node ./src/index.ts",
         "format": "eslint ./src --fix && prettier --write ./src",
         "lint": "eslint ./src",
         "start": "node ./dist/index.js"

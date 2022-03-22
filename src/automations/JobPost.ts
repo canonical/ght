@@ -7,9 +7,9 @@ import {
 } from "../common/pageUtils";
 import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
 import { PostInfo } from "../common/types";
+import { usaCities } from "../common/regions";
 import Puppeteer, { ElementHandle } from "puppeteer";
 import { blue } from "colors";
-import { usaCities } from "../common/regions";
 
 export default class JobPost {
     private page: Puppeteer.Page;
@@ -130,14 +130,18 @@ export default class JobPost {
         const contextInformation = locationInfo["context"]?.find((info: any) =>
             info["id"].includes("country")
         );
-        const countryInfo = contextInformation ? {
-            country_long_name: contextInformation["text"],
-            country_short_name: contextInformation["short_code"].toUpperCase(),
-        } : {
-            country_long_name: locationInfo["text"],
-            country_short_name: locationInfo["properties"]["short_code"].toUpperCase(),
-        };
-            
+        const countryInfo = contextInformation
+            ? {
+                  country_long_name: contextInformation["text"],
+                  country_short_name:
+                      contextInformation["short_code"].toUpperCase(),
+              }
+            : {
+                  country_long_name: locationInfo["text"],
+                  country_short_name:
+                      locationInfo["properties"]["short_code"].toUpperCase(),
+              };
+
         return {
             city: locationInfo["text"],
             ...countryInfo,
@@ -147,7 +151,7 @@ export default class JobPost {
             state_long_name: locationInfo["text"],
             state_short_name: "",
             allow_remote: true,
-            county:""
+            county: "",
         };
     }
 
