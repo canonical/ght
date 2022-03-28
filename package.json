@@ -11,6 +11,8 @@
     "repository": "git@github.com:canonical/greenhouse-automations.git",
     "license": "MIT",
     "dependencies": {
+        "@sentry/node": "6.19.2",
+        "@sentry/tracing": "6.19.2",
         "colors": "1.4.0",
         "commander": "9.1.0",
         "enquirer": "2.3.6",

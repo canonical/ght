@@ -58,7 +58,7 @@ export default class JobPost {
     }
 
     public isSuccessful = (response: { [key: string]: string }) =>
-        !(response?.status === "success" || response?.success);
+        !!(response?.status === "success" || response?.success);
 
     public async deletePost(jobPost: PostInfo, referrer: string) {
         const url = joinURL(MAIN_URL, `/jobapps/${jobPost.id}`);
@@ -122,6 +122,10 @@ export default class JobPost {
                 referrer: MAIN_URL,
             }
         );
+
+        if (!response) {
+            throw new Error(`Failed to retrieve location information for ${cityName}.`);
+        }
 
         const locationInfoList = response["features"];
         if (!locationInfoList || !locationInfoList.length)

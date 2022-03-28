@@ -9,6 +9,7 @@ import {
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import { regions } from "../common/regions";
 import { JobInfo, PostInfo } from "../common/types";
+import { isDevelopment } from "../common/processUtils";
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
 
@@ -62,7 +63,7 @@ export default class Job {
         // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
         const boards = await this.board.getBoards();
         const validBoardToPost =
-            process.env.NODE_ENV === "development" ? TEST_JOB_BOARD : JOB_BOARD;
+            isDevelopment() ? TEST_JOB_BOARD : JOB_BOARD;
         const boardToPost = boards.find(
             (board) => board.name === validBoardToPost
         );

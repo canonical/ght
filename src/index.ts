@@ -8,6 +8,7 @@ import { green } from "colors";
 import ora from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
+import { displayError, setupSentry } from "./common/processUtils";
 
 async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     spinner.start("Fetching your jobs.");
@@ -109,6 +110,7 @@ async function addPosts(
         let jobInfo: JobInfo;
         let regionNames = regionsArg;
         let cloneFrom;
+
         if (isInteractive) {
             const { name, id } = await getJobInteractive(
                 job,
@@ -168,10 +170,7 @@ async function addPosts(
         );
         console.log("Happy hiring!");
     } catch (error) {
-        const errorMessage = (<Error>error).message;
-        errorMessage
-            ? spinner.fail(`${errorMessage}`)
-            : spinner.fail("An error occurred.");
+        displayError((<Error>error), spinner);
     } finally {
         spinner.stop();
         currentBrowser?.close();
@@ -235,10 +234,7 @@ async function deletePosts(
 
         console.log("Happy hiring!");
     } catch (error) {
-        const errorMessage = (<Error>error).message;
-        errorMessage
-            ? spinner.fail(`${errorMessage}`)
-            : spinner.fail("An error occurred.");
+        displayError((<Error>error), spinner);
     } finally {
         spinner.stop();
         currentBrowser?.close();
@@ -251,10 +247,7 @@ async function login() {
     try {
         await sso.login();
     } catch (error) {
-        const errorMessage = (<Error>error).message;
-        errorMessage
-            ? spinner.fail(`${errorMessage}`)
-            : spinner.fail("An error occurred.");
+        displayError((<Error>error), spinner);
     } finally {
         spinner.stop();
     }
@@ -266,16 +259,15 @@ function logout() {
     try {
         sso.logout();
     } catch (error) {
-        const errorMessage = (<Error>error).message;
-        errorMessage
-            ? spinner.fail(`${errorMessage}`)
-            : spinner.fail("An error occurred.");
+        displayError((<Error>error), spinner);
     } finally {
         spinner.stop();
     }
 }
 
 async function main() {
+    setupSentry();
+
     const program = new Command();
     const validateNumberParam = (param: string, fieldName: string) => {
         const intValue = parseInt(param);

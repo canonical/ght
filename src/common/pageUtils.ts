@@ -55,7 +55,7 @@ export async function sendRequest(
         }
     );
 
-    if (isSuccessful(response)) throw new Error(errorMessage);
+    if (!response || !isSuccessful(response)) throw new Error(errorMessage);
 
     return response;
 }
