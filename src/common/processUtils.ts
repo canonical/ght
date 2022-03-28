@@ -19,5 +19,5 @@ export const displayError = (error: Error, spinner: Ora) => {
         ? spinner.fail(`${errorMessage}`)
         : spinner.fail("An error occurred.");
 
-    !isDevelopment() && Sentry.captureException(error);
+        if(!isDevelopment())  Sentry.captureException(error);
 }
