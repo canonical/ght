@@ -1,6 +1,6 @@
 {
   "extends": [
-    "config:base"
+    "github>canonical-web-and-design/renovate-websites"
   ],
   "packageRules": [
     {
