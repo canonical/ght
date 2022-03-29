@@ -265,13 +265,14 @@ export default class Job {
             pageText = await this.getPaginationElementText();
             morePageButton.click();
             await this.page.waitForFunction(
-                (args: string[]) => {
+                (pageText: string) => {
+                    console.log(pageText)
                     const innerText =
                         document.getElementById("jobs_pagination")?.innerText;
-                    return args[0] !== innerText;
+                    return pageText !== innerText;
                 },
                 {},
-                [pageText]
+                pageText
             );
             morePageButton = await this.page.$("#show_more_jobs");
         }
