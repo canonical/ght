@@ -49,3 +49,4 @@ export const FILTERED_ATTRIBUTES = [
 export const PROTECTED_JOB_BOARDS = ["Canonical", "Internal"];
 
 export const USER_ERROR = "UserError";
+export const RECRUITER = "RECRUITER";

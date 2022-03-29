@@ -4,6 +4,7 @@ import {
     JOB_BOARD,
     MAIN_URL,
     PROTECTED_JOB_BOARDS,
+    RECRUITER,
     TEST_JOB_BOARD,
 } from "../common/constants";
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
