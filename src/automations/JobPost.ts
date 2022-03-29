@@ -254,7 +254,6 @@ export default class JobPost {
         // set the eeoc value if the location is in the USA
         const isInUSA = usaCities.find((city: string) => location === city);
         jobApplication["enable_eeoc"] = isInUSA;
-        
 
         // Fill free job post board information, enable Indeed posts
         jobApplication["job_board_feed_settings_attributes"] = [

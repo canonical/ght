@@ -251,11 +251,10 @@ export default class Job {
         return false;
     }
 
-    private async getPaginationElementText () {
-        const paginationNum =  await this.page.$("#jobs_pagination");
-        if (!paginationNum)
-            throw new Error("Pagination text cannot be found.");
-        return await getInnerText(paginationNum); 
+    private async getPaginationElementText() {
+        const paginationElement = await this.page.$("#jobs_pagination");
+        if (!paginationElement) throw new Error("Pagination element cannot be found.");
+        return await getInnerText(paginationElement);
     }
 
     private async loadAllJobs() {
@@ -265,10 +264,15 @@ export default class Job {
         while (morePageButton) {
             pageText = await this.getPaginationElementText();
             morePageButton.click();
-            await this.page.waitForFunction((args: string[]) => {
-                const innerText = document.getElementById("jobs_pagination")?.innerText;
-                return args[0] !== innerText;
-            }, {}, [pageText]);
+            await this.page.waitForFunction(
+                (args: string[]) => {
+                    const innerText =
+                        document.getElementById("jobs_pagination")?.innerText;
+                    return args[0] !== innerText;
+                },
+                {},
+                [pageText]
+            );
             morePageButton = await this.page.$("#show_more_jobs");
         }
     }
