@@ -30,9 +30,11 @@ export default class JobPost {
 
         const triggerBox = await post.$(".js-trigger-box");
         const jobPostID = await this.page.evaluate(
-            (el) => el.getAttribute("data-job-id"),
+            (el) => el?.getAttribute("data-job-id"),
             triggerBox
         );
+        if (!jobPostID) throw new Error("Post information cannot be retrieved.");
+
         const postBoard = await post.$(".board-column");
         if (!postBoard) throw new Error("Post board cannot be found");
 
