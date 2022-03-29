@@ -251,12 +251,28 @@ export default class Job {
         return false;
     }
 
+    private async getPaginationElementText() {
+        const paginationElement = await this.page.$("#jobs_pagination");
+        if (!paginationElement) throw new Error("Pagination element cannot be found.");
+        return await getInnerText(paginationElement);
+    }
+
     private async loadAllJobs() {
         await this.page.waitForSelector(".job");
         let morePageButton = await this.page.$("#show_more_jobs");
+        let pageText;
         while (morePageButton) {
+            pageText = await this.getPaginationElementText();
             morePageButton.click();
-            await this.page.waitForNetworkIdle();
+            await this.page.waitForFunction(
+                (pageText: string) => {
+                    const innerText =
+                        document.getElementById("jobs_pagination")?.innerText;
+                    return pageText !== innerText;
+                },
+                {},
+                pageText
+            );
             morePageButton = await this.page.$("#show_more_jobs");
         }
     }
