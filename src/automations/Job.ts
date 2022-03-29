@@ -4,7 +4,6 @@ import {
     JOB_BOARD,
     MAIN_URL,
     PROTECTED_JOB_BOARDS,
-    RECRUITER,
     TEST_JOB_BOARD,
 } from "../common/constants";
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
@@ -240,17 +239,6 @@ export default class Job {
             : 1;
     }
 
-    private async isRecruiter(parentElement: Puppeteer.ElementHandle) {
-        const tags = await parentElement.$$(".job-tag");
-        for (const tag of tags) {
-            const tagText = await getInnerText(tag);
-            if (RECRUITER === tagText.toLocaleUpperCase()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private async getPaginationElementText() {
         const paginationElement = await this.page.$("#jobs_pagination");
         if (!paginationElement) throw new Error("Pagination element cannot be found.");
@@ -292,9 +280,6 @@ export default class Job {
             const jobNameElement = await jobElement.$(".job-label-name");
             if (!jobNameElement) throw new Error("Cannot get job name");
 
-            const isRecruiter = await this.isRecruiter(jobElement);
-            if (!isRecruiter) continue;
-
             const nameCell = await jobElement.$(".job-name");
             if (!nameCell) throw new Error("Cannot get job name cell.");
 
@@ -304,27 +289,6 @@ export default class Job {
         }
 
         return jobs;
-    }
-
-    public async hasAccess(jobID: number) {
-        const url = joinURL(MAIN_URL, "/alljobs");
-        await this.page.goto(url);
-
-        await this.loadAllJobs();
-        const jobElements = await this.page.$$(".job");
-        if (!jobElements || !jobElements.length)
-            throw new Error("No job found.");
-
-        for (const jobElement of jobElements) {
-            const nameCell = await jobElement.$(".job-name");
-            if (!nameCell) throw new Error("Cannot get job name cell.");
-
-            const jobIDFromCell = await getIDFromURL(nameCell, "a");
-            if (jobIDFromCell === jobID) {
-                return await this.isRecruiter(jobElement);
-            }
-        }
-        return false;
     }
 
     public async getJobIDFromPost(postID: number) {

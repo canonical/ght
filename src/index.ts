@@ -143,12 +143,6 @@ async function addPosts(
 
             spinner.start(`Fetching the job information.`);
             jobID = await job.getJobIDFromPost(postIDArg);
-
-            const hasAccess = await job.hasAccess(jobID);
-            if (!hasAccess)
-                throw Error(
-                    "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
-                );
             jobInfo = await job.getJobData(jobID);
             spinner.succeed();
 
@@ -234,11 +228,6 @@ async function deletePosts(
         } else {
             spinner.start(`Fetching the job information.`);
             jobID = await job.getJobIDFromPost(postID);
-            const hasAccess = await job.hasAccess(jobID);
-            if (!hasAccess)
-                throw Error(
-                    "Only hiring leads can delete job posts. If you are not sure about your hiring role please contact HR."
-                );
             jobInfo = await job.getJobData(jobID);
             spinner.succeed();
         }
