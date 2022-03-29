@@ -254,9 +254,10 @@ export default class Job {
     private async loadAllJobs() {
         await this.page.waitForSelector(".job");
         let morePageButton = await this.page.$("#show_more_jobs");
+
         while (morePageButton) {
             morePageButton.click();
-            await this.page.waitForNetworkIdle();
+            await this.page.waitForTimeout(3000);
             morePageButton = await this.page.$("#show_more_jobs");
         }
     }
