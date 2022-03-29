@@ -1,6 +1,6 @@
 {
     "name": "greenhouse-automations",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scripts": {
         "build": "tsc",
         "dev": "NODE_ENV=development ts-node ./src/index.ts",
