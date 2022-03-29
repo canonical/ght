@@ -266,7 +266,6 @@ export default class Job {
             morePageButton.click();
             await this.page.waitForFunction(
                 (pageText: string) => {
-                    console.log(pageText)
                     const innerText =
                         document.getElementById("jobs_pagination")?.innerText;
                     return pageText !== innerText;
