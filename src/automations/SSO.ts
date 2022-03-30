@@ -85,8 +85,12 @@ export default class SSO {
             return { sessionId: sessionId };
         }
         this.spinner.stop();
-        const credentials = await this.prompt();
-
+        let credentials;
+        try {
+            credentials = await this.prompt();
+        } catch {
+            throw new UserError("Interrupted");
+        }
         this.spinner.start("Logging in...");
         let response: Response = await fetch(
             joinURL(SSO_URL, "/+login"),
@@ -176,6 +180,7 @@ export default class SSO {
             },
         ]);
     }
+
     private getCSRFToken(html: string) {
         const {
             window: { document },
@@ -190,7 +195,7 @@ export default class SSO {
     public async authenticate() {
         const loginCookies = await this.login();
         this.spinner.start("Setting up...");
-        const browser = await Puppeteer.launch({ args: ["--no-sandbox"]});
+        const browser = await Puppeteer.launch({ args: ["--no-sandbox"] });
         const page = await browser.newPage();
         await this.setCookies(page, loginCookies);
 

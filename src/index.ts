@@ -10,6 +10,7 @@ import { green } from "colors";
 import ora from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
+import { runPrompt } from "./common/commandUtils";
 
 async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     spinner.start("Fetching your jobs.");
@@ -17,7 +18,9 @@ async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     spinner.succeed();
 
     if (jobs.size === 0)
-        throw new UserError("Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR.");
+        throw new UserError(
+            "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
+        );
 
     const prompt = new Select({
         name: "Job",
@@ -25,7 +28,7 @@ async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
         choices: [...jobs.keys()],
     });
 
-    const jobName = await prompt.run();
+    const jobName = await runPrompt(prompt);
     return {
         name: jobName,
         id: jobs.get(jobName),
@@ -49,14 +52,17 @@ async function getJobPostInteractive(posts: PostInfo[], message: string) {
         message,
         choices: [...uniqueNames],
     });
-    const jobPostName = await prompt.run();
+    const jobPostName = await runPrompt(prompt);
     // Get one of job posts whose name matches with the chosen name. It doesn not matter which one.
     const matchedJobPost = posts.find(
         (post) =>
             post.name === jobPostName &&
             post.boardInfo.name.toUpperCase() === board
     );
-    if (!matchedJobPost) throw new Error(`No job post found with name ${jobPostName} in the ${board} board.`);
+    if (!matchedJobPost)
+        throw new Error(
+            `No job post found with name ${jobPostName} in the ${board} board.`
+        );
 
     return matchedJobPost.id;
 }
@@ -69,7 +75,7 @@ async function getRegionsInteractive(message: string) {
         choices: regionNames,
         validate: (value: string[]) => value.length > 0,
     });
-    const region = await prompt.run();
+    const region = await runPrompt(prompt);
     return region;
 }
 
@@ -86,7 +92,7 @@ async function deletePostsInteractive(
         initial: true,
     });
 
-    const shouldDelete = await prompt.run();
+    const shouldDelete = await runPrompt(prompt);
     if (shouldDelete) {
         await job.deletePosts(jobInfo, regionNames, similar);
     }
@@ -122,7 +128,7 @@ async function addPosts(
             spinner.start(`Fetching job posts for ${name}.`);
             jobInfo = await job.getJobData(jobID);
             if (!jobInfo.posts.length)
-                throw new Error (
+                throw new Error(
                     `Job posts cannot be found for ${jobInfo.name}.`
                 );
             spinner.succeed();
@@ -139,14 +145,19 @@ async function addPosts(
 
             await deletePostsInteractive(job, jobInfo, regionNames, cloneFrom);
         } else {
-            if (!postIDArg) throw new UserError(`Job post ID argument is missing.`);
-            if (!regionNames) throw new UserError(`Region parameter is missing.`);
+            if (!postIDArg)
+                throw new UserError(`Job post ID argument is missing.`);
+            if (!regionNames)
+                throw new UserError(`Region parameter is missing.`);
             cloneFrom = postIDArg;
 
             spinner.start(`Fetching the job information.`);
             jobID = await job.getJobIDFromPost(postIDArg);
             jobInfo = await job.getJobData(jobID);
-            if (!jobInfo.posts.length) throw new Error(`Job posts cannot be found for ${jobInfo.name}.`);
+            if (!jobInfo.posts.length)
+                throw new Error(
+                    `Job posts cannot be found for ${jobInfo.name}.`
+                );
             spinner.succeed();
         }
         // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
@@ -169,7 +180,7 @@ async function addPosts(
         );
         console.log("Happy hiring!");
     } catch (error) {
-        displayError((<Error>error), spinner);
+        displayError(<Error>error, spinner);
     } finally {
         spinner.stop();
         currentBrowser?.close();
@@ -208,7 +219,7 @@ async function deletePosts(
             spinner.start(`Fetching job posts for ${name}.`);
             jobInfo = await job.getJobData(jobID);
             if (!jobInfo.posts.length)
-                throw new Error (
+                throw new Error(
                     `Job posts cannot be found for ${jobInfo.name}.`
                 );
             spinner.succeed();
@@ -232,7 +243,7 @@ async function deletePosts(
 
         console.log("Happy hiring!");
     } catch (error) {
-        displayError((<Error>error), spinner);
+        displayError(<Error>error, spinner);
     } finally {
         spinner.stop();
         currentBrowser?.close();
@@ -245,7 +256,7 @@ async function login() {
     try {
         await sso.login();
     } catch (error) {
-        displayError((<Error>error), spinner);
+        displayError(<Error>error, spinner);
     } finally {
         spinner.stop();
     }
@@ -257,7 +268,7 @@ function logout() {
     try {
         sso.logout();
     } catch (error) {
-        displayError((<Error>error), spinner);
+        displayError(<Error>error, spinner);
     } finally {
         spinner.stop();
     }
@@ -269,7 +280,8 @@ async function main() {
     const program = new Command();
     const validateNumberParam = (param: string, fieldName: string) => {
         const intValue = parseInt(param);
-        if (isNaN(intValue)) throw new UserError(`${fieldName} must be a number`);
+        if (isNaN(intValue))
+            throw new UserError(`${fieldName} must be a number`);
         return intValue;
     };
 
