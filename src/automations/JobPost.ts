@@ -191,7 +191,7 @@ export default class JobPost {
         if (!jobPostFormRaw)
             throw new Error("Failed to retrieve job post form data " + logName);
 
-        const jobPostForm = JSON.parse("jobPostFormRaw");
+        const jobPostForm = JSON.parse(jobPostFormRaw);
         // the pre filled job application that need modifications
         const jobApplication = jobPostForm["job_application"];
 

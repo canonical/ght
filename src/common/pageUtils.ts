@@ -46,7 +46,7 @@ export async function sendRequest(
                 });
                 return queryResponse.ok ? await queryResponse.json() :
                 { isError: true, status: queryResponse.status, url: queryResponse.url, statusText: queryResponse.statusText };
-            } catch (e: any){
+            } catch (e) {
                 return e;
             }
         },

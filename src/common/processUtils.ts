@@ -7,7 +7,7 @@ import * as Tracing from "@sentry/tracing";
 export const isDevelopment = () => process.env.NODE_ENV === "development";
 
 export const setupSentry = () => {
-    if (isDevelopment()) {
+    if (!isDevelopment()) {
         Sentry.init({
             dsn: "https://b4ad6d6db883487ebc914236321bf0e0@sentry.is.canonical.com//50",
         });
