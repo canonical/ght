@@ -20,7 +20,7 @@ export default class JobPost {
 
     public async getJobPostData(post: ElementHandle) {
         const postTitle = await post.$(".job-application__name");
-        if (!postTitle) throw new Error("Post title cannot be found");
+        if (!postTitle) throw new Error(`Post title cannot be found in ${this.page.url}`);
 
         const innerText = await getInnerText(postTitle);
         const titleLocationInfo = innerText
@@ -33,10 +33,10 @@ export default class JobPost {
             (el) => el?.getAttribute("data-job-id"),
             triggerBox
         );
-        if (!jobPostID) throw new Error("Post information cannot be retrieved.");
+        if (!jobPostID) throw new Error(`Post information cannot be found in ${this.page.url}.`);
 
         const postBoard = await post.$(".board-column");
-        if (!postBoard) throw new Error("Post board cannot be found");
+        if (!postBoard) throw new Error(`Post board cannot be found in ${this.page.url}`);
 
         const boardName = await getInnerText(postBoard);
         const boardID = await getIDFromURL(postBoard, "a");
@@ -184,13 +184,14 @@ export default class JobPost {
             throw new Error(
                 "Failed to retrieve job post form details of " + logName
             );
-        const jobPostFormRaw = await element.evaluate((node) =>
+
+        const jobPostFormRaw = await element?.evaluate((node) =>
             node.getAttribute("data-react-props")
         );
         if (!jobPostFormRaw)
             throw new Error("Failed to retrieve job post form data " + logName);
 
-        const jobPostForm = JSON.parse(jobPostFormRaw);
+        const jobPostForm = JSON.parse("jobPostFormRaw");
         // the pre filled job application that need modifications
         const jobApplication = jobPostForm["job_application"];
 
