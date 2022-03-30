@@ -11,13 +11,10 @@
     "repository": "git@github.com:canonical/greenhouse-automations.git",
     "license": "MIT",
     "dependencies": {
-        "colors": "1.4.0",
-        "commander": "9.1.0",
         "enquirer": "2.3.6",
         "http-cookie-agent": "1.0.5",
         "jsdom": "19.0.0",
         "node-fetch": "2.6.7",
-        "ora": "5.4.1",
         "puppeteer": "13.5.1",
         "tough-cookie": "4.0.0"
     },

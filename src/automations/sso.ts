@@ -1,12 +1,11 @@
 import { CONFIG_PATH, SSO_DOMAIN, SSO_URL } from "../common/constants";
 import { joinURL } from "../common/pageUtils";
+import Enquirer = require("enquirer");
 import { HttpsCookieAgent } from "http-cookie-agent";
 import { JSDOM } from "jsdom";
 import fetch, { RequestInit, Response } from "node-fetch";
-import { CookieJar } from "tough-cookie";
-import Enquirer = require("enquirer");
 import Puppeteer from "puppeteer";
-import { Ora } from "ora";
+import { CookieJar } from "tough-cookie";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 
 export type SSOCookies = {
@@ -34,9 +33,8 @@ export default class SSO {
         "Referrer-Policy": "strict-origin-when-cross-origin",
     };
     private defaultFetchOptions: RequestInit;
-    private spinner: Ora;
 
-    constructor(spinner: Ora) {
+    constructor() {
         if (existsSync(CONFIG_PATH)) {
             this.jar = CookieJar.deserializeSync(this.parseUserSettings());
         } else {
@@ -53,7 +51,6 @@ export default class SSO {
             method: "GET",
             redirect: "follow",
         };
-        this.spinner = spinner;
     }
 
     private parseUserSettings() {
@@ -77,16 +74,15 @@ export default class SSO {
     }
 
     public async login(): Promise<SSOCookies> {
-        this.spinner.start("Checking authentication...");
+        console.log("Checking authentication...");
         let sessionId = await this.currentSessionId();
         if ((await this.isLoggedIn()) && sessionId) {
-            this.spinner.succeed("Using the saved credentials.");
+            console.log("Using the saved credentials.");
             return { sessionId: sessionId };
         }
-        this.spinner.stop();
         const credentials = await this.prompt();
 
-        this.spinner.start("Logging in...");
+        console.log("Logging in...");
         let response: Response = await fetch(
             joinURL(SSO_URL, "/+login"),
             this.defaultFetchOptions
@@ -122,17 +118,17 @@ export default class SSO {
         if (!(await this.isLoggedIn()) || !sessionId)
             throw new Error("Invalid 2FA");
         this.saveUserSettings();
-        this.spinner.succeed("Authentication completed.");
+        console.log("Authentication completed.");
         return { sessionId: sessionId };
     }
 
     public logout() {
-        this.spinner.start("Logging out...");
+        console.log("Logging out...");
         if (existsSync(CONFIG_PATH)) {
             unlinkSync(CONFIG_PATH);
-            this.spinner.succeed("Logout completed.");
+            console.log("Logout completed.");
         } else {
-            this.spinner.succeed("Already logged out.");
+            console.log("Already logged out.");
         }
     }
 
@@ -188,15 +184,15 @@ export default class SSO {
 
     public async authenticate() {
         const loginCookies = await this.login();
-        this.spinner.start("Setting up...");
-        const browser = await Puppeteer.launch({ args: ["--no-sandbox"] });
+        console.log("Setting up...");
+        const browser = await Puppeteer.launch();
         const page = await browser.newPage();
         await this.setCookies(page, loginCookies);
 
-        this.spinner.succeed("Setup is completed.");
+        console.log("Setup is completed.");
+        await page.close();
         return {
             browser,
-            page,
         };
     }
 }
