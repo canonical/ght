@@ -5,12 +5,12 @@ import SSO from "./automations/SSO";
 import { PROTECTED_JOB_BOARDS } from "./common/constants";
 import { displayError, setupSentry } from "./common/processUtils";
 import UserError from "./common/UserError";
+import { runPrompt } from "./common/commandUtils";
 import { Command, Argument, Option } from "commander";
 import { green } from "colors";
 import ora from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
-import { runPrompt } from "./common/commandUtils";
 
 async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     spinner.start("Fetching your jobs.");

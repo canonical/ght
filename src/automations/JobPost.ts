@@ -8,9 +8,9 @@ import {
 import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
 import { PostInfo } from "../common/types";
 import { usaCities } from "../common/regions";
+import { evaluate } from "../common/processUtils";
 import Puppeteer, { ElementHandle } from "puppeteer";
 import { blue } from "colors";
-import { evaluate } from "../common/processUtils";
 
 export default class JobPost {
     private page: Puppeteer.Page;

@@ -32,12 +32,12 @@ export const reportError = (error: string) => {
  * to be able to track the source of the error 
  */
 export const evaluate: (
-    element: puppeteer.Page | puppeteer.ElementHandle<Element>,
+    element: puppeteer.Page | puppeteer.ElementHandle<any>,
     pageFunction: puppeteer.EvaluateFn<any>,
     ...args: puppeteer.SerializableOrJSHandle[]
 ) => Promise<any> = async (element, pageFunction, ...args) => {
     try {
-        return await (element as any).evaluate(pageFunction, ...args);
+        return await element.evaluate(pageFunction, ...args);
     } catch (err) {
         // change the error stack trace, to be able to track the error source
         throw new Error((err as Error).message);
