@@ -11,6 +11,8 @@ export const setupSentry = () => {
     if (!isDevelopment()) {
         Sentry.init({
             dsn: "https://b4ad6d6db883487ebc914236321bf0e0@sentry.is.canonical.com//50",
+            release: "ght@" + process.env.npm_package_version,
+            attachStacktrace: true,
         });
     }
 } 

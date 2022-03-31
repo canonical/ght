@@ -1,14 +1,14 @@
 {
-    "name": "greenhouse-automations",
+    "name": "ght",
     "version": "1.0.1",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && cp package.json ght ./dist",
         "dev": "NODE_ENV=development ts-node ./src/index.ts",
         "format": "eslint ./src --fix && prettier --write ./src",
         "lint": "eslint ./src",
         "start": "node ./dist/index.js"
     },
-    "repository": "git@github.com:canonical/greenhouse-automations.git",
+    "repository": "git@github.com:canonical/ght.git",
     "license": "MIT",
     "dependencies": {
         "@sentry/node": "6.19.2",
