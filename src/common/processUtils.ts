@@ -3,6 +3,7 @@ import { Ora } from "ora";
 import * as Sentry from "@sentry/node";
 // @ts-ignore It's necessary for sentry to trace errors. Importing @sentry/tracing patches the global hub for tracing to work.
 import * as Tracing from "@sentry/tracing";
+import * as puppeteer from 'puppeteer'
 
 export const isDevelopment = () => process.env.NODE_ENV === "development";
 
@@ -25,3 +26,20 @@ export const displayError = (error: Error, spinner: Ora) => {
 export const reportError = (error: string) => {
     if(!isDevelopment())  Sentry.captureException(error);
 }
+
+/**
+ * puppeteer.page.evaluate wrapper
+ * to be able to track the source of the error 
+ */
+export const evaluate: (
+    page: puppeteer.Page,
+    pageFunction: puppeteer.EvaluateFn<any>,
+    ...args: puppeteer.SerializableOrJSHandle[]
+) => Promise<any> = async (page, pageFunction, ...args) => {
+    try {
+        return await page.evaluate(pageFunction, ...args);
+    } catch (err) {
+        // change the error stack trace, to be able to track the error source
+        throw new Error((err as Error).message);
+    }
+};
