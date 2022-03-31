@@ -1,11 +1,11 @@
-import { reportError } from "./processUtils";
+import { evaluate, reportError } from "./processUtils";
 import UserError from "./UserError";
 import Puppeteer from "puppeteer";
 
 export function getInnerText(
     element: Puppeteer.ElementHandle
 ): Promise<string> {
-    return element?.evaluate((el: Element) => (el as HTMLElement).innerText);
+    return evaluate(element, (el: Element) => (el as HTMLElement).innerText);
 }
 
 export function getCSRFToken(page: Puppeteer.Page): Promise<string> {
@@ -28,7 +28,8 @@ export async function sendRequest(
     errorMessage: string,
     isSuccessful: (response: { [key: string]: string }) => boolean
 ) {
-    const response = await page.evaluate(
+    const response = await evaluate(
+        page,
         async ({ url, headers, options, csrfToken }) => {
             try {
 

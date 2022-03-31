@@ -10,6 +10,7 @@ import { PostInfo } from "../common/types";
 import { usaCities } from "../common/regions";
 import Puppeteer, { ElementHandle } from "puppeteer";
 import { blue } from "colors";
+import { evaluate } from "../common/processUtils";
 
 export default class JobPost {
     private page: Puppeteer.Page;
@@ -29,7 +30,8 @@ export default class JobPost {
             .filter((e: string) => !!e);
 
         const triggerBox = await post.$(".js-trigger-box");
-        const jobPostID = await this.page.evaluate(
+        const jobPostID = await evaluate(
+            this.page,
             (el) => el?.getAttribute("data-job-id"),
             triggerBox
         );
@@ -90,11 +92,12 @@ export default class JobPost {
             throw new Error(
                 "Data key to retrieve location information cannot be found."
             );
-        const accessToken = await accessTokenElement.evaluate((node) =>
+        const accessToken = await evaluate(accessTokenElement, (node) =>
             node.getAttribute("data-value")
         );
 
-        const response = await this.page.evaluate(
+        const response = await evaluate(
+            this.page,
             async ({ url, referrer }) => {
                 try {
                     return await (
@@ -185,7 +188,7 @@ export default class JobPost {
                 "Failed to retrieve job post form details of " + logName
             );
 
-        const jobPostFormRaw = await element?.evaluate((node) =>
+        const jobPostFormRaw = await evaluate(element, (node) =>
             node.getAttribute("data-react-props")
         );
         if (!jobPostFormRaw)
