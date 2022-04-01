@@ -4,7 +4,7 @@ import Enquirer = require("enquirer");
 import { HttpsCookieAgent } from "http-cookie-agent";
 import { JSDOM } from "jsdom";
 import fetch, { RequestInit, Response } from "node-fetch";
-import Puppeteer from "puppeteer";
+import Puppeteer, { Page } from "puppeteer";
 import { CookieJar } from "tough-cookie";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 
@@ -74,15 +74,15 @@ export default class SSO {
     }
 
     public async login(): Promise<SSOCookies> {
-        console.log("Checking authentication...");
+        // console.log("Checking authentication...");
         let sessionId = await this.currentSessionId();
         if ((await this.isLoggedIn()) && sessionId) {
-            console.log("Using the saved credentials.");
+            // console.log("Using the saved credentials.");
             return { sessionId: sessionId };
         }
         const credentials = await this.prompt();
 
-        console.log("Logging in...");
+        // console.log("Logging in...");
         let response: Response = await fetch(
             joinURL(SSO_URL, "/+login"),
             this.defaultFetchOptions
@@ -118,17 +118,17 @@ export default class SSO {
         if (!(await this.isLoggedIn()) || !sessionId)
             throw new Error("Invalid 2FA");
         this.saveUserSettings();
-        console.log("Authentication completed.");
+        // console.log("Authentication completed.");
         return { sessionId: sessionId };
     }
 
     public logout() {
-        console.log("Logging out...");
+        // console.log("Logging out...");
         if (existsSync(CONFIG_PATH)) {
             unlinkSync(CONFIG_PATH);
-            console.log("Logout completed.");
+            // console.log("Logout completed.");
         } else {
-            console.log("Already logged out.");
+            // console.log("Already logged out.");
         }
     }
 
@@ -182,17 +182,11 @@ export default class SSO {
         return csrfToken;
     }
 
-    public async authenticate() {
+    public async authenticate(page: Page) {
         const loginCookies = await this.login();
-        console.log("Setting up...");
-        const browser = await Puppeteer.launch();
-        const page = await browser.newPage();
+        // console.log("Setting up...");
         await this.setCookies(page, loginCookies);
 
-        console.log("Setup is completed.");
-        await page.close();
-        return {
-            browser,
-        };
+        // console.log("Setup is completed.");
     }
 }

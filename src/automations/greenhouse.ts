@@ -6,11 +6,11 @@ const STATUS_COLUMN_SELECTOR = ".person .toggle-interviews";
 const WRITTEN_INTERVIEW_SELECTOR = ".edit-take-home-test-graders-link";
 
 export async function writtenInterviews(
-    planId: string,
     page: Page,
+    planId: string,
     pageNumber?: number
 ): Promise<any[]> {
-    const a = new Date();
+    // const a = new Date();
 
     let url = joinURL(
         MAIN_URL,
@@ -49,7 +49,9 @@ export async function writtenInterviews(
         }
     );
 
-    console.log("done in:", new Date().getTime() - a.getTime());
+    // console.log(
+    //     `page ${pageNumber || 1} done in ${new Date().getTime() - a.getTime()}`
+    // );
     // Check for pagination
     const pagesCount =
         (await page.$$("*[role='navigation'] *[href]")).length || 1;
@@ -58,7 +60,7 @@ export async function writtenInterviews(
     if (pageNumber < pagesCount) {
         return [
             ...result,
-            ...(await writtenInterviews(planId, page, pageNumber + 1)),
+            ...(await writtenInterviews(page, planId, pageNumber + 1)),
         ];
     } else return result;
 }
