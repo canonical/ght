@@ -8,6 +8,7 @@ import {
 import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
 import { PostInfo } from "../common/types";
 import { usaCities } from "../common/regions";
+import { evaluate } from "../common/processUtils";
 import Puppeteer, { ElementHandle } from "puppeteer";
 import { blue } from "colors";
 
@@ -20,7 +21,7 @@ export default class JobPost {
 
     public async getJobPostData(post: ElementHandle) {
         const postTitle = await post.$(".job-application__name");
-        if (!postTitle) throw new Error("Post title cannot be found");
+        if (!postTitle) throw new Error(`Post title cannot be found in ${this.page.url}`);
 
         const innerText = await getInnerText(postTitle);
         const titleLocationInfo = innerText
@@ -29,14 +30,15 @@ export default class JobPost {
             .filter((e: string) => !!e);
 
         const triggerBox = await post.$(".js-trigger-box");
-        const jobPostID = await this.page.evaluate(
+        const jobPostID = await evaluate(
+            this.page,
             (el) => el?.getAttribute("data-job-id"),
             triggerBox
         );
-        if (!jobPostID) throw new Error("Post information cannot be retrieved.");
+        if (!jobPostID) throw new Error(`Post information cannot be found in ${this.page.url}.`);
 
         const postBoard = await post.$(".board-column");
-        if (!postBoard) throw new Error("Post board cannot be found");
+        if (!postBoard) throw new Error(`Post board cannot be found in ${this.page.url}`);
 
         const boardName = await getInnerText(postBoard);
         const boardID = await getIDFromURL(postBoard, "a");
@@ -58,7 +60,7 @@ export default class JobPost {
     }
 
     public isSuccessful = (response: { [key: string]: string }) =>
-        !(response?.status === "success" || response?.success);
+        !!(response?.status === "success" || response?.success);
 
     public async deletePost(jobPost: PostInfo, referrer: string) {
         const url = joinURL(MAIN_URL, `/jobapps/${jobPost.id}`);
@@ -90,11 +92,12 @@ export default class JobPost {
             throw new Error(
                 "Data key to retrieve location information cannot be found."
             );
-        const accessToken = await accessTokenElement.evaluate((node) =>
+        const accessToken = await evaluate(accessTokenElement, (node) =>
             node.getAttribute("data-value")
         );
 
-        const response = await this.page.evaluate(
+        const response = await evaluate(
+            this.page,
             async ({ url, referrer }) => {
                 try {
                     return await (
@@ -122,6 +125,10 @@ export default class JobPost {
                 referrer: MAIN_URL,
             }
         );
+
+        if (!response) {
+            throw new Error(`Failed to retrieve location information for ${cityName}.`);
+        }
 
         const locationInfoList = response["features"];
         if (!locationInfoList || !locationInfoList.length)
@@ -180,7 +187,8 @@ export default class JobPost {
             throw new Error(
                 "Failed to retrieve job post form details of " + logName
             );
-        const jobPostFormRaw = await element.evaluate((node) =>
+
+        const jobPostFormRaw = await evaluate(element, (node) =>
             node.getAttribute("data-react-props")
         );
         if (!jobPostFormRaw)

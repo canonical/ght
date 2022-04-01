@@ -1,5 +1,6 @@
 import { CONFIG_PATH, SSO_DOMAIN, SSO_URL } from "../common/constants";
 import { joinURL } from "../common/pageUtils";
+import UserError from "../common/UserError";
 import { HttpsCookieAgent } from "http-cookie-agent";
 import { JSDOM } from "jsdom";
 import fetch, { RequestInit, Response } from "node-fetch";
@@ -84,8 +85,12 @@ export default class SSO {
             return { sessionId: sessionId };
         }
         this.spinner.stop();
-        const credentials = await this.prompt();
-
+        let credentials;
+        try {
+            credentials = await this.prompt();
+        } catch {
+            throw new UserError("Interrupted");
+        }
         this.spinner.start("Logging in...");
         let response: Response = await fetch(
             joinURL(SSO_URL, "/+login"),
@@ -103,7 +108,7 @@ export default class SSO {
         });
         const html = await response.text();
         if (!html.match(/type your verification code/i))
-            throw new Error(
+            throw new UserError(
                 "Authorization failed. Please check your e-mail and password."
             );
         CSRFToken = this.getCSRFToken(html);
@@ -120,7 +125,7 @@ export default class SSO {
         // make sure that the login flow finished successfully
         sessionId = await this.currentSessionId();
         if (!(await this.isLoggedIn()) || !sessionId)
-            throw new Error("Invalid 2FA");
+            throw new UserError("Invalid 2FA");
         this.saveUserSettings();
         this.spinner.succeed("Authentication completed.");
         return { sessionId: sessionId };
@@ -175,6 +180,7 @@ export default class SSO {
             },
         ]);
     }
+
     private getCSRFToken(html: string) {
         const {
             window: { document },

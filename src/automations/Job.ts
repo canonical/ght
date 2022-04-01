@@ -9,6 +9,7 @@ import {
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import { regions } from "../common/regions";
 import { JobInfo, PostInfo } from "../common/types";
+import { isDevelopment } from "../common/processUtils";
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
 
@@ -54,7 +55,7 @@ export default class Job {
 
         if (!protectedPosts?.length) {
             const errorMessage = sourceID
-                ? `Job post ID: ${sourceID} not found in the Canonical Board.`
+                ? `Job post with ${sourceID} ID cannot be found in the Canonical Board.`
                 : `No post found to clone`;
             throw new Error(errorMessage);
         }
@@ -62,7 +63,7 @@ export default class Job {
         // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
         const boards = await this.board.getBoards();
         const validBoardToPost =
-            process.env.NODE_ENV === "development" ? TEST_JOB_BOARD : JOB_BOARD;
+            isDevelopment() ? TEST_JOB_BOARD : JOB_BOARD;
         const boardToPost = boards.find(
             (board) => board.name === validBoardToPost
         );
@@ -145,7 +146,7 @@ export default class Job {
         if (similarPostID) {
             similarPost = posts.find((post) => post.id === similarPostID);
             if (!similarPost) {
-                throw new Error(`Post cannot be found`);
+                throw new Error(`Post with ${similarPostID} ID cannot be found`);
             }
         }
 
@@ -210,7 +211,7 @@ export default class Job {
         const jobPosts: PostInfo[] = [];
         const postElements = await this.page.$$(".job-application");
         if (!postElements || !postElements.length)
-            throw new Error("No post found!");
+            throw new Error(`No post found for job ${job.name}`);
 
         for (const postElement of postElements) {
             const jobPostData = await this.jobPost.getJobPostData(postElement);
@@ -223,11 +224,12 @@ export default class Job {
     }
 
     public async getJobName(jobID: number): Promise<string> {
-        await this.page.goto(joinURL(MAIN_URL, `/plans/${jobID}`));
+        const url = joinURL(MAIN_URL, `/plans/${jobID}`);
+        await this.page.goto(url);
 
         const jobTitleElement = await this.page.$(".job-name");
         const jobAnchor = await jobTitleElement?.$("a");
-        if (!jobAnchor) throw new Error("Cannot find the job's name.");
+        if (!jobAnchor) throw new Error(`Cannot find name of the job with ${jobID} ID in the ${url} page.`);
         return await getInnerText(jobAnchor);
     }
 
@@ -274,14 +276,14 @@ export default class Job {
 
         const jobElements = await this.page.$$(".job");
         if (!jobElements || !jobElements.length)
-            throw new Error("No job found.");
+            throw new Error(`No job found in ${url}.`);
 
         for (const jobElement of jobElements) {
             const jobNameElement = await jobElement.$(".job-label-name");
-            if (!jobNameElement) throw new Error("Cannot get job name");
+            if (!jobNameElement) throw new Error(`Cannot get job name in ${url}`);
 
             const nameCell = await jobElement.$(".job-name");
-            if (!nameCell) throw new Error("Cannot get job name cell.");
+            if (!nameCell) throw new Error(`Cannot get job name cell in ${url}.`);
 
             const jobID = await getIDFromURL(nameCell, "a");
             const jobName = await getInnerText(jobNameElement);
@@ -292,9 +294,10 @@ export default class Job {
     }
 
     public async getJobIDFromPost(postID: number) {
-        await this.page.goto(joinURL(MAIN_URL, `/jobapps/${postID}/edit`));
+        const url = joinURL(MAIN_URL, `/jobapps/${postID}/edit`);
+        await this.page.goto(url);
         const jobElement = await this.page.$(".job-name");
-        if (!jobElement) throw new Error("Job cannot be found.");
+        if (!jobElement) throw new Error(`Job cannot be found in ${url}.`);
         return await getIDFromURL(jobElement, "a");
     }
 }

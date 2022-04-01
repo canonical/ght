@@ -3,6 +3,9 @@ import { regions } from "./common/regions";
 import Job from "./automations/Job";
 import SSO from "./automations/SSO";
 import { PROTECTED_JOB_BOARDS } from "./common/constants";
+import { displayError, setupSentry } from "./common/processUtils";
+import UserError from "./common/UserError";
+import { runPrompt } from "./common/commandUtils";
 import { Command, Argument, Option } from "commander";
 import { green } from "colors";
 import ora from "ora";
@@ -13,8 +16,9 @@ async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
     spinner.start("Fetching your jobs.");
     const jobs = await job.getJobs();
     spinner.succeed();
+
     if (jobs.size === 0)
-        throw Error(
+        throw new UserError(
             "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
         );
 
@@ -24,7 +28,7 @@ async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
         choices: [...jobs.keys()],
     });
 
-    const jobName = await prompt.run();
+    const jobName = await runPrompt(prompt);
     return {
         name: jobName,
         id: jobs.get(jobName),
@@ -41,21 +45,24 @@ async function getJobPostInteractive(posts: PostInfo[], message: string) {
     );
 
     if (!uniqueNames.size)
-        throw Error(`No job post found in the Canonical board.`);
+        throw new Error(`No job post found in the Canonical board.`);
 
     const prompt = new Select({
         name: "Job Post",
         message,
         choices: [...uniqueNames],
     });
-    const jobPostName = await prompt.run();
+    const jobPostName = await runPrompt(prompt);
     // Get one of job posts whose name matches with the chosen name. It doesn not matter which one.
     const matchedJobPost = posts.find(
         (post) =>
             post.name === jobPostName &&
             post.boardInfo.name.toUpperCase() === board
     );
-    if (!matchedJobPost) throw Error(`No job post found with given name.`);
+    if (!matchedJobPost)
+        throw new Error(
+            `No job post found with name ${jobPostName} in the ${board} board.`
+        );
 
     return matchedJobPost.id;
 }
@@ -68,7 +75,7 @@ async function getRegionsInteractive(message: string) {
         choices: regionNames,
         validate: (value: string[]) => value.length > 0,
     });
-    const region = await prompt.run();
+    const region = await runPrompt(prompt);
     return region;
 }
 
@@ -85,7 +92,7 @@ async function deletePostsInteractive(
         initial: true,
     });
 
-    const shouldDelete = await prompt.run();
+    const shouldDelete = await runPrompt(prompt);
     if (shouldDelete) {
         await job.deletePosts(jobInfo, regionNames, similar);
     }
@@ -109,21 +116,22 @@ async function addPosts(
         let jobInfo: JobInfo;
         let regionNames = regionsArg;
         let cloneFrom;
+
         if (isInteractive) {
             const { name, id } = await getJobInteractive(
                 job,
                 "What job would you like to create job posts for?",
                 spinner
             );
-            if (!id) throw Error(`Job ID cannot be found.`);
+            if (!id) throw new Error(`Job cannot be found with id ${id}.`);
             jobID = id;
             spinner.start(`Fetching job posts for ${name}.`);
             jobInfo = await job.getJobData(jobID);
-            spinner.succeed();
-            if (jobInfo.posts.length === 0)
-                throw Error(
-                    "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
+            if (!jobInfo.posts.length)
+                throw new Error(
+                    `Job posts cannot be found for ${jobInfo.name}.`
                 );
+            spinner.succeed();
 
             const jobPostID = await getJobPostInteractive(
                 jobInfo.posts,
@@ -137,16 +145,20 @@ async function addPosts(
 
             await deletePostsInteractive(job, jobInfo, regionNames, cloneFrom);
         } else {
-            if (!postIDArg) throw Error(`Job post ID argument is missing.`);
-            if (!regionNames) throw Error(`Region parameter is missing.`);
+            if (!postIDArg)
+                throw new UserError(`Job post ID argument is missing.`);
+            if (!regionNames)
+                throw new UserError(`Region parameter is missing.`);
             cloneFrom = postIDArg;
 
             spinner.start(`Fetching the job information.`);
             jobID = await job.getJobIDFromPost(postIDArg);
             jobInfo = await job.getJobData(jobID);
+            if (!jobInfo.posts.length)
+                throw new Error(
+                    `Job posts cannot be found for ${jobInfo.name}.`
+                );
             spinner.succeed();
-
-            if (jobInfo.posts.length === 0) throw Error("No job post found.");
         }
         // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
         const clonedJobPosts = await job.clonePost(
@@ -168,10 +180,7 @@ async function addPosts(
         );
         console.log("Happy hiring!");
     } catch (error) {
-        const errorMessage = (<Error>error).message;
-        errorMessage
-            ? spinner.fail(`${errorMessage}`)
-            : spinner.fail("An error occurred.");
+        displayError(<Error>error, spinner);
     } finally {
         spinner.stop();
         currentBrowser?.close();
@@ -204,17 +213,16 @@ async function deletePosts(
                 spinner
             );
 
-            if (!id) throw Error(`Job ID cannot be found.`);
+            if (!id) throw new Error(`Job with ${id} cannot be found.`);
             jobID = id;
 
             spinner.start(`Fetching job posts for ${name}.`);
             jobInfo = await job.getJobData(jobID);
-            spinner.succeed();
-
-            if (jobInfo.posts.length === 0)
-                throw Error(
-                    "Only hiring leads can delete job posts. If you are not sure about your hiring role please contact HR."
+            if (!jobInfo.posts.length)
+                throw new Error(
+                    `Job posts cannot be found for ${jobInfo.name}.`
                 );
+            spinner.succeed();
 
             const jobPostID = await getJobPostInteractive(
                 jobInfo.posts,
@@ -235,10 +243,7 @@ async function deletePosts(
 
         console.log("Happy hiring!");
     } catch (error) {
-        const errorMessage = (<Error>error).message;
-        errorMessage
-            ? spinner.fail(`${errorMessage}`)
-            : spinner.fail("An error occurred.");
+        displayError(<Error>error, spinner);
     } finally {
         spinner.stop();
         currentBrowser?.close();
@@ -251,10 +256,7 @@ async function login() {
     try {
         await sso.login();
     } catch (error) {
-        const errorMessage = (<Error>error).message;
-        errorMessage
-            ? spinner.fail(`${errorMessage}`)
-            : spinner.fail("An error occurred.");
+        displayError(<Error>error, spinner);
     } finally {
         spinner.stop();
     }
@@ -266,20 +268,20 @@ function logout() {
     try {
         sso.logout();
     } catch (error) {
-        const errorMessage = (<Error>error).message;
-        errorMessage
-            ? spinner.fail(`${errorMessage}`)
-            : spinner.fail("An error occurred.");
+        displayError(<Error>error, spinner);
     } finally {
         spinner.stop();
     }
 }
 
 async function main() {
+    setupSentry();
+
     const program = new Command();
     const validateNumberParam = (param: string, fieldName: string) => {
         const intValue = parseInt(param);
-        if (isNaN(intValue)) throw new Error(`${fieldName} must be a number`);
+        if (isNaN(intValue))
+            throw new UserError(`${fieldName} must be a number`);
         return intValue;
     };
 
@@ -288,7 +290,7 @@ async function main() {
             ...new Set(param.split(",").map((value) => value.trim())),
         ];
         enteredRegions.forEach((enteredRegion) => {
-            if (!regions[enteredRegion]) throw new Error(`Invalid region.`);
+            if (!regions[enteredRegion]) throw new UserError(`Invalid region.`);
         });
 
         return enteredRegions;

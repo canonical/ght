@@ -1,5 +1,5 @@
 name: ght
-version: "1.0.0"
+version: "1.0.2"
 summary: Perform actions in Canonical's Greenhouse automatically.
 description: An automated browser that does a set of tasks on Canonical's Greenhouse dashboard without the need of interaction with the UI.
 base: core20
@@ -25,7 +25,6 @@ parts:
             yarn build
             # this causes PROT_EXEC problem
             rm ./node_modules/puppeteer/.local-chromium/linux-*/chrome-linux/nacl_irt_*.nexe
-            cp ./greenhouse.js ./dist/ght
             cp -a ./dist/. $SNAPCRAFT_PART_INSTALL/
             cp -r ./node_modules $SNAPCRAFT_PART_INSTALL
         stage-packages:

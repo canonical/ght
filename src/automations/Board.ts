@@ -21,7 +21,7 @@ export default class Board {
                 method: "GET",
             },
             "Failed to get boards",
-            (queryResult) => !queryResult
+            (queryResult) => !!queryResult
         );
 
         return response["job_boards"].map((board: any) => ({
