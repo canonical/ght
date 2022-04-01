@@ -9,7 +9,7 @@ import {
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
 import { regions } from "../common/regions";
 import { JobInfo, PostInfo } from "../common/types";
-import { isDevelopment } from "../common/processUtils";
+import { evaluate, isDevelopment } from "../common/processUtils";
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
 
@@ -241,56 +241,59 @@ export default class Job {
             : 1;
     }
 
-    private async getPaginationElementText() {
-        const paginationElement = await this.page.$("#jobs_pagination");
-        if (!paginationElement) throw new Error("Pagination element cannot be found.");
-        return await getInnerText(paginationElement);
+    private async getJobsFromPage(page: number) {
+        const url = joinURL(MAIN_URL, `/alljobs/list?page=${page}`);
+        await this.page.goto(url);
+
+        const body = await this.page.$("body");
+        const innerHTML = await body?.evaluate(element =>  element.innerHTML);
+        if(!innerHTML)
+            throw new Error(`Jobs cannot be found from ${url}`);
+
+        return await evaluate(this.page, ({htmlAsStr}) => {
+            const domParser = new DOMParser();
+            const root = domParser.parseFromString(htmlAsStr, "text/html");
+            const jobElements = root.querySelectorAll("a.target");
+            const jobInfo: {[jobName: string]: number} = {};
+            for (const item of jobElements) {
+                if (item.getAttribute("title")){
+                    const url = item.getAttribute("href");
+                    if (!url) 
+                        throw new Error(`Cannot get ID from ${url}.`);
+                    const urlParts: string[] = url.split("/");
+                    const id = parseInt(urlParts[urlParts.length - 1]);
+                    const nameElement = item.querySelector(".cell-text.job-label-name");
+                    if (!nameElement) 
+                        throw new Error(`Cannot get job name.`);
+                    
+                    jobInfo[nameElement.innerHTML] = id;
+                }
+            }
+            return jobInfo;
+        }, {htmlAsStr: JSON.parse(decodeURIComponent(innerHTML))["html"]});
     }
 
     private async loadAllJobs() {
-        await this.page.waitForSelector(".job");
-        let morePageButton = await this.page.$("#show_more_jobs");
-        let pageText;
-        while (morePageButton) {
-            pageText = await this.getPaginationElementText();
-            morePageButton.click();
-            await this.page.waitForFunction(
-                (pageText: string) => {
-                    const innerText =
-                        document.getElementById("jobs_pagination")?.innerText;
-                    return pageText !== innerText;
-                },
-                {},
-                pageText
-            );
-            morePageButton = await this.page.$("#show_more_jobs");
+        let page = 1;
+        let jobs: {[jobName: string]: number} = {}
+        let retrievedJobs: {[jobName: string]: number} = {};
+        let hasPage = true;
+
+        while(hasPage) {
+            retrievedJobs = await this.getJobsFromPage(page);
+            if (!Object.keys(retrievedJobs).length)
+                hasPage = false;
+            else {
+                jobs = {...jobs, ...retrievedJobs};
+                page += 1;
+            } 
         }
+        return jobs;
     }
 
     public async getJobs() {
-        const jobs = new Map<string, number>();
-        const url = joinURL(MAIN_URL, "/alljobs");
-        await this.page.goto(url);
-
-        await this.loadAllJobs();
-
-        const jobElements = await this.page.$$(".job");
-        if (!jobElements || !jobElements.length)
-            throw new Error(`No job found in ${url}.`);
-
-        for (const jobElement of jobElements) {
-            const jobNameElement = await jobElement.$(".job-label-name");
-            if (!jobNameElement) throw new Error(`Cannot get job name in ${url}`);
-
-            const nameCell = await jobElement.$(".job-name");
-            if (!nameCell) throw new Error(`Cannot get job name cell in ${url}.`);
-
-            const jobID = await getIDFromURL(nameCell, "a");
-            const jobName = await getInnerText(jobNameElement);
-            jobs.set(jobName, jobID);
-        }
-
-        return jobs;
+        const jobs = await this.loadAllJobs();
+        return new Map(Object.entries(jobs));
     }
 
     public async getJobIDFromPost(postID: number) {
