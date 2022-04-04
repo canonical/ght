@@ -5,6 +5,20 @@ import { Page } from "puppeteer";
 const STATUS_COLUMN_SELECTOR = ".person .toggle-interviews";
 const WRITTEN_INTERVIEW_SELECTOR = ".edit-take-home-test-graders-link";
 
+const STAGES = [
+    "Application Review",
+    "Written Interview",
+    "Psychometric Assessment",
+    "Meet & Greet",
+    "Technical Exercise",
+    "Early Stage Interviews",
+    "HR Interview",
+    "Late Stage Interviews",
+    "Pre-Offer Checklist",
+    "Executive Review",
+    "Offer",
+];
+
 export async function writtenInterviews(
     page: Page,
     planId: string,
@@ -14,10 +28,12 @@ export async function writtenInterviews(
 
     let url = joinURL(
         MAIN_URL,
-        `plans/${planId}/candidates?sort=last_activity+desc&type=all&job_status=all`
-        // ?hiring_plan_id=${planId}&job_status=open&sort=last_activity+desc&stage_status_id=2&type=all`
+        `/plans/${planId}/candidates?hiring_plan_id[]=${planId}&job_status=open&sort=last_activity+desc&stage_status_id=2&type=all`
     );
     if (pageNumber) url = `${url}&page=${pageNumber}`;
+    STAGES.slice(1).forEach(
+        (stage) => (url = `${url}&in_stages[]=${encodeURIComponent(stage)}`)
+    );
     await page.goto(url, {
         waitUntil: "networkidle2",
     });
@@ -25,10 +41,7 @@ export async function writtenInterviews(
     // expand all tasks
     page.evaluate(
         ({ selector }) => {
-            document.querySelectorAll(selector).forEach((e) => {
-                // only expand written applications
-                if (e.textContent.match(/ due from /i)) e.click();
-            });
+            document.querySelectorAll(selector).forEach((e) => e.click());
         },
         { selector: STATUS_COLUMN_SELECTOR }
     );

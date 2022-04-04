@@ -10,9 +10,9 @@ async function main() {
         concurrency: Cluster.CONCURRENCY_PAGE,
         // for CONCURRENCY_PAGE, max concurrency is the max amount of tabs open
         maxConcurrency: 5,
-        monitor: true, // show interactif log (set to false in prod)
+        monitor: false, // show interactif log (set to false in prod)
         timeout: 30000, // fail a task after 30 seconds
-        puppeteerOptions: { headless: false },
+        puppeteerOptions: { headless: true },
     });
 
     await cluster.task(
