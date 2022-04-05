@@ -4,6 +4,7 @@ import {
     JOB_BOARD,
     MAIN_URL,
     PROTECTED_JOB_BOARDS,
+    RECRUITER,
     TEST_JOB_BOARD,
 } from "../common/constants";
 import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
@@ -255,13 +256,26 @@ export default class Job {
 
         return await evaluate(
             this.page,
-            ({ htmlAsStr }) => {
+            ({ htmlAsStr, recruiterTag }) => {
                 const domParser = new DOMParser();
                 const root = domParser.parseFromString(htmlAsStr, "text/html");
                 const jobElements = root.querySelectorAll("a.target");
                 const jobInfo: { [jobName: string]: number } = {};
                 for (const item of jobElements) {
                     if (item.getAttribute("title")) {
+                        const tags = item.querySelectorAll(".job-tag.role");
+                        let isRecruiter = false;
+                        for (const tag of tags) {
+                            const recruiterCheck = tag.innerHTML.match(
+                                new RegExp(recruiterTag, "i")
+                            );
+                            if (recruiterCheck) {
+                                isRecruiter = true;
+                                break;
+                            }
+                        }
+
+                        if (!isRecruiter) continue;
                         const url = item.getAttribute("href");
                         if (!url) throw new Error(`Cannot get ID from ${url}.`);
                         const urlParts: string[] = url.split("/");
@@ -277,7 +291,10 @@ export default class Job {
                 }
                 return jobInfo;
             },
-            { htmlAsStr: JSON.parse(decodeURIComponent(innerHTML))["html"] }
+            {
+                htmlAsStr: JSON.parse(decodeURIComponent(innerHTML))["html"],
+                recruiterTag: RECRUITER,
+            }
         );
     }
 
