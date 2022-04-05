@@ -62,8 +62,7 @@ export default class Job {
 
         // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
         const boards = await this.board.getBoards();
-        const validBoardToPost =
-            isDevelopment() ? TEST_JOB_BOARD : JOB_BOARD;
+        const validBoardToPost = isDevelopment() ? TEST_JOB_BOARD : JOB_BOARD;
         const boardToPost = boards.find(
             (board) => board.name === validBoardToPost
         );
@@ -138,15 +137,17 @@ export default class Job {
     }
 
     private filterPostsToDelete(
-        similarPostID: number,
-        enteredRegions: string[],
-        posts: PostInfo[]
+        posts: PostInfo[],
+        similarPostID?: number,
+        enteredRegions?: string[]
     ) {
         let similarPost;
         if (similarPostID) {
             similarPost = posts.find((post) => post.id === similarPostID);
             if (!similarPost) {
-                throw new Error(`Post with ${similarPostID} ID cannot be found`);
+                throw new Error(
+                    `Post with ${similarPostID} ID cannot be found`
+                );
             }
         }
 
@@ -179,16 +180,16 @@ export default class Job {
 
     public async deletePosts(
         jobData: JobInfo,
-        enteredRegions: string[],
-        similarPostID: number
+        enteredRegions?: string[],
+        similarPostID?: number
     ) {
         this.spinner.start(`Starting to delete job posts.`);
         const posts: PostInfo[] = jobData.posts;
 
         const postToDelete = this.filterPostsToDelete(
+            posts,
             similarPostID,
-            enteredRegions,
-            posts
+            enteredRegions
         );
 
         const referrer = joinURL(MAIN_URL, `/plans/${jobData.id}/jobapp`);
@@ -229,7 +230,10 @@ export default class Job {
 
         const jobTitleElement = await this.page.$(".job-name");
         const jobAnchor = await jobTitleElement?.$("a");
-        if (!jobAnchor) throw new Error(`Cannot find name of the job with ${jobID} ID in the ${url} page.`);
+        if (!jobAnchor)
+            throw new Error(
+                `Cannot find name of the job with ${jobID} ID in the ${url} page.`
+            );
         return await getInnerText(jobAnchor);
     }
 
@@ -246,47 +250,50 @@ export default class Job {
         await this.page.goto(url);
 
         const body = await this.page.$("body");
-        const innerHTML = await body?.evaluate(element =>  element.innerHTML);
-        if(!innerHTML)
-            throw new Error(`Jobs cannot be found from ${url}`);
+        const innerHTML = await body?.evaluate((element) => element.innerHTML);
+        if (!innerHTML) throw new Error(`Jobs cannot be found from ${url}`);
 
-        return await evaluate(this.page, ({htmlAsStr}) => {
-            const domParser = new DOMParser();
-            const root = domParser.parseFromString(htmlAsStr, "text/html");
-            const jobElements = root.querySelectorAll("a.target");
-            const jobInfo: {[jobName: string]: number} = {};
-            for (const item of jobElements) {
-                if (item.getAttribute("title")){
-                    const url = item.getAttribute("href");
-                    if (!url) 
-                        throw new Error(`Cannot get ID from ${url}.`);
-                    const urlParts: string[] = url.split("/");
-                    const id = parseInt(urlParts[urlParts.length - 1]);
-                    const nameElement = item.querySelector(".cell-text.job-label-name");
-                    if (!nameElement) 
-                        throw new Error(`Cannot get job name.`);
-                    
-                    jobInfo[nameElement.innerHTML] = id;
+        return await evaluate(
+            this.page,
+            ({ htmlAsStr }) => {
+                const domParser = new DOMParser();
+                const root = domParser.parseFromString(htmlAsStr, "text/html");
+                const jobElements = root.querySelectorAll("a.target");
+                const jobInfo: { [jobName: string]: number } = {};
+                for (const item of jobElements) {
+                    if (item.getAttribute("title")) {
+                        const url = item.getAttribute("href");
+                        if (!url) throw new Error(`Cannot get ID from ${url}.`);
+                        const urlParts: string[] = url.split("/");
+                        const id = parseInt(urlParts[urlParts.length - 1]);
+                        const nameElement = item.querySelector(
+                            ".cell-text.job-label-name"
+                        );
+                        if (!nameElement)
+                            throw new Error(`Cannot get job name.`);
+
+                        jobInfo[nameElement.innerHTML] = id;
+                    }
                 }
-            }
-            return jobInfo;
-        }, {htmlAsStr: JSON.parse(decodeURIComponent(innerHTML))["html"]});
+                return jobInfo;
+            },
+            { htmlAsStr: JSON.parse(decodeURIComponent(innerHTML))["html"] }
+        );
     }
 
     private async loadAllJobs() {
         let page = 1;
-        let jobs: {[jobName: string]: number} = {}
-        let retrievedJobs: {[jobName: string]: number} = {};
+        let jobs: { [jobName: string]: number } = {};
+        let retrievedJobs: { [jobName: string]: number } = {};
         let hasPage = true;
 
-        while(hasPage) {
+        while (hasPage) {
             retrievedJobs = await this.getJobsFromPage(page);
-            if (!Object.keys(retrievedJobs).length)
-                hasPage = false;
+            if (!Object.keys(retrievedJobs).length) hasPage = false;
             else {
-                jobs = {...jobs, ...retrievedJobs};
+                jobs = { ...jobs, ...retrievedJobs };
                 page += 1;
-            } 
+            }
         }
         return jobs;
     }

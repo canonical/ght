@@ -250,6 +250,53 @@ async function deletePosts(
     }
 }
 
+async function resetPosts(isInteractive: boolean, jobIDArg: number) {
+    const spinner = ora();
+    const sso = new SSO(spinner);
+    let currentBrowser;
+
+    try {
+        const { browser, page } = await sso.authenticate();
+        currentBrowser = browser;
+
+        const job = new Job(page, spinner);
+        let jobID = jobIDArg;
+        let jobInfo: JobInfo;
+
+        if (isInteractive) {
+            const { name, id } = await getJobInteractive(
+                job,
+                "What job would you like to delete all job posts from?",
+                spinner
+            );
+
+            if (!id) throw new Error(`Job with ${id} cannot be found.`);
+            jobID = id;
+
+            spinner.start(`Fetching job posts for ${name}.`);
+            jobInfo = await job.getJobData(jobID);
+            if (!jobInfo.posts.length)
+                throw new Error(
+                    `Job posts cannot be found for ${jobInfo.name}.`
+                );
+            spinner.succeed();
+        } else {
+            if (!jobID) throw new UserError(`Job ID argument is missing.`);
+
+            spinner.start(`Fetching the job information.`);
+            jobInfo = await job.getJobData(jobID);
+            spinner.succeed();
+        }
+        await job.deletePosts(jobInfo);
+        console.log("Happy hiring!");
+    } catch (error) {
+        displayError(<Error>error, spinner);
+    } finally {
+        spinner.stop();
+        currentBrowser?.close();
+    }
+}
+
 async function login() {
     const spinner = ora();
     const sso = new SSO(spinner);
@@ -303,12 +350,18 @@ async function main() {
 
     const replicateCommand = program.command("replicate");
     const deletePostsCommand = program.command("delete-posts");
+    const resetPostsCommand = program.command("reset");
     const loginCommand = program.command("login");
     const logoutCommand = program.command("logout");
 
     program.configureHelp({
         visibleCommands: () => {
-            return [replicateCommand, loginCommand, logoutCommand];
+            return [
+                replicateCommand,
+                resetPostsCommand,
+                loginCommand,
+                logoutCommand,
+            ];
         },
     });
 
@@ -347,9 +400,9 @@ async function main() {
 
     deletePostsCommand
         .usage(
-            "([-i | --interactive] | <job-id> --regions=<region-name>[, <region-name-2>...])" +
-                " \n\n Examples: \n\t greenhouse delete-posts --interactive " +
-                "\n\t greenhouse delete-posts 1234 --regions=emea,americas"
+            "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
+                " \n\n Examples: \n\t ght delete-posts --interactive " +
+                "\n\t ght delete-posts 1234 --regions=emea,americas"
         )
         .description("Delete job posts of the given job")
         .addArgument(
@@ -373,6 +426,30 @@ async function main() {
         )
         .action(async (jobPostID, options) => {
             await deletePosts(options.interactive, jobPostID, options.regions);
+        });
+
+    resetPostsCommand
+        .usage(
+            "([-i | --interactive] | <job-id>" +
+                " \n\n Examples: \n\t ght reset --interactive " +
+                "\n\t ght reset 1234"
+        )
+        .description("Delete all job posts of the given job")
+        .addArgument(
+            new Argument(
+                "<job-id>",
+                "Job ID of the job that will be reset"
+            )
+                .argOptional()
+                .argParser((value: string) =>
+                    validateNumberParam(value, "job-id")
+                )
+        )
+        .addOption(
+            new Option("-i, --interactive", "Enable interactive interface")
+        )
+        .action(async (jobID, options) => {
+            await resetPosts(options.interactive, jobID);
         });
 
     loginCommand.description("Login and save credentials").action(async () => {
