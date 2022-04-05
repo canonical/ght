@@ -266,7 +266,7 @@ async function resetPosts(isInteractive: boolean, jobIDArg: number) {
         if (isInteractive) {
             const { name, id } = await getJobInteractive(
                 job,
-                "What job would you like to delete job posts from?",
+                "What job would you like to delete all job posts from?",
                 spinner
             );
 
