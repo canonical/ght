@@ -434,7 +434,7 @@ async function main() {
                 " \n\n Examples: \n\t ght reset --interactive " +
                 "\n\t ght reset 1234"
         )
-        .description("Delete job posts of the given job")
+        .description("Delete all job posts of the given job")
         .addArgument(
             new Argument(
                 "<job-id>",
