@@ -438,7 +438,7 @@ async function main() {
         .addArgument(
             new Argument(
                 "<job-id>",
-                "Delete job posts that have same name with the given post"
+                "Job ID of the job that will be reset"
             )
                 .argOptional()
                 .argParser((value: string) =>
