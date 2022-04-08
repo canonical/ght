@@ -301,7 +301,7 @@ export default class Job {
 
         return {
             jobs,
-            hasMorePage: !!content["pagination"].replace(/\n/g, ""),
+            hasMorePage: !!content["pagination"]?.replace(/\n/g, ""),
         };
     }
 
