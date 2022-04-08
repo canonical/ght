@@ -254,7 +254,9 @@ export default class Job {
         const innerHTML = await body?.evaluate((element) => element.innerHTML);
         if (!innerHTML) throw new Error(`Jobs cannot be found from ${url}`);
 
-        return await evaluate(
+        const content = JSON.parse(decodeURIComponent(innerHTML));
+
+        const jobs = await evaluate(
             this.page,
             ({ htmlAsStr, recruiterTag }) => {
                 const domParser = new DOMParser();
@@ -292,10 +294,15 @@ export default class Job {
                 return jobInfo;
             },
             {
-                htmlAsStr: JSON.parse(decodeURIComponent(innerHTML))["html"],
+                htmlAsStr: content["html"],
                 recruiterTag: RECRUITER,
             }
         );
+
+        return {
+            jobs,
+            hasMorePage: !!content["pagination"].replace(/\n/g, ""),
+        };
     }
 
     private async loadAllJobs() {
@@ -305,12 +312,11 @@ export default class Job {
         let hasPage = true;
 
         while (hasPage) {
-            retrievedJobs = await this.getJobsFromPage(page);
-            if (!Object.keys(retrievedJobs).length) hasPage = false;
-            else {
-                jobs = { ...jobs, ...retrievedJobs };
-                page += 1;
-            }
+            const pageInformation = await this.getJobsFromPage(page);
+            retrievedJobs = pageInformation.jobs;
+            hasPage = pageInformation.hasMorePage;
+            jobs = { ...jobs, ...retrievedJobs };
+            page += 1;
         }
         return jobs;
     }
