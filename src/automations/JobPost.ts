@@ -21,7 +21,8 @@ export default class JobPost {
 
     public async getJobPostData(post: ElementHandle) {
         const postTitle = await post.$(".job-application__name");
-        if (!postTitle) throw new Error(`Post title cannot be found in ${this.page.url}`);
+        if (!postTitle)
+            throw new Error(`Post title cannot be found in ${this.page.url()}`);
 
         const innerText = await getInnerText(postTitle);
         const titleLocationInfo = innerText
@@ -35,10 +36,14 @@ export default class JobPost {
             (el) => el?.getAttribute("data-job-id"),
             triggerBox
         );
-        if (!jobPostID) throw new Error(`Post information cannot be found in ${this.page.url}.`);
+        if (!jobPostID)
+            throw new Error(
+                `Post information cannot be found in ${this.page.url()}.`
+            );
 
         const postBoard = await post.$(".board-column");
-        if (!postBoard) throw new Error(`Post board cannot be found in ${this.page.url}`);
+        if (!postBoard)
+            throw new Error(`Post board cannot be found in ${this.page.url()}`);
 
         const boardName = await getInnerText(postBoard);
         const boardID = await getIDFromURL(postBoard, "a");
@@ -127,7 +132,9 @@ export default class JobPost {
         );
 
         if (!response) {
-            throw new Error(`Failed to retrieve location information for ${cityName}.`);
+            throw new Error(
+                `Failed to retrieve location information for ${cityName}.`
+            );
         }
 
         const locationInfoList = response["features"];
