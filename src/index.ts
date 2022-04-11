@@ -335,8 +335,8 @@ function configureDeleteCommand(command: Command, sso: SSO, spinner: Ora) {
         .command("delete-posts")
         .usage(
             "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
-                " \n\n Examples: \n\t ght delete-posts --interactive " +
-                "\n\t ght delete-posts 1234 --regions=emea,americas"
+                " \n\n Examples: \n\t ght reset --interactive " +
+                "\n\t ght reset 1234 --regions=emea,americas"
         )
         .description("Delete job posts of the given job")
         .addArgument(
