@@ -81,7 +81,7 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Americas, San José, San José, Costa Rica",
         "Home based - Americas, Santiago",
         "Home based - Americas, São Paulo",
-        "Home based - Americas, Waterloo Ontario",
+        "Home based - Americas, Waterloo, Ontario",
     ],
     emea: [
         "Home based - Africa, Accra",
