@@ -81,6 +81,7 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Americas, San José, San José, Costa Rica",
         "Home based - Americas, Santiago",
         "Home based - Americas, São Paulo",
+        "Home based - Americas, Waterloo Ontario",
     ],
     emea: [
         "Home based - Africa, Accra",
@@ -132,6 +133,9 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Europe, Warsaw",
         "Home based - Europe, Wrocław",
         "Home based - Europe, Zagreb",
+        "Home based - Europe, Malaga",
+        "Home based - Europe, Valencia",
+        "Home based - Europe, Tartu",
     ],
     apac: [
         "Home based - Asia Pacific, Adelaide",
@@ -164,5 +168,9 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Asia Pacific, Wellington",
         "Home based - Asia Pacific, Wuhan",
         "Home based - Asia Pacific, Xiamen",
+        "Home based - Asia Pacific, Fukuoka",
+        "Home based - Asia Pacific, Kyoto",
+        "Home based - Asia Pacific, Nagoya",
+        "Home based - Asia Pacific, Osaka",
     ],
 };
