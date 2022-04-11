@@ -87,7 +87,9 @@ export default class JobPost {
     }
 
     public async getLocationInfo(location: string, jobPostID: number) {
-        const cityName = location.split(",")[1];
+        const locationArr = location.split(",");
+        locationArr.shift();
+        const cityName = locationArr.reduce((str1, str2) => `${str1}, ${str2}`);
 
         await this.page.goto(joinURL(MAIN_URL, `/jobapps/${jobPostID}/edit`));
         const accessTokenElement = await this.page.$(
