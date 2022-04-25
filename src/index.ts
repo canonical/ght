@@ -8,11 +8,12 @@ import UserError from "./common/UserError";
 import { runPrompt } from "./common/commandUtils";
 import { Command, Argument, Option } from "commander";
 import { green } from "colors";
-import ora from "ora";
+import ora, { Ora } from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
+import { Browser, Page } from "puppeteer";
 
-async function getJobInteractive(job: Job, message: string, spinner: ora.Ora) {
+async function getJobInteractive(job: Job, message: string, spinner: Ora) {
     spinner.start("Fetching your jobs.");
     const jobs = await job.getJobs();
     spinner.succeed();
@@ -99,273 +100,186 @@ async function deletePostsInteractive(
 }
 
 async function addPosts(
+    page: Page,
+    spinner: Ora,
     isInteractive: boolean,
     postIDArg: number,
     regionsArg: string[]
 ) {
-    const spinner = ora();
-    let currentBrowser;
+    const job = new Job(page, spinner);
 
-    try {
-        const sso = new SSO(spinner);
-        const { browser, page } = await sso.authenticate();
-        currentBrowser = browser;
-        const job = new Job(page, spinner);
+    let jobID;
+    let jobInfo: JobInfo;
+    let regionNames = regionsArg;
+    let cloneFrom;
 
-        let jobID;
-        let jobInfo: JobInfo;
-        let regionNames = regionsArg;
-        let cloneFrom;
+    if (isInteractive) {
+        const { name, id } = await getJobInteractive(
+            job,
+            "What job would you like to create job posts for?",
+            spinner
+        );
+        if (!id) throw new Error(`Job cannot be found with id ${id}.`);
+        jobID = id;
+        spinner.start(`Fetching job posts for ${name}.`);
+        jobInfo = await job.getJobData(jobID);
+        if (!jobInfo.posts.length)
+            throw new Error(`Job posts cannot be found for ${jobInfo.name}.`);
+        spinner.succeed();
 
-        if (isInteractive) {
-            const { name, id } = await getJobInteractive(
-                job,
-                "What job would you like to create job posts for?",
-                spinner
-            );
-            if (!id) throw new Error(`Job cannot be found with id ${id}.`);
-            jobID = id;
-            spinner.start(`Fetching job posts for ${name}.`);
-            jobInfo = await job.getJobData(jobID);
-            if (!jobInfo.posts.length)
-                throw new Error(
-                    `Job posts cannot be found for ${jobInfo.name}.`
-                );
-            spinner.succeed();
-
-            const jobPostID = await getJobPostInteractive(
-                jobInfo.posts,
-                "What job post should be copied?"
-            );
-            cloneFrom = jobPostID;
-
-            regionNames = await getRegionsInteractive(
-                "What region should those job posts be? Use space to make a selection."
-            );
-
-            await deletePostsInteractive(job, jobInfo, regionNames, cloneFrom);
-        } else {
-            if (!postIDArg)
-                throw new UserError(`Job post ID argument is missing.`);
-            if (!regionNames)
-                throw new UserError(`Region parameter is missing.`);
-            cloneFrom = postIDArg;
-
-            spinner.start(`Fetching the job information.`);
-            jobID = await job.getJobIDFromPost(postIDArg);
-            jobInfo = await job.getJobData(jobID);
-            if (!jobInfo.posts.length)
-                throw new Error(
-                    `Job posts cannot be found for ${jobInfo.name}.`
-                );
-            spinner.succeed();
-        }
-        // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
-        const clonedJobPosts = await job.clonePost(
+        const jobPostID = await getJobPostInteractive(
             jobInfo.posts,
-            regionNames,
-            cloneFrom
+            "What job post should be copied?"
         );
-        // Mark all newly added job posts as live
-        const processedJobCount = await job.markAsLive(jobID, jobInfo.posts);
+        cloneFrom = jobPostID;
 
-        console.log(
-            green("✔"),
-            `${processedJobCount} job posts for ${clonedJobPosts
-                .map((post) => post.name)
-                .reduce(
-                    (previousValue, currentValue) =>
-                        previousValue + ", " + currentValue
-                )} of ${jobInfo.name} were created in ${regionNames}`
+        regionNames = await getRegionsInteractive(
+            "What region should those job posts be? Use space to make a selection."
         );
-        console.log("Happy hiring!");
-    } catch (error) {
-        displayError(<Error>error, spinner);
-    } finally {
-        spinner.stop();
-        currentBrowser?.close();
+
+        await deletePostsInteractive(job, jobInfo, regionNames, cloneFrom);
+    } else {
+        if (!postIDArg) throw new UserError(`Job post ID argument is missing.`);
+        if (!regionNames) throw new UserError(`Region parameter is missing.`);
+        cloneFrom = postIDArg;
+
+        spinner.start(`Fetching the job information.`);
+        jobID = await job.getJobIDFromPost(postIDArg);
+        jobInfo = await job.getJobData(jobID);
+        if (!jobInfo.posts.length)
+            throw new Error(`Job posts cannot be found for ${jobInfo.name}.`);
+        spinner.succeed();
     }
+    // Process updates for each 'Canonical' job unless a "clone-from" argument is passed
+    const clonedJobPosts = await job.clonePost(
+        jobInfo.posts,
+        regionNames,
+        cloneFrom
+    );
+    // Mark all newly added job posts as live
+    const processedJobCount = await job.markAsLive(jobID, jobInfo.posts);
+
+    console.log(
+        green("✔"),
+        `${processedJobCount} job posts for ${clonedJobPosts
+            .map((post) => post.name)
+            .reduce(
+                (previousValue, currentValue) =>
+                    previousValue + ", " + currentValue
+            )} of ${jobInfo.name} were created in ${regionNames}`
+    );
+    console.log("Happy hiring!");
 }
 
 async function deletePosts(
+    spinner: Ora,
+    page: Page,
     isInteractive: boolean,
     jobPostIDArg: number,
     regionsArg: string[]
 ) {
-    const spinner = ora();
-    const sso = new SSO(spinner);
-    let currentBrowser;
+    const job = new Job(page, spinner);
+    let jobID;
+    let jobInfo: JobInfo;
+    let regionNames = regionsArg;
+    let postID = jobPostIDArg;
 
-    try {
-        const { browser, page } = await sso.authenticate();
-        currentBrowser = browser;
+    if (isInteractive) {
+        const { name, id } = await getJobInteractive(
+            job,
+            "What job would you like to delete job posts from?",
+            spinner
+        );
 
-        const job = new Job(page, spinner);
-        let jobID;
-        let jobInfo: JobInfo;
-        let regionNames = regionsArg;
-        let postID = jobPostIDArg;
+        if (!id) throw new Error(`Job with ${id} cannot be found.`);
+        jobID = id;
 
-        if (isInteractive) {
-            const { name, id } = await getJobInteractive(
-                job,
-                "What job would you like to delete job posts from?",
-                spinner
-            );
+        spinner.start(`Fetching job posts for ${name}.`);
+        jobInfo = await job.getJobData(jobID);
+        if (!jobInfo.posts.length)
+            throw new Error(`Job posts cannot be found for ${jobInfo.name}.`);
+        spinner.succeed();
 
-            if (!id) throw new Error(`Job with ${id} cannot be found.`);
-            jobID = id;
+        const jobPostID = await getJobPostInteractive(
+            jobInfo.posts,
+            "Which job posts should be deleted?"
+        );
+        postID = jobPostID;
 
-            spinner.start(`Fetching job posts for ${name}.`);
-            jobInfo = await job.getJobData(jobID);
-            if (!jobInfo.posts.length)
-                throw new Error(
-                    `Job posts cannot be found for ${jobInfo.name}.`
-                );
-            spinner.succeed();
-
-            const jobPostID = await getJobPostInteractive(
-                jobInfo.posts,
-                "Which job posts should be deleted?"
-            );
-            postID = jobPostID;
-
-            regionNames = await getRegionsInteractive(
-                "What region should the job posts be deleted from? Use space to make a selection."
-            );
-        } else {
-            spinner.start(`Fetching the job information.`);
-            jobID = await job.getJobIDFromPost(postID);
-            jobInfo = await job.getJobData(jobID);
-            spinner.succeed();
-        }
-        await job.deletePosts(jobInfo, regionNames, postID);
-
-        console.log("Happy hiring!");
-    } catch (error) {
-        displayError(<Error>error, spinner);
-    } finally {
-        spinner.stop();
-        currentBrowser?.close();
+        regionNames = await getRegionsInteractive(
+            "What region should the job posts be deleted from? Use space to make a selection."
+        );
+    } else {
+        spinner.start(`Fetching the job information.`);
+        jobID = await job.getJobIDFromPost(postID);
+        jobInfo = await job.getJobData(jobID);
+        spinner.succeed();
     }
+    await job.deletePosts(jobInfo, regionNames, postID);
+
+    console.log("Happy hiring!");
 }
 
-async function resetPosts(isInteractive: boolean, jobIDArg: number) {
-    const spinner = ora();
-    const sso = new SSO(spinner);
-    let currentBrowser;
+async function resetPosts(
+    spinner: Ora,
+    page: Page,
+    isInteractive: boolean,
+    jobIDArg: number
+) {
+    const job = new Job(page, spinner);
+    let jobID = jobIDArg;
+    let jobInfo: JobInfo;
 
-    try {
-        const { browser, page } = await sso.authenticate();
-        currentBrowser = browser;
+    if (isInteractive) {
+        const { name, id } = await getJobInteractive(
+            job,
+            "What job would you like to delete all job posts from?",
+            spinner
+        );
 
-        const job = new Job(page, spinner);
-        let jobID = jobIDArg;
-        let jobInfo: JobInfo;
+        if (!id) throw new Error(`Job with ${id} cannot be found.`);
+        jobID = id;
 
-        if (isInteractive) {
-            const { name, id } = await getJobInteractive(
-                job,
-                "What job would you like to delete all job posts from?",
-                spinner
+        spinner.start(`Fetching job posts for ${name}.`);
+        jobInfo = await job.getJobData(jobID);
+        if (!jobInfo.posts.length)
+            throw new Error(`Job posts cannot be found for ${jobInfo.name}.`);
+        spinner.succeed();
+    } else {
+        if (!jobID) throw new UserError(`Job ID argument is missing.`);
+
+        spinner.start(`Fetching the job information.`);
+        jobInfo = await job.getJobData(jobID);
+        spinner.succeed();
+    }
+    await job.deletePosts(jobInfo);
+    console.log("Happy hiring!");
+}
+
+function validateNumberParam (param: string, fieldName: string) {
+    const intValue = parseInt(param);
+    if (isNaN(intValue)) throw new UserError(`${fieldName} must be a number`);
+    return intValue;
+};
+
+function validateRegionParam (param: string) {
+    const enteredRegions: string[] = [
+        ...new Set(param.split(",").map((value) => value.trim())),
+    ];
+
+    enteredRegions.forEach((enteredRegion) => {
+        if (!regions[enteredRegion])
+            throw new UserError(
+                `Invalid region, available regions are: americas, apac, emea.`
             );
-
-            if (!id) throw new Error(`Job with ${id} cannot be found.`);
-            jobID = id;
-
-            spinner.start(`Fetching job posts for ${name}.`);
-            jobInfo = await job.getJobData(jobID);
-            if (!jobInfo.posts.length)
-                throw new Error(
-                    `Job posts cannot be found for ${jobInfo.name}.`
-                );
-            spinner.succeed();
-        } else {
-            if (!jobID) throw new UserError(`Job ID argument is missing.`);
-
-            spinner.start(`Fetching the job information.`);
-            jobInfo = await job.getJobData(jobID);
-            spinner.succeed();
-        }
-        await job.deletePosts(jobInfo);
-        console.log("Happy hiring!");
-    } catch (error) {
-        displayError(<Error>error, spinner);
-    } finally {
-        spinner.stop();
-        currentBrowser?.close();
-    }
-}
-
-async function login() {
-    const spinner = ora();
-    const sso = new SSO(spinner);
-    try {
-        await sso.login();
-    } catch (error) {
-        displayError(<Error>error, spinner);
-    } finally {
-        spinner.stop();
-    }
-}
-
-function logout() {
-    const spinner = ora();
-    const sso = new SSO(spinner);
-    try {
-        sso.logout();
-    } catch (error) {
-        displayError(<Error>error, spinner);
-    } finally {
-        spinner.stop();
-    }
-}
-
-async function main() {
-    setupSentry();
-
-    const program = new Command();
-    const validateNumberParam = (param: string, fieldName: string) => {
-        const intValue = parseInt(param);
-        if (isNaN(intValue))
-            throw new UserError(`${fieldName} must be a number`);
-        return intValue;
-    };
-
-    const validateRegionParam = (param: string) => {
-        const enteredRegions: string[] = [
-            ...new Set(param.split(",").map((value) => value.trim())),
-        ];
-        enteredRegions.forEach((enteredRegion) => {
-            if (!regions[enteredRegion]) throw new UserError(`Invalid region.`);
-        });
-
-        return enteredRegions;
-    };
-
-    program.description(
-        "Greenhouse is a command-line tool that provides helpers to automate " +
-            "interactions with the Canonical Greenhouse website."
-    );
-
-    const replicateCommand = program.command("replicate");
-    const deletePostsCommand = program.command("delete-posts");
-    const resetPostsCommand = program.command("reset");
-    const loginCommand = program.command("login");
-    const logoutCommand = program.command("logout");
-
-    program.configureHelp({
-        visibleCommands: () => {
-            return [
-                replicateCommand,
-                resetPostsCommand,
-                loginCommand,
-                logoutCommand,
-            ];
-        },
     });
 
-    replicateCommand
+    return enteredRegions;
+};
+
+function configureReplicateCommand(command: Command, page: Page, spinner: Ora) {
+    return command
+        .command("replicate")
         .usage(
             "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
                 "\n\n Examples: \n\t ght replicate --interactive " +
@@ -395,10 +309,19 @@ async function main() {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobPostID, options) => {
-            await addPosts(options.interactive, jobPostID, options.regions);
+            await addPosts(
+                page,
+                spinner,
+                options.interactive,
+                jobPostID,
+                options.regions
+            );
         });
+}
 
-    deletePostsCommand
+function configureDeleteCommand(command: Command, page: Page, spinner: Ora) {
+    return command
+        .command("delete-posts")
         .usage(
             "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
                 " \n\n Examples: \n\t ght delete-posts --interactive " +
@@ -425,10 +348,19 @@ async function main() {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobPostID, options) => {
-            await deletePosts(options.interactive, jobPostID, options.regions);
+            await deletePosts(
+                spinner,
+                page,
+                options.interactive,
+                jobPostID,
+                options.regions
+            );
         });
+}
 
-    resetPostsCommand
+function configureResetCommand(command: Command, page: Page, spinner: Ora) {
+    return command
+        .command("reset")
         .usage(
             "([-i | --interactive] | <job-id>" +
                 " \n\n Examples: \n\t ght reset --interactive " +
@@ -436,10 +368,7 @@ async function main() {
         )
         .description("Delete all job posts of the given job")
         .addArgument(
-            new Argument(
-                "<job-id>",
-                "Job ID of the job that will be reset"
-            )
+            new Argument("<job-id>", "Job ID of the job that will be reset")
                 .argOptional()
                 .argParser((value: string) =>
                     validateNumberParam(value, "job-id")
@@ -449,18 +378,76 @@ async function main() {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobID, options) => {
-            await resetPosts(options.interactive, jobID);
+            await resetPosts(spinner, page, options.interactive, jobID);
         });
+}
 
-    loginCommand.description("Login and save credentials").action(async () => {
-        await login();
+function configureLoginCommand(command: Command, sso: SSO) {
+    return command
+        .command("login")
+        .description("Login and save credentials")
+        .action(async () => {
+            await sso.login();
+        });
+}
+
+function configureLogoutCommand(command: Command, sso: SSO) {
+    return command
+        .command("logout")
+        .description("Remove saved credentials")
+        .action(() => {
+            sso.logout();
+        });
+}
+
+function configureCommand(
+    command: Command,
+    page: Page,
+    spinner: Ora,
+    sso: SSO
+) {
+    command.description(
+        "Greenhouse is a command-line tool that provides helpers to automate " +
+            "interactions with the Canonical Greenhouse website."
+    );
+
+    const replicateCommand = configureReplicateCommand(command, page, spinner);
+    const deletePostsCommand = configureDeleteCommand(command, page, spinner);
+    const resetPostsCommand = configureResetCommand(command, page, spinner);
+    const loginCommand = configureLoginCommand(command, sso);
+    const logoutCommand = configureLogoutCommand(command, sso);
+
+    command.configureHelp({
+        visibleCommands: () => {
+            return [
+                replicateCommand,
+                resetPostsCommand,
+                loginCommand,
+                logoutCommand,
+            ];
+        },
     });
+}
 
-    logoutCommand.description("Remove saved credentials").action(() => {
-        logout();
-    });
+async function main() {
+    setupSentry();
+    const spinner = ora();
+    let browser: Browser | null = null;
+    try {
+        const program = new Command();
+        const sso = new SSO(spinner);
+        const browserInfo = await sso.authenticate();
+        browser = browserInfo.browser;
+        const page = browserInfo.page;
 
-    await program.parseAsync(process.argv);
+        configureCommand(program, page, spinner, sso);
+        await program.parseAsync(process.argv);
+    } catch (error) {
+        displayError(<Error>error, spinner);
+    } finally {
+        spinner.stop();
+        browser?.close();
+    }
 }
 
 main();
