@@ -100,12 +100,13 @@ async function deletePostsInteractive(
 }
 
 async function addPosts(
-    page: Page,
+    sso: SSO,
     spinner: Ora,
     isInteractive: boolean,
     postIDArg: number,
     regionsArg: string[]
 ) {
+    const {browser, page} = await sso.authenticate();
     const job = new Job(page, spinner);
 
     let jobID;
@@ -165,16 +166,20 @@ async function addPosts(
             .map((post) => post.name)
             .join(", ")} of ${jobInfo.name} were created in ${regionNames}`
     );
+    await browser.close();
     console.log("Happy hiring!");
 }
 
 async function deletePosts(
     spinner: Ora,
-    page: Page,
+    sso: SSO,
     isInteractive: boolean,
     jobPostIDArg: number,
     regionsArg: string[]
 ) {
+
+    const {browser, page} = await sso.authenticate();
+
     const job = new Job(page, spinner);
     let jobID;
     let jobInfo: JobInfo;
@@ -213,16 +218,17 @@ async function deletePosts(
         spinner.succeed();
     }
     await job.deletePosts(jobInfo, regionNames, postID);
-
+    await browser.close();
     console.log("Happy hiring!");
 }
 
 async function resetPosts(
     spinner: Ora,
-    page: Page,
+    sso: SSO,
     isInteractive: boolean,
     jobIDArg: number
 ) {
+    const {browser, page} = await sso.authenticate();
     const job = new Job(page, spinner);
     let jobID = jobIDArg;
     let jobInfo: JobInfo;
@@ -250,6 +256,7 @@ async function resetPosts(
         spinner.succeed();
     }
     await job.deletePosts(jobInfo);
+    await browser.close();
     console.log("Happy hiring!");
 }
 
@@ -274,7 +281,7 @@ function validateRegionParam (param: string) {
     return enteredRegions;
 };
 
-function configureReplicateCommand(command: Command, page: Page, spinner: Ora) {
+function configureReplicateCommand(command: Command, sso: SSO, spinner: Ora) {
     return command
         .command("replicate")
         .usage(
@@ -307,7 +314,7 @@ function configureReplicateCommand(command: Command, page: Page, spinner: Ora) {
         )
         .action(async (jobPostID, options) => {
             await addPosts(
-                page,
+                sso,
                 spinner,
                 options.interactive,
                 jobPostID,
@@ -316,7 +323,7 @@ function configureReplicateCommand(command: Command, page: Page, spinner: Ora) {
         });
 }
 
-function configureDeleteCommand(command: Command, page: Page, spinner: Ora) {
+function configureDeleteCommand(command: Command, sso: SSO, spinner: Ora) {
     return command
         .command("delete-posts")
         .usage(
@@ -347,7 +354,7 @@ function configureDeleteCommand(command: Command, page: Page, spinner: Ora) {
         .action(async (jobPostID, options) => {
             await deletePosts(
                 spinner,
-                page,
+                sso,
                 options.interactive,
                 jobPostID,
                 options.regions
@@ -355,7 +362,7 @@ function configureDeleteCommand(command: Command, page: Page, spinner: Ora) {
         });
 }
 
-function configureResetCommand(command: Command, page: Page, spinner: Ora) {
+function configureResetCommand(command: Command, sso: SSO, spinner: Ora) {
     return command
         .command("reset")
         .usage(
@@ -375,7 +382,7 @@ function configureResetCommand(command: Command, page: Page, spinner: Ora) {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobID, options) => {
-            await resetPosts(spinner, page, options.interactive, jobID);
+            await resetPosts(spinner, sso, options.interactive, jobID);
         });
 }
 
@@ -399,7 +406,6 @@ function configureLogoutCommand(command: Command, sso: SSO) {
 
 function configureCommand(
     command: Command,
-    page: Page,
     spinner: Ora,
     sso: SSO
 ) {
@@ -408,9 +414,9 @@ function configureCommand(
             "interactions with the Canonical Greenhouse website."
     );
 
-    const replicateCommand = configureReplicateCommand(command, page, spinner);
-    const deletePostsCommand = configureDeleteCommand(command, page, spinner);
-    const resetPostsCommand = configureResetCommand(command, page, spinner);
+    const replicateCommand = configureReplicateCommand(command, sso, spinner);
+    const deletePostsCommand = configureDeleteCommand(command, sso, spinner);
+    const resetPostsCommand = configureResetCommand(command, sso, spinner);
     const loginCommand = configureLoginCommand(command, sso);
     const logoutCommand = configureLogoutCommand(command, sso);
 
@@ -429,21 +435,15 @@ function configureCommand(
 async function main() {
     setupSentry();
     const spinner = ora();
-    let browser: Browser | null = null;
     try {
         const program = new Command();
         const sso = new SSO(spinner);
-        const browserInfo = await sso.authenticate();
-        browser = browserInfo.browser;
-        const page = browserInfo.page;
-
-        configureCommand(program, page, spinner, sso);
+        configureCommand(program, spinner, sso);
         await program.parseAsync(process.argv);
     } catch (error) {
         displayError(<Error>error, spinner);
     } finally {
         spinner.stop();
-        browser?.close();
     }
 }
 
