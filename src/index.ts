@@ -163,10 +163,7 @@ async function addPosts(
         green("✔"),
         `${processedJobCount} job posts for ${clonedJobPosts
             .map((post) => post.name)
-            .reduce(
-                (previousValue, currentValue) =>
-                    previousValue + ", " + currentValue
-            )} of ${jobInfo.name} were created in ${regionNames}`
+            .join(", ")} of ${jobInfo.name} were created in ${regionNames}`
     );
     console.log("Happy hiring!");
 }
