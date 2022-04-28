@@ -106,7 +106,7 @@ async function addPosts(
     postIDArg: number,
     regionsArg: string[]
 ) {
-    const {browser, page} = await sso.authenticate();
+    const { browser, page } = await sso.authenticate();
     const job = new Job(page, spinner);
 
     let jobID;
@@ -177,8 +177,7 @@ async function deletePosts(
     jobPostIDArg: number,
     regionsArg: string[]
 ) {
-
-    const {browser, page} = await sso.authenticate();
+    const { browser, page } = await sso.authenticate();
 
     const job = new Job(page, spinner);
     let jobID;
@@ -228,7 +227,7 @@ async function resetPosts(
     isInteractive: boolean,
     jobIDArg: number
 ) {
-    const {browser, page} = await sso.authenticate();
+    const { browser, page } = await sso.authenticate();
     const job = new Job(page, spinner);
     let jobID = jobIDArg;
     let jobInfo: JobInfo;
@@ -260,13 +259,13 @@ async function resetPosts(
     console.log("Happy hiring!");
 }
 
-function validateNumberParam (param: string, fieldName: string) {
+function validateNumberParam(param: string, fieldName: string) {
     const intValue = parseInt(param);
     if (isNaN(intValue)) throw new UserError(`${fieldName} must be a number`);
     return intValue;
-};
+}
 
-function validateRegionParam (param: string) {
+function validateRegionParam(param: string) {
     const enteredRegions: string[] = [
         ...new Set(param.split(",").map((value) => value.trim())),
     ];
@@ -279,7 +278,7 @@ function validateRegionParam (param: string) {
     });
 
     return enteredRegions;
-};
+}
 
 function configureReplicateCommand(command: Command, sso: SSO, spinner: Ora) {
     return command
@@ -404,11 +403,7 @@ function configureLogoutCommand(command: Command, sso: SSO) {
         });
 }
 
-function configureCommand(
-    command: Command,
-    spinner: Ora,
-    sso: SSO
-) {
+function configureCommand(command: Command, spinner: Ora, sso: SSO) {
     command.description(
         "Greenhouse is a command-line tool that provides helpers to automate " +
             "interactions with the Canonical Greenhouse website."
