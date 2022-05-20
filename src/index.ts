@@ -418,12 +418,13 @@ function configureLogoutCommand(command: Command, sso: SSO) {
         });
 }
 
-function configureCommand(command: Command, spinner: Ora, sso: SSO) {
+function configureCommand(command: Command, spinner: Ora) {
     command.description(
         "Greenhouse is a command-line tool that provides helpers to automate " +
             "interactions with the Canonical Greenhouse website."
     );
-
+    
+    const sso = new SSO(spinner);
     const replicateCommand = configureReplicateCommand(command, sso, spinner);
     const deletePostsCommand = configureDeleteCommand(command, sso, spinner);
     const resetPostsCommand = configureResetCommand(command, sso, spinner);
@@ -447,8 +448,7 @@ async function main() {
     const spinner = ora();
     try {
         const program = new Command();
-        const sso = new SSO(spinner);
-        configureCommand(program, spinner, sso);
+        configureCommand(program, spinner);
         await program.parseAsync(process.argv);
     } catch (error) {
         displayError(<Error>error, spinner);
