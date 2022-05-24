@@ -11,7 +11,7 @@ import { green } from "colors";
 import ora, { Ora } from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
-import { Browser, Page } from "puppeteer";
+import { Page } from "puppeteer";
 
 async function getJobInteractive(job: Job, message: string, spinner: Ora) {
     spinner.start("Fetching your jobs.");
@@ -99,16 +99,29 @@ async function deletePostsInteractive(
     }
 }
 
-async function addPosts(
+async function provideAuthentication(
     sso: SSO,
+    action: (...args: any[]) => Promise<void>,
+    ...args: any[]
+) {
+    const { browser, page } = await sso.authenticate();
+    try {
+        await action(...args, page);
+    } catch (e) {
+        throw e;
+    } finally {
+        browser.close();
+    }
+}
+
+async function addPosts(
     spinner: Ora,
     isInteractive: boolean,
     postIDArg: number,
-    regionsArg: string[]
+    regionsArg: string[],
+    page: Page
 ) {
-    const { browser, page } = await sso.authenticate();
     const job = new Job(page, spinner);
-
     let jobID;
     let jobInfo: JobInfo;
     let regionNames = regionsArg;
@@ -166,19 +179,16 @@ async function addPosts(
             .map((post) => post.name)
             .join(", ")} of ${jobInfo.name} were created in ${regionNames}`
     );
-    await browser.close();
     console.log("Happy hiring!");
 }
 
 async function deletePosts(
     spinner: Ora,
-    sso: SSO,
     isInteractive: boolean,
     jobPostIDArg: number,
-    regionsArg: string[]
+    regionsArg: string[],
+    page: Page
 ) {
-    const { browser, page } = await sso.authenticate();
-
     const job = new Job(page, spinner);
     let jobID;
     let jobInfo: JobInfo;
@@ -217,17 +227,15 @@ async function deletePosts(
         spinner.succeed();
     }
     await job.deletePosts(jobInfo, regionNames, postID);
-    await browser.close();
     console.log("Happy hiring!");
 }
 
 async function resetPosts(
     spinner: Ora,
-    sso: SSO,
     isInteractive: boolean,
-    jobIDArg: number
+    jobIDArg: number,
+    page: Page
 ) {
-    const { browser, page } = await sso.authenticate();
     const job = new Job(page, spinner);
     let jobID = jobIDArg;
     let jobInfo: JobInfo;
@@ -255,7 +263,6 @@ async function resetPosts(
         spinner.succeed();
     }
     await job.deletePosts(jobInfo);
-    await browser.close();
     console.log("Happy hiring!");
 }
 
@@ -312,8 +319,9 @@ function configureReplicateCommand(command: Command, sso: SSO, spinner: Ora) {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobPostID, options) => {
-            await addPosts(
+            await provideAuthentication(
                 sso,
+                addPosts,
                 spinner,
                 options.interactive,
                 jobPostID,
@@ -351,9 +359,10 @@ function configureDeleteCommand(command: Command, sso: SSO, spinner: Ora) {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobPostID, options) => {
-            await deletePosts(
-                spinner,
+            await provideAuthentication(
                 sso,
+                deletePosts,
+                spinner,
                 options.interactive,
                 jobPostID,
                 options.regions
@@ -381,7 +390,13 @@ function configureResetCommand(command: Command, sso: SSO, spinner: Ora) {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobID, options) => {
-            await resetPosts(spinner, sso, options.interactive, jobID);
+            await provideAuthentication(
+                sso,
+                resetPosts,
+                spinner,
+                options.interactive,
+                jobID
+            );
         });
 }
 
@@ -403,12 +418,13 @@ function configureLogoutCommand(command: Command, sso: SSO) {
         });
 }
 
-function configureCommand(command: Command, spinner: Ora, sso: SSO) {
+function configureCommand(command: Command, spinner: Ora) {
     command.description(
         "Greenhouse is a command-line tool that provides helpers to automate " +
             "interactions with the Canonical Greenhouse website."
     );
-
+    
+    const sso = new SSO(spinner);
     const replicateCommand = configureReplicateCommand(command, sso, spinner);
     const deletePostsCommand = configureDeleteCommand(command, sso, spinner);
     const resetPostsCommand = configureResetCommand(command, sso, spinner);
@@ -432,8 +448,7 @@ async function main() {
     const spinner = ora();
     try {
         const program = new Command();
-        const sso = new SSO(spinner);
-        configureCommand(program, spinner, sso);
+        configureCommand(program, spinner);
         await program.parseAsync(process.argv);
     } catch (error) {
         displayError(<Error>error, spinner);
