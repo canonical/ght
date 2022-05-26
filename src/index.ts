@@ -230,42 +230,6 @@ async function deletePosts(
     console.log("Happy hiring!");
 }
 
-async function resetPosts(
-    spinner: Ora,
-    isInteractive: boolean,
-    jobIDArg: number,
-    page: Page
-) {
-    const job = new Job(page, spinner);
-    let jobID = jobIDArg;
-    let jobInfo: JobInfo;
-
-    if (isInteractive) {
-        const { name, id } = await getJobInteractive(
-            job,
-            "What job would you like to delete all job posts from?",
-            spinner
-        );
-
-        if (!id) throw new Error(`Job with ${id} cannot be found.`);
-        jobID = id;
-
-        spinner.start(`Fetching job posts for ${name}.`);
-        jobInfo = await job.getJobData(jobID);
-        if (!jobInfo.posts.length)
-            throw new Error(`Job posts cannot be found for ${jobInfo.name}.`);
-        spinner.succeed();
-    } else {
-        if (!jobID) throw new UserError(`Job ID argument is missing.`);
-
-        spinner.start(`Fetching the job information.`);
-        jobInfo = await job.getJobData(jobID);
-        spinner.succeed();
-    }
-    await job.deletePosts(jobInfo);
-    console.log("Happy hiring!");
-}
-
 function validateNumberParam(param: string, fieldName: string) {
     const intValue = parseInt(param);
     if (isNaN(intValue)) throw new UserError(`${fieldName} must be a number`);
@@ -330,13 +294,13 @@ function configureReplicateCommand(command: Command, sso: SSO, spinner: Ora) {
         });
 }
 
-function configureDeleteCommand(command: Command, sso: SSO, spinner: Ora) {
+function configureResetCommand(command: Command, sso: SSO, spinner: Ora) {
     return command
-        .command("delete-posts")
+        .command("reset")
         .usage(
             "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
-                " \n\n Examples: \n\t ght delete-posts --interactive " +
-                "\n\t ght delete-posts 1234 --regions=emea,americas"
+                " \n\n Examples: \n\t ght reset --interactive " +
+                "\n\t ght reset 1234 --regions=emea,americas"
         )
         .description("Delete job posts of the given job")
         .addArgument(
@@ -370,36 +334,6 @@ function configureDeleteCommand(command: Command, sso: SSO, spinner: Ora) {
         });
 }
 
-function configureResetCommand(command: Command, sso: SSO, spinner: Ora) {
-    return command
-        .command("reset")
-        .usage(
-            "([-i | --interactive] | <job-id>" +
-                " \n\n Examples: \n\t ght reset --interactive " +
-                "\n\t ght reset 1234"
-        )
-        .description("Delete all job posts of the given job")
-        .addArgument(
-            new Argument("<job-id>", "Job ID of the job that will be reset")
-                .argOptional()
-                .argParser((value: string) =>
-                    validateNumberParam(value, "job-id")
-                )
-        )
-        .addOption(
-            new Option("-i, --interactive", "Enable interactive interface")
-        )
-        .action(async (jobID, options) => {
-            await provideAuthentication(
-                sso,
-                resetPosts,
-                spinner,
-                options.interactive,
-                jobID
-            );
-        });
-}
-
 function configureLoginCommand(command: Command, sso: SSO) {
     return command
         .command("login")
@@ -426,7 +360,6 @@ function configureCommand(command: Command, spinner: Ora) {
     
     const sso = new SSO(spinner);
     const replicateCommand = configureReplicateCommand(command, sso, spinner);
-    const deletePostsCommand = configureDeleteCommand(command, sso, spinner);
     const resetPostsCommand = configureResetCommand(command, sso, spinner);
     const loginCommand = configureLoginCommand(command, sso);
     const logoutCommand = configureLogoutCommand(command, sso);
