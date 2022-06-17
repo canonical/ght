@@ -261,6 +261,7 @@ export default class Job {
             ({ htmlAsStr, recruiterTag }) => {
                 const domParser = new DOMParser();
                 const root = domParser.parseFromString(htmlAsStr, "text/html");
+
                 const jobElements = root.querySelectorAll("a.target");
                 const jobInfo: { [jobName: string]: number } = {};
                 for (const item of jobElements) {
@@ -282,13 +283,20 @@ export default class Job {
                         if (!url) throw new Error(`Cannot get ID from ${url}.`);
                         const urlParts: string[] = url.split("/");
                         const id = parseInt(urlParts[urlParts.length - 1]);
-                        const nameElement = item.querySelector(
-                            ".cell-text.job-label-name"
-                        );
+                        const nameElement = item.getAttribute("title");
                         if (!nameElement)
                             throw new Error(`Cannot get job name.`);
 
-                        jobInfo[nameElement.innerHTML] = id;
+                        const matchedReqID = nameElement.match(/\([0-9]+\)/);
+                        if (!matchedReqID)
+                            throw new Error(`Cannot get req ID.`);
+                        const matchedElement = matchedReqID[0];
+                        const reqID = matchedElement.slice(
+                            1,
+                            matchedElement.length - 1
+                        );
+                        const jobName = nameElement.split(/\([0-9]+\)/)[0];
+                        jobInfo[`[${reqID}] ${jobName}`] = id;
                     }
                 }
                 return jobInfo;
