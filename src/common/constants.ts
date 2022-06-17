@@ -31,7 +31,6 @@ export const FILTERED_ATTRIBUTES = [
     "all_office_ids",
     "office_ids",
     "questions_for_api",
-    "resume_required",
     "compliance",
     "data_compliance",
     "departments",
