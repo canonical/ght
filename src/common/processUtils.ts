@@ -1,9 +1,10 @@
 import { USER_ERROR } from "./constants";
 import { Ora } from "ora";
 import * as Sentry from "@sentry/node";
-// @ts-ignore It's necessary for sentry to trace errors. Importing @sentry/tracing patches the global hub for tracing to work.
+//It's necessary for sentry to trace errors. Importing @sentry/tracing patches the global hub for tracing to work.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Tracing from "@sentry/tracing";
-import * as puppeteer from 'puppeteer'
+import * as puppeteer from "puppeteer";
 
 export const isDevelopment = () => process.env.NODE_ENV === "development";
 
@@ -15,23 +16,24 @@ export const setupSentry = () => {
             attachStacktrace: true,
         });
     }
-} 
+};
 
 export const displayError = (error: Error, spinner: Ora) => {
-    if(!isDevelopment() && error.name !== USER_ERROR)  Sentry.captureException(error);
+    if (!isDevelopment() && error.name !== USER_ERROR)
+        Sentry.captureException(error);
     const errorMessage = error.message;
     errorMessage
         ? spinner.fail(`${errorMessage}`)
         : spinner.fail("An error occurred.");
-}
+};
 
 export const reportError = (error: string) => {
-    if(!isDevelopment())  Sentry.captureException(error);
-}
+    if (!isDevelopment()) Sentry.captureException(error);
+};
 
 /**
  * puppeteer.page.evaluate wrapper
- * to be able to track the source of the error 
+ * to be able to track the source of the error
  */
 export const evaluate: (
     element: puppeteer.Page | puppeteer.ElementHandle<any>,
