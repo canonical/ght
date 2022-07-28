@@ -1,11 +1,12 @@
 import { JobInfo, PostInfo } from "./common/types";
-import { regions } from "./common/regions";
+import { regionCategories, regions } from "./common/regions";
 import Job from "./automations/Job";
 import SSO from "./automations/SSO";
 import { PROTECTED_JOB_BOARDS } from "./common/constants";
 import { displayError, setupSentry } from "./common/processUtils";
 import UserError from "./common/UserError";
 import { runPrompt } from "./common/commandUtils";
+import { tests } from "./test-greenhouse";
 import { Command, Argument, Option } from "commander";
 import { green } from "colors";
 import ora, { Ora } from "ora";
@@ -69,7 +70,7 @@ async function getJobPostInteractive(posts: PostInfo[], message: string) {
 }
 
 async function getRegionsInteractive(message: string) {
-    const regionNames = Object.keys(regions);
+    const regionNames = regionCategories;
     const prompt = new MultiSelect({
         name: "Regions",
         message,
@@ -99,22 +100,20 @@ async function deletePostsInteractive(
     }
 }
 
-async function provideAuthentication(
+export async function provideAuthentication(
     sso: SSO,
-    action: (...args: any[]) => Promise<void>,
-    ...args: any[]
+    action: (page: Page) => Promise<void>
 ) {
     const { browser, page } = await sso.authenticate();
     try {
-        await action(...args, page);
-    } catch (e) {
-        throw e;
-    } finally {
+        await action(page);
         browser.close();
+    } catch (e) {
+        browser.close();
+        throw e;
     }
 }
-
-async function addPosts(
+export async function addPosts(
     spinner: Ora,
     isInteractive: boolean,
     postIDArg: number,
@@ -182,7 +181,7 @@ async function addPosts(
     console.log("Happy hiring!");
 }
 
-async function deletePosts(
+export async function deletePosts(
     spinner: Ora,
     isInteractive: boolean,
     jobPostIDArg: number,
@@ -283,13 +282,14 @@ function configureReplicateCommand(command: Command, sso: SSO, spinner: Ora) {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobPostID, options) => {
-            await provideAuthentication(
-                sso,
-                addPosts,
-                spinner,
-                options.interactive,
-                jobPostID,
-                options.regions
+            await provideAuthentication(sso, (page) =>
+                addPosts(
+                    spinner,
+                    options.interactive,
+                    jobPostID,
+                    options.regions,
+                    page
+                )
             );
         });
 }
@@ -323,13 +323,14 @@ function configureResetCommand(command: Command, sso: SSO, spinner: Ora) {
             new Option("-i, --interactive", "Enable interactive interface")
         )
         .action(async (jobPostID, options) => {
-            await provideAuthentication(
-                sso,
-                deletePosts,
-                spinner,
-                options.interactive,
-                jobPostID,
-                options.regions
+            await provideAuthentication(sso, (page) =>
+                deletePosts(
+                    spinner,
+                    options.interactive,
+                    jobPostID,
+                    options.regions,
+                    page
+                )
             );
         });
 }
@@ -352,17 +353,31 @@ function configureLogoutCommand(command: Command, sso: SSO) {
         });
 }
 
+function configureTestingCommand(command: Command, sso: SSO, spinner: Ora) {
+    return command
+        .command("doctor")
+        .description(
+            "Diagnose problems with the GHT tool and check if everything is working with Greenhouse."
+        )
+        .action(async () => {
+            for (const test of tests) {
+                await test(sso, spinner);
+            }
+        });
+}
+
 function configureCommand(command: Command, spinner: Ora) {
     command.description(
         "Greenhouse is a command-line tool that provides helpers to automate " +
             "interactions with the Canonical Greenhouse website."
     );
-    
+
     const sso = new SSO(spinner);
     const replicateCommand = configureReplicateCommand(command, sso, spinner);
     const resetPostsCommand = configureResetCommand(command, sso, spinner);
     const loginCommand = configureLoginCommand(command, sso);
     const logoutCommand = configureLogoutCommand(command, sso);
+    const testingCommand = configureTestingCommand(command, sso, spinner);
 
     command.configureHelp({
         visibleCommands: () => {
@@ -371,6 +386,7 @@ function configureCommand(command: Command, spinner: Ora) {
                 resetPostsCommand,
                 loginCommand,
                 logoutCommand,
+                testingCommand,
             ];
         },
     });
@@ -385,6 +401,7 @@ async function main() {
         await program.parseAsync(process.argv);
     } catch (error) {
         displayError(<Error>error, spinner);
+        process.exit(1);
     } finally {
         spinner.stop();
     }

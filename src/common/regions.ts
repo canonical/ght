@@ -52,9 +52,9 @@ export const usaCities: string[] = [
     "Home based - Americas, Washington",
     "Home based - Americas, Wichita",
 ];
-
+export const regionCategories = ["America", "EMEA", "APAC"];
 export const regions: { [key: string]: string[] } = {
-    americas: [
+    America: [
         ...usaCities,
         "Home based - Americas, Calgary",
         "Home based - Americas, Montreal",
@@ -83,7 +83,7 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Americas, São Paulo",
         "Home based - Americas, Waterloo, Ontario",
     ],
-    emea: [
+    EMEA: [
         "Home based - Africa, Accra",
         "Home based - Africa, Cairo",
         "Home based - Africa, Cape Town",
@@ -153,7 +153,7 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Europe, Rennes",
         "Home based - Europe, Nice",
     ],
-    apac: [
+    APAC: [
         "Home based - Asia Pacific, Adelaide",
         "Home based - Asia Pacific, Auckland",
         "Home based - Asia Pacific, Bangalore",
@@ -189,4 +189,5 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Asia Pacific, Nagoya",
         "Home based - Asia Pacific, Osaka",
     ],
+    test: ["Home based - Africa, Accra"],
 };
