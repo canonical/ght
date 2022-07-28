@@ -32,7 +32,6 @@ export async function sendRequest(
         page,
         async ({ url, headers, options, csrfToken }) => {
             try {
-
                 const queryResponse: Response = await fetch(url, {
                     headers: {
                         accept: "application/json, text/javascript, */*; q=0.01",
@@ -45,8 +44,14 @@ export async function sendRequest(
                     credentials: "include",
                     ...options,
                 });
-                return queryResponse.ok ? await queryResponse.json() :
-                { isError: true, status: queryResponse.status, url: queryResponse.url, statusText: queryResponse.statusText };
+                return queryResponse.ok
+                    ? await queryResponse.json()
+                    : {
+                          isError: true,
+                          status: queryResponse.status,
+                          url: queryResponse.url,
+                          statusText: queryResponse.statusText,
+                      };
             } catch (e) {
                 return e;
             }
@@ -60,8 +65,9 @@ export async function sendRequest(
     );
 
     if (!response || response.isError || !isSuccessful(response)) {
-        const errorToReport = response.isError ? `The server responded with a status of ${response.status} (${response.statusText}). URL: ${response.url}` :
-            errorMessage;
+        const errorToReport = response.isError
+            ? `The server responded with a status of ${response.status} (${response.statusText}). URL: ${response.url}`
+            : errorMessage;
         reportError(errorToReport);
         throw new UserError(errorMessage);
     }
