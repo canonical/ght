@@ -1,3 +1,5 @@
+import { green } from "colors";
+import { Ora } from "ora";
 import { Page } from "puppeteer";
 import { MAIN_URL } from "../common/constants";
 import UserError from "../common/UserError";
@@ -11,11 +13,18 @@ export default class LoadBalancer {
     private page: Page;
     private graders: Grader[];
     private jobs: string[];
+    private spinner: Ora;
 
-    constructor(page: Page, graders: Grader[], selectedJobs: string[]) {
+    constructor(
+        page: Page,
+        graders: Grader[],
+        selectedJobs: string[],
+        spinner: Ora
+    ) {
         this.page = page;
         this.graders = graders;
         this.jobs = selectedJobs;
+        this.spinner = spinner;
     }
 
     /**
@@ -136,26 +145,32 @@ export default class LoadBalancer {
             throw new Error("Unable to find user's name in Greenhouse");
         }
 
+        this.spinner.start("Processing applications\n");
+
         for await (const application of this.getApplicationsToProcess()) {
-            console.log(application);
             const selector = `.person[application="${application?.applicationID}"]`;
 
             // Click toggle button
             await this.page.waitForSelector(`${selector} .toggle-interviews`);
-            await this.page?.click(`${selector} .toggle-interviews`);
+            await this.page.$eval(`${selector} .toggle-interviews`, (toggle) =>
+                (toggle as HTMLAnchorElement).click()
+            );
 
             // Click edit
             await this.page.waitForSelector(
                 `${selector} .edit-take-home-test-graders-link`
             );
-            await this.page.click(
-                `${selector} .edit-take-home-test-graders-link`
+
+            console.log("found");
+            await this.page.$eval(
+                `${selector} .edit-take-home-test-graders-link`,
+                (btn) => (btn as HTMLAnchorElement).click()
             );
 
             // Wait for modal to open
-            await this.page.waitForSelector(
-                "[aria-describedby='edit_take_home_test_graders_modal']"
-            );
+            await this.page.waitForSelector("ul.chzn-choices", {
+                visible: true,
+            });
 
             // Read graders already assigned
             const gradersAssigned = await this.page.$$eval(
@@ -185,12 +200,13 @@ export default class LoadBalancer {
             await this.writeGrader(grader1);
             await this.writeGrader(grader2);
 
-            console.log(
-                `Written Interview from ${application.candidate} assigned to: ${grader1.name}, ${grader2.name}`
-            );
-
             // Click save
             await this.page.click("input[type='submit']");
+
+            console.log(
+                green("✔"),
+                `Written Interview from ${application.candidate} assigned to: ${grader1.name}, ${grader2.name}`
+            );
         }
     }
 }
