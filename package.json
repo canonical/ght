@@ -17,6 +17,7 @@
         "commander": "9.1.0",
         "enquirer": "2.3.6",
         "http-cookie-agent": "1.0.5",
+        "js-yaml": "^4.1.0",
         "jsdom": "19.0.0",
         "node-fetch": "2.6.7",
         "ora": "5.4.1",
