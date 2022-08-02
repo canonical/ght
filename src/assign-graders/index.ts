@@ -5,8 +5,10 @@ import { MultiSelect } from "enquirer";
 import LoadBalancer from "./LoadBalancer";
 import Puppeteer from "puppeteer";
 import { loadConfig, createPool } from "./utils";
+import { Ora } from "ora";
 
 export default async function assignGraders(
+    spinner: Ora,
     page: Puppeteer.Page,
     isInteractive: boolean
 ) {
@@ -29,7 +31,12 @@ export default async function assignGraders(
         const selectedJobs: string[] = await runPrompt(prompt);
         const graders = createPool(config, selectedJobs, STAGE);
 
-        const loadBalancer = new LoadBalancer(page, graders, selectedJobs);
+        const loadBalancer = new LoadBalancer(
+            page,
+            graders,
+            selectedJobs,
+            spinner
+        );
         await loadBalancer.execute();
     }
 }
