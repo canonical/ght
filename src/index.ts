@@ -8,11 +8,12 @@ import UserError from "./common/UserError";
 import { runPrompt } from "./common/commandUtils";
 import { tests } from "./test-greenhouse";
 import { Command, Argument, Option } from "commander";
-import { green } from "colors";
+import { green, random } from "colors";
 import ora, { Ora } from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
 import { Page } from "puppeteer";
+import assignGraders from "./assign-graders";
 
 async function getJobInteractive(job: Job, message: string, spinner: Ora) {
     spinner.start("Fetching your jobs.");
@@ -353,6 +354,24 @@ function configureLogoutCommand(command: Command, sso: SSO) {
         });
 }
 
+function configureLoadBalancerCommand(command: Command, sso: SSO) {
+    return command
+        .command("assign")
+        .usage(
+            "([-i | --interactive])" +
+                "\n\n Examples: \n\t ght assign --interactive "
+        )
+        .description("Assign random graders to written interview")
+        .addOption(
+            new Option("-i, --interactive", "Enable interactive interface")
+        )
+        .action(async (options) => {
+            await provideAuthentication(sso, (page) =>
+                assignGraders(page, options.interactive)
+            );
+        });
+}
+
 function configureTestingCommand(command: Command, sso: SSO, spinner: Ora) {
     return command
         .command("doctor")
@@ -378,6 +397,7 @@ function configureCommand(command: Command, spinner: Ora) {
     const loginCommand = configureLoginCommand(command, sso);
     const logoutCommand = configureLogoutCommand(command, sso);
     const testingCommand = configureTestingCommand(command, sso, spinner);
+    const loadBalancerCommand = configureLoadBalancerCommand(command, sso);
 
     command.configureHelp({
         visibleCommands: () => {
@@ -387,6 +407,7 @@ function configureCommand(command: Command, spinner: Ora) {
                 loginCommand,
                 logoutCommand,
                 testingCommand,
+                loadBalancerCommand,
             ];
         },
     });
