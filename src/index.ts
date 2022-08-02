@@ -354,7 +354,11 @@ function configureLogoutCommand(command: Command, sso: SSO) {
         });
 }
 
-function configureLoadBalancerCommand(command: Command, sso: SSO) {
+function configureLoadBalancerCommand(
+    command: Command,
+    sso: SSO,
+    spinner: Ora
+) {
     return command
         .command("assign")
         .usage(
@@ -367,7 +371,7 @@ function configureLoadBalancerCommand(command: Command, sso: SSO) {
         )
         .action(async (options) => {
             await provideAuthentication(sso, (page) =>
-                assignGraders(page, options.interactive)
+                assignGraders(spinner, page, options.interactive)
             );
         });
 }
@@ -397,7 +401,11 @@ function configureCommand(command: Command, spinner: Ora) {
     const loginCommand = configureLoginCommand(command, sso);
     const logoutCommand = configureLogoutCommand(command, sso);
     const testingCommand = configureTestingCommand(command, sso, spinner);
-    const loadBalancerCommand = configureLoadBalancerCommand(command, sso);
+    const loadBalancerCommand = configureLoadBalancerCommand(
+        command,
+        sso,
+        spinner
+    );
 
     command.configureHelp({
         visibleCommands: () => {
