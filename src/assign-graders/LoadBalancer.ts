@@ -161,7 +161,6 @@ export default class LoadBalancer {
                 `${selector} .edit-take-home-test-graders-link`
             );
 
-            console.log("found");
             await this.page.$eval(
                 `${selector} .edit-take-home-test-graders-link`,
                 (btn) => (btn as HTMLAnchorElement).click()
@@ -177,8 +176,15 @@ export default class LoadBalancer {
                 "ul .search-choice span",
                 (el) => el.map((grader) => grader.textContent)
             );
-            // Skip if already two graders assigned
+            // Skip if already graders assigned
             if (gradersAssigned.length >= 2) {
+                continue;
+            }
+            // Skip if only one grader but it's not the user
+            if (
+                gradersAssigned.length === 1 &&
+                gradersAssigned[0] !== currentUser
+            ) {
                 continue;
             }
 
