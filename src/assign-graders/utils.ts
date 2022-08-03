@@ -9,7 +9,7 @@ import { Config, Grader } from "./types";
  * Load list of graders from config file
  */
 export function loadConfig(): Config {
-    const filePath = join(homedir(), "people.yml");
+    const filePath = join(homedir(), "ght-graders.yml");
     const config = yaml.load(fs.readFileSync(filePath, "utf8"));
 
     return config;

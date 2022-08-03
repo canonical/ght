@@ -208,5 +208,7 @@ export default class LoadBalancer {
                 `Written Interview from ${application.candidate} assigned to: ${grader1.name}, ${grader2.name}`
             );
         }
+
+        this.spinner.stop();
     }
 }
