@@ -1,6 +1,5 @@
-// @ts-ignore
-import yaml from "js-yaml";
 import fs from "fs";
+import yaml from "js-yaml";
 import { homedir } from "os";
 import { join } from "path";
 import { Config, Grader } from "./types";
@@ -9,8 +8,11 @@ import { Config, Grader } from "./types";
  * Load list of graders from config file
  */
 export function loadConfig(): Config {
-    const filePath = join(homedir(), "ght-graders.yml");
-    const config = yaml.load(fs.readFileSync(filePath, "utf8"));
+    const filePath = join(
+        process.env["SNAP_REAL_HOME"] || homedir(),
+        "ght-graders.yml"
+    );
+    const config = yaml.load(fs.readFileSync(filePath, "utf8")) as Config;
 
     return config;
 }
@@ -23,7 +25,7 @@ export function createPool(
     selectedJobs: string[],
     stage: string
 ) {
-    let pool: Grader[] = [];
+    const pool: Grader[] = [];
     selectedJobs.forEach((job) => {
         const activeGraders = config[job][stage].filter(
             (grader) => grader.active

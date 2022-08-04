@@ -27,6 +27,7 @@
     "devDependencies": {
         "@tsconfig/node16": "1.0.2",
         "@types/colors": "1.2.1",
+        "@types/js-yaml": "^4.0.5",
         "@types/jsdom": "16.2.14",
         "@types/node": "17.0.14",
         "@types/node-fetch": "2.6.1",
