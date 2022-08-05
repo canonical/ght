@@ -1,9 +1,9 @@
+import { Application, Grader } from "./types";
+import { MAIN_URL } from "../common/constants";
+import UserError from "../common/UserError";
 import { green } from "colors";
 import { Ora } from "ora";
 import { Page } from "puppeteer";
-import { MAIN_URL } from "../common/constants";
-import UserError from "../common/UserError";
-import { Application, Grader } from "./types";
 
 /**
  * Interact with Greenhouse UI and assign

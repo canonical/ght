@@ -1,10 +1,10 @@
+import LoadBalancer from "./LoadBalancer";
+import { loadConfig, createPool } from "./utils";
 import UserError from "../common/UserError";
 import { runPrompt } from "../common/commandUtils";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { MultiSelect } from "enquirer";
-import LoadBalancer from "./LoadBalancer";
 import Puppeteer from "puppeteer";
-import { loadConfig, createPool } from "./utils";
 import { Ora } from "ora";
 
 export default async function assignGraders(

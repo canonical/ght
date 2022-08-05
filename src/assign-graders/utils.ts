@@ -1,8 +1,8 @@
-import fs from "fs";
+import { Config, Grader } from "./types";
 import yaml from "js-yaml";
+import fs from "fs";
 import { homedir } from "os";
 import { join } from "path";
-import { Config, Grader } from "./types";
 
 /**
  * Load list of graders from config file

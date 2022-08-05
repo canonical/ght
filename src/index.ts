@@ -7,13 +7,13 @@ import { displayError, setupSentry } from "./common/processUtils";
 import UserError from "./common/UserError";
 import { runPrompt } from "./common/commandUtils";
 import { tests } from "./test-greenhouse";
+import assignGraders from "./assign-graders";
 import { Command, Argument, Option } from "commander";
 import { green } from "colors";
 import ora, { Ora } from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
 import { Page } from "puppeteer";
-import assignGraders from "./assign-graders";
 
 async function getJobInteractive(job: Job, message: string, spinner: Ora) {
     spinner.start("Fetching your jobs.");
