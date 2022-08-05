@@ -8,7 +8,7 @@ import UserError from "./common/UserError";
 import { runPrompt } from "./common/commandUtils";
 import { tests } from "./test-greenhouse";
 import { Command, Argument, Option } from "commander";
-import { green, random } from "colors";
+import { green } from "colors";
 import ora, { Ora } from "ora";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
