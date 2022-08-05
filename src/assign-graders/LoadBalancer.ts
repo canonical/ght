@@ -41,7 +41,7 @@ export default class LoadBalancer {
                 const job = p
                     .querySelector(".job")
                     // Delete requisition ID next to job name
-                    ?.textContent?.replace(/\(\d+\)/, "")
+                    ?.textContent?.replace(/\(\d+\)$/, "")
                     .trim();
                 const candidate = p.querySelector(".name a")?.textContent;
 
