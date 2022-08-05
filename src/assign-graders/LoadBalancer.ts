@@ -45,12 +45,7 @@ export default class LoadBalancer {
                     .trim();
                 const candidate = p.querySelector(".name a")?.textContent;
 
-                if (
-                    applicationID != null &&
-                    candidate != null &&
-                    job != null &&
-                    toGrade != null
-                ) {
+                if (applicationID && candidate && job && toGrade) {
                     return {
                         applicationID,
                         candidate,
