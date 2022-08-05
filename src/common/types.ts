@@ -13,5 +13,3 @@ export interface PostInfo extends BaseInfo {
 export interface JobInfo extends BaseInfo {
     posts: PostInfo[];
 }
-
-// Assign graders
