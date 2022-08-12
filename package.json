@@ -1,6 +1,6 @@
 {
     "name": "ght",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "scripts": {
         "build": "tsc && cp package.json ght ./dist",
         "dev": "NODE_ENV=development ts-node ./src/index.ts",
@@ -17,6 +17,7 @@
         "commander": "9.1.0",
         "enquirer": "2.3.6",
         "http-cookie-agent": "1.0.5",
+        "js-yaml": "^4.1.0",
         "jsdom": "19.0.0",
         "node-fetch": "2.6.7",
         "ora": "5.4.1",
@@ -26,6 +27,7 @@
     "devDependencies": {
         "@tsconfig/node16": "1.0.2",
         "@types/colors": "1.2.1",
+        "@types/js-yaml": "^4.0.5",
         "@types/jsdom": "16.2.14",
         "@types/node": "17.0.14",
         "@types/node-fetch": "2.6.1",

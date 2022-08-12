@@ -7,6 +7,7 @@ import { displayError, setupSentry } from "./common/processUtils";
 import UserError from "./common/UserError";
 import { runPrompt } from "./common/commandUtils";
 import { tests } from "./test-greenhouse";
+import assignGraders from "./assign-graders";
 import { Command, Argument, Option } from "commander";
 import { green } from "colors";
 import ora, { Ora } from "ora";
@@ -353,6 +354,28 @@ function configureLogoutCommand(command: Command, sso: SSO) {
         });
 }
 
+function configureLoadBalancerCommand(
+    command: Command,
+    sso: SSO,
+    spinner: Ora
+) {
+    return command
+        .command("assign")
+        .usage(
+            "([-i | --interactive])" +
+                "\n\n Examples: \n\t ght assign --interactive "
+        )
+        .description("Assign random graders to written interview")
+        .addOption(
+            new Option("-i, --interactive", "Enable interactive interface")
+        )
+        .action(async (options) => {
+            await provideAuthentication(sso, (page) =>
+                assignGraders(spinner, page, options.interactive)
+            );
+        });
+}
+
 function configureTestingCommand(command: Command, sso: SSO, spinner: Ora) {
     return command
         .command("doctor")
@@ -378,6 +401,11 @@ function configureCommand(command: Command, spinner: Ora) {
     const loginCommand = configureLoginCommand(command, sso);
     const logoutCommand = configureLogoutCommand(command, sso);
     const testingCommand = configureTestingCommand(command, sso, spinner);
+    const loadBalancerCommand = configureLoadBalancerCommand(
+        command,
+        sso,
+        spinner
+    );
 
     command.configureHelp({
         visibleCommands: () => {
@@ -387,6 +415,7 @@ function configureCommand(command: Command, spinner: Ora) {
                 loginCommand,
                 logoutCommand,
                 testingCommand,
+                loadBalancerCommand,
             ];
         },
     });
