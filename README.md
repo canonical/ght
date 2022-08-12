@@ -29,6 +29,27 @@ If you want to use the interactive mode you can run the command with the flag `-
 ght replicate -i
 ```
 
+### Assign graders to written interviews
+
+You can use `ght` to assign random graders to written interviews. You should have a `ght-graders.yml` file in your home directory with the format:
+
+```
+Job name 1:
+  Written Interview:
+    - name: Grader One
+      active: true
+    - name: Grader Two
+      active: false
+    - name: Grader Three
+      active: true
+Job name 2:
+  Written Interview:
+    - name: Grader Four
+      active: true
+```
+
+Running `ght assign -i` will guide you through the process of selecting the jobs. For the selected jobs, it will go through the written interviews needing graders (applications where only the hiring lead is assigned, since this is the default behaviour in Greenhouse) and will assign two random names from the list provided.
+
 ### Authentication
 
 The CLI will manage authentication. To avoid entering credentials every time the command runs, the authorization cookie created by Greenhouse and SSO will be stored in the file:  `~/.canonical-greenhouse.json`.
