@@ -110,7 +110,7 @@ export default class LoadBalancer {
      * Assign graders to one application
      */
     private async assignGradersToApplication(application: Application) {
-        this.spinner.start("Processing applications");
+        // this.spinner.start("Processing applications");
 
         const selector = `.person[application="${application?.applicationID}"]`;
 
@@ -119,17 +119,20 @@ export default class LoadBalancer {
         await this.page.$eval(`${selector} .toggle-interviews`, (toggle) =>
             (toggle as HTMLAnchorElement).click()
         );
+        console.log(`Toggle interviews button clicked`);
 
         // Click edit
         await this.page.waitForSelector(
             `${selector} .edit-take-home-test-graders-link`
         );
+        console.log(`Edit button clicked`);
 
         await this.page.$eval(
             `${selector} .edit-take-home-test-graders-link`,
             (btn) => (btn as HTMLAnchorElement).click()
         );
 
+        console.log(`Waiting for modal to open`);
         // Wait for modal to open
         await this.page.waitForSelector("ul.chzn-choices", {
             visible: true,
@@ -140,8 +143,11 @@ export default class LoadBalancer {
             "ul .search-choice span",
             (el) => el.map((grader) => grader.textContent)
         );
+        console.log(`Graders already assigned`, gradersAssigned);
+
         // Skip if already graders assigned
         if (gradersAssigned.length >= 2) {
+            console.log(`Skipping`);
             return;
         }
         // Skip if only one grader but it's not the user
@@ -149,12 +155,14 @@ export default class LoadBalancer {
             gradersAssigned.length === 1 &&
             gradersAssigned[0] !== this.currentUser
         ) {
+            console.log(`Skipping`);
             return;
         }
 
         // Click input field
         await this.page.waitForSelector(".search-field input[type='text']");
         await this.page.click(".search-field input[type='text']");
+        console.log(`Input field clicked`);
 
         // If there's only one grader and is the user running the command remove it
         // (hiring leads are assigned by default as graders)
@@ -167,13 +175,17 @@ export default class LoadBalancer {
         }
 
         const [grader1, grader2] = this.findRandomGraders(application);
+        console.log(`Graders picked: ${grader1.name}, ${grader2.name}`);
         await this.writeGrader(grader1);
         await this.writeGrader(grader2);
+        console.log(`Graders written`);
 
         // Click save
-        await this.page.click("input[type='submit']");
-
-        this.spinner.stop();
+        // await this.page.click("input[type='submit']");
+        // Close modal
+        await this.page.click("button[title='Close']");
+        console.log(`Modal closed`);
+        // this.spinner.stop();
         console.log(
             green("✔"),
             `Written Interview from ${application.candidate} assigned to: ${grader1.name}, ${grader2.name}`
@@ -184,25 +196,39 @@ export default class LoadBalancer {
         await this.page.goto(
             `${MAIN_URL}people?sort_by=last_activity&sort_order=desc&stage_status_id%5B%5D=2&in_stages%5B%5D=Written+Interview`
         );
+        console.log(
+            `In the page ${MAIN_URL}people?sort_by=last_activity&sort_order=desc&stage_status_id%5B%5D=2&in_stages%5B%5D=Written+Interview`
+        );
         await this.findUsername();
+        console.log(`User is: ${this.currentUser}`);
 
+        console.log(`Looping over the applications`);
         while (true) {
             await this.page.waitForSelector(".person");
             const applicationsPage = await this.getApplicationsPage();
+            console.log(
+                `Number of applications in page: ${applicationsPage.length}`
+            );
             for (const application of applicationsPage) {
                 if (
                     application &&
                     application?.toGrade &&
                     this.jobs.includes(application.job)
                 ) {
+                    console.log(
+                        `Trying to assign graders for application`,
+                        application
+                    );
                     await this.assignGradersToApplication(application);
                 }
             }
 
             // Keep doing this until there are no more pages
             const nextPageBtn = await this.page.$("a.next_page:not(.disabled)");
+            console.log(`Next page exists? ${nextPageBtn ? "Yes" : "No"}`);
             if (!nextPageBtn) break;
 
+            console.log(`Going to the next page`);
             await Promise.all([
                 this.page.waitForNavigation(),
                 nextPageBtn.click(),

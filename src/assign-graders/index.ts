@@ -29,8 +29,9 @@ export default async function assignGraders(
             validate: (value: string[]) => value.length > 0,
         });
         const selectedJobs: string[] = await runPrompt(prompt);
+        console.log(`Selected jobs`, selectedJobs);
         const graders = createPool(config, selectedJobs, STAGE);
-
+        console.log(`Pool of graders`, graders);
         const loadBalancer = new LoadBalancer(
             page,
             graders,
