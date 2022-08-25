@@ -6,6 +6,7 @@ import { runPrompt } from "../common/commandUtils";
 import { MultiSelect } from "enquirer";
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
+import Job from "../automations/Job";
 
 export default async function assignGraders(
     spinner: Ora,
@@ -16,27 +17,41 @@ export default async function assignGraders(
     const STAGE = "Written Interview";
 
     // Only interactive mode for now
-    if (isInteractive) {
-        const config = await loadConfig();
-        const jobs = Object.keys(config);
-        if (!jobs.length) throw new UserError("You don't have any job.");
+    if (!isInteractive) return;
 
-        const prompt = new MultiSelect({
-            name: "Jobs",
-            message:
-                "Choose the jobs you want to assign graders to. Use space to make a selection",
-            choices: jobs,
-            validate: (value: string[]) => value.length > 0,
-        });
-        const selectedJobs: string[] = await runPrompt(prompt);
-        const graders = createPool(config, selectedJobs, STAGE);
+    const job = new Job(page, spinner);
+    const jobs = await job.getJobs();
+    if (!jobs.size) throw new UserError("You don't have any job.");
 
-        const loadBalancer = new LoadBalancer(
-            page,
-            graders,
-            selectedJobs,
-            spinner
+    const prompt = new MultiSelect({
+        name: "Jobs",
+        message:
+            "Choose the jobs you want to assign graders to. Use space to make a selection",
+        choices: Array.from(jobs.keys()),
+        validate: (value: string[]) => value.length > 0,
+    });
+    const selected: string[] = await runPrompt(prompt);
+
+    const selectedJobs = selected.map((job) => {
+        // Remove the requisition ID to match the format used in the config file
+        const jobName = job.replace(/\[\d+\]/, "").trim();
+        const id = jobs.get(job);
+        if (!id) throw new Error(`Error assigning and id to ${jobName}`);
+
+        return {
+            id,
+            jobName,
+        };
+    });
+
+    const config = await loadConfig();
+    const graders = createPool(config, selectedJobs, STAGE);
+    if (!graders.length) {
+        throw new UserError(
+            "Unable to find graders for the selected jobs. Check that the job name is matching."
         );
-        await loadBalancer.execute();
     }
+
+    const loadBalancer = new LoadBalancer(page, graders, selectedJobs, spinner);
+    await loadBalancer.execute();
 }
