@@ -1,4 +1,4 @@
-import { Application, Grader } from "./types";
+import { Application, Grader, Job } from "./types";
 import { MAIN_URL } from "../common/constants";
 import UserError from "../common/UserError";
 import { green } from "colors";
@@ -12,14 +12,14 @@ import { Page } from "puppeteer";
 export default class LoadBalancer {
     private page: Page;
     private graders: Grader[];
-    private jobs: string[];
+    private jobs: Job[];
     private spinner: Ora;
     private currentUser: string = "";
 
     constructor(
         page: Page,
         graders: Grader[],
-        selectedJobs: string[],
+        selectedJobs: Job[],
         spinner: Ora
     ) {
         this.page = page;
@@ -32,29 +32,28 @@ export default class LoadBalancer {
      * Return applications in current page
      */
     private async getApplicationsPage() {
-        return await this.page.$$eval(".person", (people) =>
-            people.map((p) => {
-                const applicationID = p.getAttribute("application");
-                const toggleText = p.querySelector(
-                    "a.toggle-interviews"
-                )?.textContent;
-                const toGrade = toggleText?.includes("Scorecard due");
-                const job = p
-                    .querySelector(".job")
-                    // Delete requisition ID next to job name
-                    ?.textContent?.replace(/\(\d+\)$/, "")
-                    .trim();
-                const candidate = p.querySelector(".name a")?.textContent;
+        console.log("Getting applications in page");
+        return await this.page.$$eval(
+            ".person",
+            (people, user) => {
+                return people.map((p) => {
+                    const applicationID = p.getAttribute("application");
+                    const toggleText = p.querySelector(
+                        "a.toggle-interviews"
+                    )?.textContent;
+                    const toGrade = toggleText === `Scorecard due from ${user}`;
+                    const candidate = p.querySelector(".name a")?.textContent;
 
-                if (applicationID && candidate && job && toGrade != null) {
-                    return {
-                        applicationID,
-                        candidate,
-                        job,
-                        toGrade,
-                    };
-                }
-            })
+                    if (applicationID && candidate && toGrade != null) {
+                        return {
+                            applicationID,
+                            candidate,
+                            toGrade,
+                        };
+                    }
+                });
+            },
+            this.currentUser
         );
     }
 
@@ -76,15 +75,15 @@ export default class LoadBalancer {
     /**
      * Find two random graders for an application
      */
-    private findRandomGraders(application: Application) {
+    private findRandomGraders(job: Job, application: Application) {
         const graders = this.graders.filter(
-            (grader: Grader) => grader.job == application.job
+            (grader: Grader) => grader.jobName == job.jobName
         );
         if (graders.length < 2) {
             throw new UserError("Not enough graders to pick from");
         }
         const grader1 = this.getRandom(graders);
-        // Remove first grader so it doesn't get choosen twice
+        // Remove first grader so it doesn't get chosen twice
         const grader2 = this.getRandom(
             graders.filter((name) => name !== grader1)
         );
@@ -109,7 +108,11 @@ export default class LoadBalancer {
     /**
      * Assign graders to one application
      */
-    private async assignGradersToApplication(application: Application) {
+    private async assignGradersToApplication(
+        job: Job,
+        application: Application,
+        graders: Grader[]
+    ) {
         // this.spinner.start("Processing applications");
 
         const selector = `.person[application="${application?.applicationID}"]`;
@@ -138,46 +141,18 @@ export default class LoadBalancer {
             visible: true,
         });
 
-        // Read graders already assigned
-        const gradersAssigned = await this.page.$$eval(
-            "ul .search-choice span",
-            (el) => el.map((grader) => grader.textContent)
-        );
-        console.log(`Graders already assigned`, gradersAssigned);
-
-        // Skip if already graders assigned
-        if (gradersAssigned.length >= 2) {
-            console.log(`Skipping`);
-            return;
-        }
-        // Skip if only one grader but it's not the user
-        if (
-            gradersAssigned.length === 1 &&
-            gradersAssigned[0] !== this.currentUser
-        ) {
-            console.log(`Skipping`);
-            return;
-        }
-
         // Click input field
         await this.page.waitForSelector(".search-field input[type='text']");
         await this.page.click(".search-field input[type='text']");
         console.log(`Input field clicked`);
 
-        // If there's only one grader and is the user running the command remove it
-        // (hiring leads are assigned by default as graders)
-        if (
-            gradersAssigned.length === 1 &&
-            gradersAssigned[0] === this.currentUser
-        ) {
-            await this.page.keyboard.press("Backspace");
-            await this.page.keyboard.press("Backspace");
-        }
+        // Delete current use assigned
+        await this.page.keyboard.press("Backspace");
+        await this.page.keyboard.press("Backspace");
 
-        const [grader1, grader2] = this.findRandomGraders(application);
-        console.log(`Graders picked: ${grader1.name}, ${grader2.name}`);
-        await this.writeGrader(grader1);
-        await this.writeGrader(grader2);
+        console.log(`Graders picked: ${graders[0].name}, ${graders[1].name}`);
+        await this.writeGrader(graders[0]);
+        await this.writeGrader(graders[1]);
         console.log(`Graders written`);
 
         // Click save
@@ -188,51 +163,66 @@ export default class LoadBalancer {
         // this.spinner.stop();
         console.log(
             green("✔"),
-            `Written Interview from ${application.candidate} assigned to: ${grader1.name}, ${grader2.name}`
+            `Written Interview from ${application.candidate} assigned to: ${graders[0].name}, ${graders[1].name}`
         );
     }
 
+    /**
+     * Return url for the page that shows written interviews for a given job
+     */
+    private buildUrl(job: Job) {
+        const url = new URL(`${MAIN_URL}people`);
+        url.searchParams.append("stage_status_id", "2");
+        url.searchParams.append("in_stages", "Written Interview");
+        url.searchParams.append("hiring_plan_id", job.id.toString());
+
+        return url.href;
+    }
+
     public async execute(): Promise<void> {
-        await this.page.goto(
-            `${MAIN_URL}people?sort_by=last_activity&sort_order=desc&stage_status_id%5B%5D=2&in_stages%5B%5D=Written+Interview`
-        );
-        console.log(
-            `In the page ${MAIN_URL}people?sort_by=last_activity&sort_order=desc&stage_status_id%5B%5D=2&in_stages%5B%5D=Written+Interview`
-        );
-        await this.findUsername();
-        console.log(`User is: ${this.currentUser}`);
-
-        console.log(`Looping over the applications`);
-        while (true) {
+        for (const job of this.jobs) {
+            const url = this.buildUrl(job);
+            console.log(`Url: ${url}`);
+            await this.page.goto(url);
             await this.page.waitForSelector(".person");
-            const applicationsPage = await this.getApplicationsPage();
-            console.log(
-                `Number of applications in page: ${applicationsPage.length}`
-            );
-            for (const application of applicationsPage) {
-                if (
-                    application &&
-                    application?.toGrade &&
-                    this.jobs.includes(application.job)
-                ) {
-                    console.log(
-                        `Trying to assign graders for application`,
-                        application
-                    );
-                    await this.assignGradersToApplication(application);
+
+            await this.findUsername();
+            console.log(`User is: ${this.currentUser}`);
+
+            console.log(`Looping over the applications`);
+            while (true) {
+                const applicationsPage = await this.getApplicationsPage();
+                console.log(
+                    `Number of applications in page: ${applicationsPage.length}`
+                );
+                console.log("applicationsPage", applicationsPage);
+                for (const application of applicationsPage) {
+                    if (application && application.toGrade) {
+                        const graders = this.findRandomGraders(
+                            job,
+                            application
+                        );
+                        await this.assignGradersToApplication(
+                            job,
+                            application,
+                            graders
+                        );
+                    }
                 }
+
+                // Keep doing this until there are no more pages
+                const nextPageBtn = await this.page.$(
+                    "a.next_page:not(.disabled)"
+                );
+                console.log(`Next page exists? ${nextPageBtn ? "Yes" : "No"}`);
+                if (!nextPageBtn) break;
+
+                console.log(`Going to the next page`);
+                await Promise.all([
+                    this.page.waitForNavigation(),
+                    nextPageBtn.click(),
+                ]);
             }
-
-            // Keep doing this until there are no more pages
-            const nextPageBtn = await this.page.$("a.next_page:not(.disabled)");
-            console.log(`Next page exists? ${nextPageBtn ? "Yes" : "No"}`);
-            if (!nextPageBtn) break;
-
-            console.log(`Going to the next page`);
-            await Promise.all([
-                this.page.waitForNavigation(),
-                nextPageBtn.click(),
-            ]);
         }
     }
 }
