@@ -363,9 +363,12 @@ function configureLoadBalancerCommand(
         .command("assign")
         .usage(
             "([-i | --interactive])" +
-                "\n\n Examples: \n\t ght assign --interactive "
+                "\n\n Examples: \n\t ght assign --interactive"
         )
-        .description("Assign random graders to written interview")
+        .description(
+            "Assign graders to written interviews for the jobs selected.\n" +
+                "Graders are randomly picked from a ght-graders.yml file defined in your home directory"
+        )
         .addOption(
             new Option("-i, --interactive", "Enable interactive interface")
         )

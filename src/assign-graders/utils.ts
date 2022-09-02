@@ -1,4 +1,4 @@
-import { Config, Grader } from "./types";
+import { Config, Grader, Job } from "./types";
 import yaml from "js-yaml";
 import fs from "fs";
 import { homedir } from "os";
@@ -20,18 +20,14 @@ export function loadConfig(): Config {
 /**
  * Return list of graders based on selected options
  */
-export function createPool(
-    config: Config,
-    selectedJobs: string[],
-    stage: string
-) {
+export function createPool(config: Config, selectedJobs: Job[], stage: string) {
     const pool: Grader[] = [];
-    selectedJobs.forEach((job) => {
-        const activeGraders = config[job][stage].filter(
+    selectedJobs.forEach(({ jobName }) => {
+        const activeGraders = config[jobName][stage].filter(
             (grader) => grader.active
         );
         activeGraders.forEach(({ name }) => {
-            pool.push({ name, job });
+            pool.push({ name, jobName });
         });
     });
 

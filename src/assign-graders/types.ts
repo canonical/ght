@@ -11,12 +11,16 @@ export type Config = {
 
 export type Grader = {
     name: string;
-    job: string;
+    jobName: string;
 };
 
 export type Application = {
     candidate: string;
-    job: string;
     applicationID: string;
     toGrade: boolean;
+};
+
+export type Job = {
+    id: number;
+    jobName: string;
 };
