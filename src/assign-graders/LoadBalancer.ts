@@ -69,6 +69,17 @@ export default class LoadBalancer {
     private async writeGrader(grader: Grader) {
         await this.page.type(".search-field input[type='text']", grader.name);
         await this.page.keyboard.press("Enter");
+
+        // Make sure that the user was correctly assigned
+        const gradersAssigned = await this.page.$$eval(
+            "ul .search-choice span",
+            (el) => el.map((grader) => grader.textContent)
+        );
+        if (!gradersAssigned.includes(grader.name)) {
+            throw new UserError(
+                `Couldn't assign ${grader.name}. Please verify there's a Greenhouse user with this name`
+            );
+        }
     }
 
     /**
