@@ -45,6 +45,9 @@ export default async function assignGraders(
     });
 
     const config = await loadConfig();
+    if (!config) {
+        throw new UserError("Unable to find list of graders");
+    }
     const graders = createPool(config, selectedJobs, STAGE);
     if (!graders.length) {
         throw new UserError(
