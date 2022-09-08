@@ -12,9 +12,12 @@ export function loadConfig(): Config {
         process.env["SNAP_REAL_HOME"] || homedir(),
         "ght-graders.yml"
     );
-    const config = yaml.load(fs.readFileSync(filePath, "utf8")) as Config;
-
-    return config;
+    try {
+        const config = yaml.load(fs.readFileSync(filePath, "utf8")) as Config;
+        return config;
+    } catch {
+        throw new Error("Unable to load config file");
+    }
 }
 
 /**
@@ -23,6 +26,9 @@ export function loadConfig(): Config {
 export function createPool(config: Config, selectedJobs: Job[], stage: string) {
     const pool: Grader[] = [];
     selectedJobs.forEach(({ jobName }) => {
+        if (!config[jobName]) {
+            throw new Error(`Unable to find "${jobName}" in config file`);
+        }
         const activeGraders = config[jobName][stage].filter(
             (grader) => grader.active
         );
