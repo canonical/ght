@@ -122,19 +122,15 @@ export default class LoadBalancer {
         application: Application,
         graders: Grader[]
     ) {
-        // this.spinner.start("Processing application");
-
         const selector = `.person[application="${application?.applicationID}"]`;
 
         // Click toggle button
-        console.log("Click toggle applications details");
         await this.page.waitForSelector(`${selector} .toggle-interviews`);
         await this.page.$eval(`${selector} .toggle-interviews`, (toggle) =>
             (toggle as HTMLAnchorElement).click()
         );
 
         // Click edit
-        console.log("Click edit");
         await this.page.waitForSelector(
             `${selector} .edit-take-home-test-graders-link`
         );
@@ -158,14 +154,11 @@ export default class LoadBalancer {
         await this.page.keyboard.press("Backspace");
 
         // Type graders
-        console.log("Typing graders");
         await this.writeGrader(graders[0]);
         await this.writeGrader(graders[1]);
 
         // Click save
-        // await this.page.click("input[type='submit']");
-        // For debugging we use close button instead of save
-        await this.page.click("button[title='Close']");
+        await this.page.click("input[type='submit']");
 
         this.spinner.stop();
         console.log(
@@ -189,19 +182,17 @@ export default class LoadBalancer {
     public async execute(): Promise<void> {
         for (const job of this.jobs) {
             const url = this.buildUrl(job);
-            console.log("Go to url", url);
             await this.page.goto(url);
             await this.page.waitForSelector(".person");
 
             await this.findUsername();
             while (true) {
-                console.log("Find applications in page");
+                this.spinner.start("Processing applications");
+
                 const applicationsPage = await this.getApplicationsPage();
-                console.log("Applications in page", applicationsPage);
                 for (const application of applicationsPage) {
                     if (application && application.toGrade) {
                         const graders = this.findRandomGraders(job);
-                        console.log("graders", graders);
                         await this.assignGradersToApplication(
                             application,
                             graders
@@ -215,7 +206,6 @@ export default class LoadBalancer {
                 );
                 if (!nextPageBtn) break;
 
-                console.log("Going to the next page");
                 await Promise.all([
                     this.page.waitForNavigation(),
                     nextPageBtn.click(),
