@@ -122,8 +122,6 @@ export default class LoadBalancer {
         application: Application,
         graders: Grader[]
     ) {
-        this.spinner.start("Processing applications");
-
         const selector = `.person[application="${application?.applicationID}"]`;
 
         // Click toggle button
@@ -167,6 +165,7 @@ export default class LoadBalancer {
             green("✔"),
             `Written Interview from ${application.candidate} assigned to: ${graders[0].name}, ${graders[1].name}`
         );
+        this.spinner.start();
     }
 
     /**
@@ -189,6 +188,8 @@ export default class LoadBalancer {
 
             await this.findUsername();
             while (true) {
+                this.spinner.start("Processing applications");
+
                 const applicationsPage = await this.getApplicationsPage();
                 for (const application of applicationsPage) {
                     if (application && application.toGrade) {
