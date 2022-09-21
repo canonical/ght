@@ -165,6 +165,7 @@ export default class LoadBalancer {
             green("✔"),
             `Written Interview from ${application.candidate} assigned to: ${graders[0].name}, ${graders[1].name}`
         );
+        this.spinner.start();
     }
 
     /**
