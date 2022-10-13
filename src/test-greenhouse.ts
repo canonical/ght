@@ -9,7 +9,7 @@ const JOB_POST_ID = 4267760;
 
 async function successfulTestGreenhouseUISelectors(sso: SSO, spinner: Ora) {
     console.log(
-        "Testing the UI selectors - this should be successful as job ID exists.."
+        "Testing the UI selectors - this should be successful as job ID exists..."
     );
     try {
         await provideAuthentication(sso, async (page) => {
@@ -64,7 +64,7 @@ async function failedTestReplicateJobPost(sso: SSO, spinner: Ora) {
 
 async function successfulTestReplicateJobPost(sso: SSO, spinner: Ora) {
     console.log(
-        "Testing job post replicate - this should be successful as region 'apac' exists.."
+        "Testing job post replicate - this should be successful as region 'apac' exists..."
     );
     try {
         await provideAuthentication(sso, (page) =>
@@ -98,11 +98,17 @@ async function successfulTestDeleteJobPost(sso: SSO, spinner: Ora) {
 
 async function multipleSuccessfulTestReplicateJobPost(sso: SSO, spinner: Ora) {
     console.log(
-        "Testing multiple job post replicate - this should be successful as regions 'apac'  and 'americas' exist.."
+        "Testing multiple job post replicate - this should be successful as regions 'apac', 'americas' and 'emea' exist..."
     );
     try {
         await provideAuthentication(sso, (page) =>
-            addPosts(spinner, false, JOB_POST_ID, ["apac", "americas"], page)
+            addPosts(
+                spinner,
+                false,
+                JOB_POST_ID,
+                ["apac", "americas", "emea"],
+                page
+            )
         );
     } catch (e) {
         console.log(
@@ -115,11 +121,17 @@ async function multipleSuccessfulTestReplicateJobPost(sso: SSO, spinner: Ora) {
 
 async function multipleSuccessfulTestDeleteJobPost(sso: SSO, spinner: Ora) {
     console.log(
-        "Testing multiple job post delete - replicated job posts for regions 'apac'  and 'americas' should be successfully deleted..."
+        "Testing multiple job post delete - replicated job posts for regions 'apac', 'americas' and 'emea' should be successfully deleted..."
     );
     try {
         await provideAuthentication(sso, (page) =>
-            deletePosts(spinner, false, JOB_POST_ID, ["apac", "americas"], page)
+            deletePosts(
+                spinner,
+                false,
+                JOB_POST_ID,
+                ["apac", "americas", "emea"],
+                page
+            )
         );
     } catch (e) {
         console.log(
