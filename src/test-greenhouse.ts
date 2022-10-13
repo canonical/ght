@@ -62,6 +62,28 @@ async function failedTestReplicateJobPost(sso: SSO, spinner: Ora) {
     }
 }
 
+async function misspelledTestReplicateJobPost(sso: SSO, spinner: Ora) {
+    console.log(
+        "Testing job post replicate - this should fail as regions 'Americas', 'Apac' and 'EMEA', (uppercase and/or misspell) don't exist..."
+    );
+    try {
+        await provideAuthentication(sso, (page) =>
+            addPosts(
+                spinner,
+                false,
+                JOB_POST_ID,
+                ["Americas", "Apac", "EMEA"],
+                page
+            )
+        );
+    } catch (e) {
+        console.log(
+            "Failed to add a new job post to the testing job Scenario A:",
+            e
+        );
+    }
+}
+
 async function successfulTestReplicateJobPost(sso: SSO, spinner: Ora) {
     console.log(
         "Testing job post replicate - this should be successful as region 'apac' exists..."
@@ -160,6 +182,7 @@ export const tests = [
     successfulTestGreenhouseUISelectors,
     failedTestGreenhouseUISelectors,
     failedTestReplicateJobPost,
+    misspelledTestReplicateJobPost,
     successfulTestReplicateJobPost,
     successfulTestDeleteJobPost,
     multipleSuccessfulTestReplicateJobPost,
