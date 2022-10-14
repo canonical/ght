@@ -3,6 +3,7 @@ on: pull_request
 
 env:
     CREDENTIALS: ${{ secrets.CREDENTIALS }}
+    GITHUB_ACTIONS: true
 
 jobs:
     tests:

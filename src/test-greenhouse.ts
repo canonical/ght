@@ -1,4 +1,6 @@
-import { addPosts, deletePosts, provideAuthentication } from ".";
+import { provideAuthentication } from ".";
+import { interactiveAndNonInteractiveTests } from "./interactiveAndNonInteractiveTests";
+import assignGraders from "./assign-graders";
 import Job from "./automations/Job";
 import SSO from "./automations/SSO";
 import { Ora } from "ora";
@@ -6,6 +8,9 @@ import { Ora } from "ora";
 // Dev - test 1
 const JOB_ID = 2044596;
 const JOB_POST_ID = 4267760;
+
+// Check for env variable - this variable will be set in the Github actions yaml
+const githubActions = process.env.GITHUB_ACTIONS;
 
 async function successfulTestGreenhouseUISelectors(sso: SSO, spinner: Ora) {
     console.log(
@@ -46,146 +51,75 @@ async function failedTestGreenhouseUISelectors(sso: SSO, spinner: Ora) {
     }
 }
 
-async function failedTestReplicateJobPost(sso: SSO, spinner: Ora) {
-    console.log(
-        "Testing job post replicate - this should fail as region 'test' doesn't exist..."
-    );
-    try {
-        await provideAuthentication(sso, (page) =>
-            addPosts(spinner, false, JOB_POST_ID, ["test"], page)
+async function runInteractiveAndNonInteractiveTests(sso: SSO, spinner: Ora) {
+    // Run non-interactive tests
+    await interactiveAndNonInteractiveTests(false, sso, spinner, JOB_POST_ID);
+    // Won't run interactive tests in Github actions
+    if (!githubActions)
+        await interactiveAndNonInteractiveTests(
+            true,
+            sso,
+            spinner,
+            JOB_POST_ID
         );
-    } catch (e) {
+}
+
+// Won't run this interactive test in Github actions
+async function successfulTestAssignGraders(sso: SSO, spinner: Ora) {
+    if (!githubActions) {
         console.log(
-            "Failed to add a new job post to the testing job Scenario A:",
-            e
+            "Testing assign graders - this should be successful as graders' names exist in config file..."
         );
+        try {
+            await provideAuthentication(sso, (page) =>
+                assignGraders(spinner, page, true)
+            );
+        } catch (e) {
+            console.log("Failed to assign graders", e);
+            process.exit(1);
+        }
     }
 }
 
-async function misspelledTestReplicateJobPost(sso: SSO, spinner: Ora) {
-    console.log(
-        "Testing job post replicate - this should fail as regions 'Americas', 'Apac' and 'EMEA', (uppercase and/or misspell) don't exist..."
-    );
-    try {
-        await provideAuthentication(sso, (page) =>
-            addPosts(
-                spinner,
-                false,
-                JOB_POST_ID,
-                ["Americas", "Apac", "EMEA"],
-                page
-            )
-        );
-    } catch (e) {
+// Won't run this interactive test in Github actions
+async function firstFailedTestAssignGraders(sso: SSO, spinner: Ora) {
+    if (!githubActions) {
+        // Delete job from the 'ght-graders.yml' file
         console.log(
-            "Failed to add a new job post to the testing job Scenario A:",
-            e
+            "Testing assign graders - this should fail as job doesn't exist in the config file..."
         );
+        try {
+            await provideAuthentication(sso, (page) =>
+                assignGraders(spinner, page, true)
+            );
+        } catch (e) {
+            console.log("Failed to assign graders", e);
+        }
     }
 }
 
-async function successfulTestReplicateJobPost(sso: SSO, spinner: Ora) {
-    console.log(
-        "Testing job post replicate - this should be successful as region 'apac' exists..."
-    );
-    try {
-        await provideAuthentication(sso, (page) =>
-            addPosts(spinner, false, JOB_POST_ID, ["apac"], page)
-        );
-    } catch (e) {
+// Won't run this interactive test in Github actions
+async function secondFailedTestAssignGraders(sso: SSO, spinner: Ora) {
+    if (!githubActions) {
+        // Delete the 'ght-graders.yml' file
         console.log(
-            "Failed to add a new job post to the testing job Scenario A:",
-            e
+            "Testing assign graders - this should fail as config file doesn't exist..."
         );
-        process.exit(1);
-    }
-}
-
-async function successfulTestDeleteJobPost(sso: SSO, spinner: Ora) {
-    console.log(
-        "Testing job post delete - replicated job posts for region 'apac' should be successfully deleted..."
-    );
-    try {
-        await provideAuthentication(sso, (page) =>
-            deletePosts(spinner, false, JOB_POST_ID, ["apac"], page)
-        );
-    } catch (e) {
-        console.log(
-            "Failed to delete the previously created job post Scenario A:",
-            e
-        );
-        process.exit(1);
-    }
-}
-
-async function multipleSuccessfulTestReplicateJobPost(sso: SSO, spinner: Ora) {
-    console.log(
-        "Testing multiple job post replicate - this should be successful as regions 'apac', 'americas' and 'emea' exist..."
-    );
-    try {
-        await provideAuthentication(sso, (page) =>
-            addPosts(
-                spinner,
-                false,
-                JOB_POST_ID,
-                ["apac", "americas", "emea"],
-                page
-            )
-        );
-    } catch (e) {
-        console.log(
-            "Failed to add a new job post to the testing job Scenario A:",
-            e
-        );
-        process.exit(1);
-    }
-}
-
-async function multipleSuccessfulTestDeleteJobPost(sso: SSO, spinner: Ora) {
-    console.log(
-        "Testing multiple job post delete - replicated job posts for regions 'apac', 'americas' and 'emea' should be successfully deleted..."
-    );
-    try {
-        await provideAuthentication(sso, (page) =>
-            deletePosts(
-                spinner,
-                false,
-                JOB_POST_ID,
-                ["apac", "americas", "emea"],
-                page
-            )
-        );
-    } catch (e) {
-        console.log(
-            "Failed to delete the previously created job post Scenario A:",
-            e
-        );
-        process.exit(1);
-    }
-}
-
-async function failedTestDeleteJobPost(sso: SSO, spinner: Ora) {
-    console.log("Testing job post delete - this should fail to delete...");
-    try {
-        await provideAuthentication(sso, (page) =>
-            deletePosts(spinner, false, JOB_POST_ID, ["test"], page)
-        );
-    } catch (e) {
-        console.log(
-            "Failed to delete the previously created job post Scenario A:",
-            e
-        );
+        try {
+            await provideAuthentication(sso, (page) =>
+                assignGraders(spinner, page, true)
+            );
+        } catch (e) {
+            console.log("Failed to assign graders", e);
+        }
     }
 }
 
 export const tests = [
     successfulTestGreenhouseUISelectors,
     failedTestGreenhouseUISelectors,
-    failedTestReplicateJobPost,
-    misspelledTestReplicateJobPost,
-    successfulTestReplicateJobPost,
-    successfulTestDeleteJobPost,
-    multipleSuccessfulTestReplicateJobPost,
-    multipleSuccessfulTestDeleteJobPost,
-    failedTestDeleteJobPost,
+    runInteractiveAndNonInteractiveTests,
+    successfulTestAssignGraders,
+    firstFailedTestAssignGraders,
+    secondFailedTestAssignGraders,
 ];
