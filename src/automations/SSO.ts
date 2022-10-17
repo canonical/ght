@@ -166,7 +166,7 @@ export default class SSO {
             {
                 type: "input",
                 name: "email",
-                message: "Your Canonical email:",
+                message: "Your Ubuntu One email:",
             },
             {
                 type: "password",
