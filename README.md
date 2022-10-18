@@ -14,6 +14,8 @@ On Linux it is available as a snap:
 snap install ght
 ```
 
+On MacOS, please follow the [instructions here](#macos-installation-guide).
+
 ## Usage
 
 ### Replicate job posts
@@ -59,5 +61,40 @@ Running `ght assign -i` will guide you through the process of selecting the jobs
 The CLI will manage authentication. To avoid entering credentials every time the command runs, the authorization cookie created by Greenhouse and SSO will be stored in the file: `~/.canonical-greenhouse.json`.
 
 Every time the authentication requires a refresh, you will be requested to authenticate.
+
+
+## MacOS installation guide
+
+### First time setup
+
+1. Install the version 16 LTS of Node.js: https://nodejs.org/en/download/
+2. Open the terminal app
+3. Copy paste the following lines to the terminal and hit enter, you will be asked to type your password:
+```sh
+sudo npm install -g yarn
+git clone https://github.com/canonical/ght ~/.ght
+cd ~/.ght
+yarn install && yarn build
+cp ght dist
+sudo ln -s /usr/local/bin/ght ~/.ght/dist/ght
+exit
+```
+4. GHT should be installed now on your system! You can run in the terminal:
+```sh
+ght replicate ...
+```
+
+### Update to latest version
+
+Open the terminal app and copy paste the following commands to your terminal:
+
+```sh
+cd ~/.ght
+rm -rf dist
+git reset HEAD --hard
+git pull origin main
+yarn install && yarn build
+cp ght dist
+```
 
 **Happy hiring!**
