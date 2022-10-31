@@ -123,12 +123,26 @@ export default class LoadBalancer {
         graders: Grader[]
     ) {
         const selector = `.person[application="${application?.applicationID}"]`;
+        let interviewCount = 0;
 
         // Click toggle button
         await this.page.waitForSelector(`${selector} .toggle-interviews`);
         await this.page.$eval(`${selector} .toggle-interviews`, (toggle) =>
             (toggle as HTMLAnchorElement).click()
         );
+
+        // Check there is only one interviewer
+        await this.page.waitForSelector(`${selector} tr.interview`);
+        interviewCount = await this.page.$$eval(
+            `${selector} tr.interview`,
+            (interviewRows) => {
+                return interviewRows.length;
+            }
+        );
+
+        if (interviewCount !== 1) {
+            return;
+        }
 
         // Click edit
         await this.page.waitForSelector(
