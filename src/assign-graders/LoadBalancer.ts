@@ -14,7 +14,7 @@ export default class LoadBalancer {
     private graders: Grader[];
     private jobs: Job[];
     private spinner: Ora;
-    private currentUser: string = "";
+    private currentUser = "";
 
     constructor(
         page: Page,
@@ -106,8 +106,8 @@ export default class LoadBalancer {
      */
     private async findUsername() {
         const currentUser = await this.page.$eval(
-            "script[data-user-name]",
-            (el) => (el as HTMLElement).dataset.userName
+            "script[data-key='ZendeskConfig.userName']",
+            (el) => (el as HTMLElement).dataset.value
         );
         if (!currentUser) {
             throw new Error("Unable to find user's name in Greenhouse");
@@ -197,13 +197,13 @@ export default class LoadBalancer {
     public async execute(): Promise<void> {
         for (const job of this.jobs) {
             const url = this.buildUrl(job);
-            await this.page.goto(url);
+            await this.page.goto(url, { waitUntil: "networkidle0" });
             await this.page.waitForSelector(".person");
 
             await this.findUsername();
+            let page = 1;
             while (true) {
                 this.spinner.start("Processing applications");
-
                 const applicationsPage = await this.getApplicationsPage();
                 for (const application of applicationsPage) {
                     if (application && application.toGrade) {
@@ -220,11 +220,10 @@ export default class LoadBalancer {
                     "a.next_page:not(.disabled)"
                 );
                 if (!nextPageBtn) break;
-
-                await Promise.all([
-                    this.page.waitForNavigation(),
-                    nextPageBtn.click(),
-                ]);
+                page++;
+                await this.page.goto(url + `&page=${page}`, {
+                    waitUntil: "networkidle0",
+                });
             }
         }
     }
