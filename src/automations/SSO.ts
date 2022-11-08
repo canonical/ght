@@ -197,6 +197,7 @@ export default class SSO {
         this.spinner.start("Setting up...");
         const browser = await Puppeteer.launch({
             headless: true,
+	    defaultViewport: null,
             args: ["--no-sandbox"],
         });
         const page = await browser.newPage();
