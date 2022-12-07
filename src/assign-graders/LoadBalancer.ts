@@ -15,17 +15,20 @@ export default class LoadBalancer {
     private jobs: Job[];
     private spinner: Ora;
     private currentUser = "";
+    private gradersCount = 2;
 
     constructor(
         page: Page,
         graders: Grader[],
         selectedJobs: Job[],
-        spinner: Ora
+        spinner: Ora,
+        gradersCount: number
     ) {
         this.page = page;
         this.graders = graders;
         this.jobs = selectedJobs;
         this.spinner = spinner;
+        this.gradersCount = gradersCount;
     }
 
     /**
@@ -57,13 +60,6 @@ export default class LoadBalancer {
     }
 
     /**
-     * Get random grader from array
-     */
-    private getRandom(graders: Grader[]) {
-        return graders[Math.floor(Math.random() * graders.length)];
-    }
-
-    /**
      * Type grader's name
      */
     private async writeGrader(grader: Grader) {
@@ -89,16 +85,17 @@ export default class LoadBalancer {
         const graders = this.graders.filter(
             (grader: Grader) => grader.jobName == job.jobName
         );
-        if (graders.length < 2) {
+        if (graders.length < this.gradersCount) {
             throw new UserError("Not enough graders to pick from");
         }
-        const grader1 = this.getRandom(graders);
-        // Remove first grader so it doesn't get chosen twice
-        const grader2 = this.getRandom(
-            graders.filter((name) => name !== grader1)
-        );
 
-        return [grader1, grader2];
+        // Shuffle graders array
+        const shuffledGraders = graders.sort(() => 0.5 - Math.random());
+
+        // Get sub-array of first elements to the graders count selected
+        const selectedGraders = shuffledGraders.slice(0, this.gradersCount);
+
+        return selectedGraders;
     }
 
     /**
@@ -167,18 +164,21 @@ export default class LoadBalancer {
         await this.page.keyboard.press("Backspace");
         await this.page.keyboard.press("Backspace");
 
+        let outputMessage = `Written Interview from ${application.candidate} assigned to: `;
+
         // Type graders
-        await this.writeGrader(graders[0]);
-        await this.writeGrader(graders[1]);
+        let comma = "";
+        for (const grader of graders) {
+            await this.writeGrader(grader);
+            outputMessage += `${comma}${grader.name}`;
+            comma = ", ";
+        }
 
         // Click save
         await this.page.click("input[type='submit']");
 
         this.spinner.stop();
-        console.log(
-            green("✔"),
-            `Written Interview from ${application.candidate} assigned to: ${graders[0].name}, ${graders[1].name}`
-        );
+        console.log(green("✔"), outputMessage);
         this.spinner.start();
     }
 
