@@ -3,7 +3,7 @@ import { loadConfig, createPool } from "./utils";
 import UserError from "../common/UserError";
 import { runPrompt } from "../common/commandUtils";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
-import { MultiSelect, Select } from "enquirer";
+import { MultiSelect } from "enquirer";
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
 import Job from "../automations/Job";
@@ -22,15 +22,6 @@ export default async function assignGraders(
     const job = new Job(page, spinner);
     const jobs = await job.getJobs();
     if (!jobs.size) throw new UserError("You don't have any job.");
-
-    const graderCountPrompt = new Select({
-        name: "Graders",
-        message: "Choose the number of graders",
-        choices: ["1", "2", "3", "4"],
-        initial: 1,
-    });
-    const gradersCountResponse: string[] = await runPrompt(graderCountPrompt);
-    const gradersCount: number = +gradersCountResponse;
 
     const prompt = new MultiSelect({
         name: "Jobs",
@@ -64,12 +55,6 @@ export default async function assignGraders(
         );
     }
 
-    const loadBalancer = new LoadBalancer(
-        page,
-        graders,
-        selectedJobs,
-        spinner,
-        gradersCount
-    );
+    const loadBalancer = new LoadBalancer(page, graders, selectedJobs, spinner);
     await loadBalancer.execute();
 }
