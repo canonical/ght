@@ -187,7 +187,6 @@ export default class LoadBalancer {
     /**
      * Record the grader for output reporting at the end of the action
      */
-
     private recordGrader(person: Grader) {
         const index = this.graderStore.findIndex(
             (e) => e.Grader === person.name
