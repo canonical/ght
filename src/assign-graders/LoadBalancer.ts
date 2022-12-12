@@ -213,6 +213,7 @@ export default class LoadBalancer {
 
         return url.href;
     }
+    
     /**
      * Sort the array by assignments
      */
