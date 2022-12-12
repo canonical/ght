@@ -1,4 +1,4 @@
-import { Application, Grader, Job } from "./types";
+import { Application, Grader, Job, GraderRecord } from "./types";
 import { MAIN_URL } from "../common/constants";
 import UserError from "../common/UserError";
 import { green } from "colors";
@@ -16,6 +16,7 @@ export default class LoadBalancer {
     private spinner: Ora;
     private currentUser = "";
     private gradersCount = 2;
+    private graderStore: GraderRecord[] = [];
 
     constructor(
         page: Page,
@@ -169,6 +170,7 @@ export default class LoadBalancer {
         // Type graders
         let comma = "";
         for (const grader of graders) {
+            this.recordGrader(grader);
             await this.writeGrader(grader);
             outputMessage += `${comma}${grader.name}`;
             comma = ", ";
@@ -183,6 +185,24 @@ export default class LoadBalancer {
     }
 
     /**
+     * Record the grader for output reporting at the end of the action
+     */
+    private recordGrader(person: Grader) {
+        const index = this.graderStore.findIndex(
+            (e) => e.Grader === person.name
+        );
+        if (index === -1) {
+            this.graderStore.push({
+                Grader: person.name,
+                Assignments: 1,
+            });
+        } else {
+            this.graderStore[index].Assignments =
+                this.graderStore[index].Assignments + 1;
+        }
+    }
+
+    /**
      * Return url for the page that shows written interviews for a given job
      */
     private buildUrl(job: Job) {
@@ -193,8 +213,16 @@ export default class LoadBalancer {
 
         return url.href;
     }
+    
+    /**
+     * Sort the array by assignments
+     */
+    private compareAssignments(a: GraderRecord, b: GraderRecord) {
+        return b.Assignments - a.Assignments;
+    }
 
     public async execute(): Promise<void> {
+        let allocationsCount = 0;
         for (const job of this.jobs) {
             const url = this.buildUrl(job);
             await this.page.goto(url, { waitUntil: "networkidle0" });
@@ -212,6 +240,7 @@ export default class LoadBalancer {
                             application,
                             graders
                         );
+                        allocationsCount++;
                     }
                 }
 
@@ -225,6 +254,20 @@ export default class LoadBalancer {
                     waitUntil: "networkidle0",
                 });
             }
+        }
+        this.spinner.stop();
+        if (allocationsCount) {
+            console.log(
+                green("✔"),
+                `${allocationsCount} submissions were auto-assigned`
+            );
+            this.graderStore.sort(this.compareAssignments);
+            console.table(this.graderStore);
+            console.log(
+                "Visit https://hiring.canonical.com/dashboards/performance to view historical team workload"
+            );
+        } else {
+            console.log(green("✔"), `No submissions found to auto-assign`);
         }
     }
 }

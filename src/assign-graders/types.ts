@@ -14,6 +14,11 @@ export type Grader = {
     jobName: string;
 };
 
+export type GraderRecord = {
+    Grader: string;
+    Assignments: number;
+};
+
 export type Application = {
     candidate: string;
     applicationID: string;
