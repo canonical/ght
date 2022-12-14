@@ -85,9 +85,18 @@ export default class SSO {
             return { sessionId: sessionId };
         }
         this.spinner.stop();
-        let credentials;
+        interface Credentials {
+            email?: string;
+            password?: string;
+            authCode?: string;
+        }
+        let credentials: Credentials;
         try {
-            credentials = await this.prompt();
+            if (process.env.CREDENTIALS) {
+                credentials = process.env.CREDENTIALS as Credentials;
+            } else {
+                credentials = await this.prompt();
+            }
         } catch {
             throw new UserError("Interrupted");
         }

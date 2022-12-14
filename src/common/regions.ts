@@ -187,5 +187,4 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Asia Pacific, Nagoya",
         "Home based - Asia Pacific, Osaka",
     ],
-    test: ["Home based - Africa, Accra"],
 };

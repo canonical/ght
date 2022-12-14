@@ -1,0 +1,14 @@
+name: PR check
+on: pull_request
+
+env:
+    CREDENTIALS: ${{ secrets.CREDENTIALS }}
+    GITHUB_ACTIONS: true
+
+jobs:
+    tests:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: Run ght tests
+              run: yarn dev doctor
