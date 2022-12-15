@@ -5,11 +5,15 @@ description: An automated browser that does a set of tasks on Canonical's Greenh
 base: core20
 confinement: strict
 grade: stable
-architectures: [amd64]
+architectures:
+    - amd64
+    - arm64
 parts:
     node:
         plugin: dump
-        source: https://nodejs.org/dist/v16.14.0/node-v16.14.0-linux-x64.tar.xz
+        source: 
+            - on amd64: https://nodejs.org/dist/v16.14.0/node-v16.14.0-linux-x64.tar.xz
+            - on arm64: https://nodejs.org/dist/v16.14.0/node-v16.14.0-linux-arm64.tar.xz
         stage:
             - bin
             - include
@@ -18,13 +22,15 @@ parts:
         after: [node]
         plugin: nil
         source: .
+        build-packages:
+            - on arm64: ["chromium-browser"]
         override-build: |
             npm config set unsafe-perm true
             npm install -g yarn
             yarn install
             yarn build
             # this causes PROT_EXEC problem
-            rm ./node_modules/puppeteer/.local-chromium/linux-*/chrome-linux/nacl_irt_*.nexe
+            rm -f ./node_modules/puppeteer/.local-chromium/linux-*/chrome-linux/nacl_irt_*.nexe
             cp -a ./dist/. $SNAPCRAFT_PART_INSTALL/
             cp -r ./node_modules $SNAPCRAFT_PART_INSTALL
         stage-packages:
