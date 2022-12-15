@@ -7,8 +7,16 @@ env:
 
 jobs:
     tests:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-22.04
         steps:
-            - uses: actions/checkout@v2
+            - name: Checkout repository
+              uses: actions/checkout@v3
+            - name: Setup NodeJS
+              run: |
+                sudo snap install node --channel=16/stable --classic
+                npm install -g typescript
+                npm install -g ts-node
+            - name: Install project dependencies
+              run: yarn
             - name: Run ght tests
               run: yarn dev doctor
