@@ -1,10 +1,6 @@
 name: PR check
 on: pull_request
 
-env:
-    CREDENTIALS: ${{ secrets.CREDENTIALS }}
-    GITHUB_ACTIONS: true
-
 jobs:
     tests:
         runs-on: ubuntu-22.04
@@ -13,10 +9,10 @@ jobs:
               uses: actions/checkout@v3
             - name: Setup NodeJS
               run: |
-                sudo snap install node --channel=16/stable --classic
-                npm install -g typescript
-                npm install -g ts-node
+                  sudo snap install node --channel=16/stable --classic
+                  npm install -g typescript
+                  npm install -g ts-node
             - name: Install project dependencies
               run: yarn
             - name: Run ght tests
-              run: yarn dev doctor
+              run: npm run test

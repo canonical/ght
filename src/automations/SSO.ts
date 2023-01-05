@@ -92,11 +92,7 @@ export default class SSO {
         }
         let credentials: Credentials;
         try {
-            if (process.env.CREDENTIALS) {
-                credentials = process.env.CREDENTIALS as Credentials;
-            } else {
-                credentials = await this.prompt();
-            }
+            credentials = await this.prompt();
         } catch {
             throw new UserError("Interrupted");
         }
