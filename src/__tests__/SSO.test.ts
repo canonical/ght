@@ -1,6 +1,6 @@
 import { testHTML } from "./mocks";
 import SSO from "../automations/SSO";
-import * as error from "../common/UserError";
+import UserError from "../common/UserError";
 import Enquirer from "enquirer";
 import * as cookies from "tough-cookie";
 
@@ -29,55 +29,51 @@ jest.mock("tough-cookie", () => {
     };
 });
 
-it("logs in with saved credentials", async () => {
-    const spinner = {
-        start: jest.fn(),
-        succeed: jest.fn(),
-        stop: jest.fn(),
-    } as any;
+describe("SSO tests", () => {
+    let spinner: any;
 
-    Enquirer.prompt = jest.fn().mockResolvedValue({
-        email: "test@test.com",
-        password: "test",
-        authCode: "test-auth",
+    beforeEach(() => {
+        spinner = {
+            start: jest.fn(),
+            succeed: jest.fn(),
+            stop: jest.fn(),
+        } as any;
+
+        Enquirer.prompt = jest.fn().mockResolvedValue({
+            email: "test@test.com",
+            password: "test",
+            authCode: "test-auth",
+        });
     });
 
-    const sso = new SSO(spinner);
+    it("logs in with saved credentials", async () => {
+        const sso = new SSO(spinner);
 
-    await sso.login();
+        await sso.login();
 
-    expect(spinner.start).toHaveBeenLastCalledWith(
-        "Checking authentication..."
-    );
-
-    expect(spinner.succeed).toHaveBeenCalledWith(
-        "Using the saved credentials."
-    );
-});
-
-it("displays invalid 2FA", async () => {
-    jest.spyOn(cookies, "CookieJar").mockImplementation((): any => {
-        return {
-            setCookie: jest.fn(),
-            getCookies: jest.fn().mockReturnValue([]),
-        };
-    });
-    jest.spyOn(error, "default").mockReturnValueOnce(jest.fn() as any);
-
-    const spinner = {
-        start: jest.fn(),
-        succeed: jest.fn(),
-        stop: jest.fn(),
-    } as any;
-
-    Enquirer.prompt = jest.fn().mockResolvedValue({
-        email: "test@test.com",
-        password: "test",
-        authCode: "test-auth",
+        expect(spinner.start).toHaveBeenLastCalledWith(
+            "Checking authentication..."
+        );
+        expect(spinner.succeed).toHaveBeenCalledWith(
+            "Using the saved credentials."
+        );
     });
 
-    const sso = new SSO(spinner);
-    await sso.login();
+    it("displays invalid 2FA", async () => {
+        jest.spyOn(cookies, "CookieJar").mockImplementation((): any => {
+            return {
+                setCookie: jest.fn(),
+                getCookies: jest.fn().mockReturnValue([]),
+            };
+        });
 
-    expect(error.default).toHaveBeenCalled();
+        const sso = new SSO(spinner);
+
+        try {
+            await sso.login();
+        } catch (e) {
+            expect(e).toEqual(new UserError("Invalid 2FA"));
+        }
+        expect(spinner.start).toHaveBeenLastCalledWith("Logging in...");
+    });
 });
