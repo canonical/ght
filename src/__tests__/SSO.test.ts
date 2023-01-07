@@ -1,8 +1,8 @@
 import { testHTML } from "./mocks";
 import SSO from "../automations/SSO";
 import UserError from "../common/UserError";
-import Enquirer from "enquirer";
 import * as cookies from "tough-cookie";
+import Enquirer = require("enquirer");
 
 jest.mock("tough-cookie", () => jest.fn());
 jest.mock(
@@ -71,8 +71,8 @@ describe("SSO tests", () => {
 
         try {
             await sso.login();
-        } catch (e) {
-            expect(e).toEqual(new UserError("Invalid 2FA"));
+        } catch (error) {
+            expect(error).toEqual(new UserError("Invalid 2FA"));
         }
         expect(spinner.start).toHaveBeenLastCalledWith("Logging in...");
     });

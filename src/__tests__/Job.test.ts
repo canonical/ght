@@ -4,9 +4,19 @@ import Job from "../automations/Job";
 import * as jobPost from "../automations/JobPost";
 import { PostInfo } from "../common/types";
 
+jest.mock("../common/pageUtils", () => ({
+    ...jest.requireActual("../common/pageUtils"),
+    getIDFromURL: jest.fn().mockReturnValue(1),
+}));
+
+Object.defineProperty(constants, "MAIN_URL", {
+    writable: true,
+    value: "https://test.test",
+});
+
 describe("Job tests", () => {
     let spinner: any;
-    const page = { reload: jest.fn() } as any;
+    let page = { reload: jest.fn(), goto: jest.fn() } as any;
 
     beforeEach(() => {
         spinner = {
@@ -277,13 +287,6 @@ describe("Job tests", () => {
 
         let jobData = { id: 1, name: "test", posts: [postInfo] };
 
-        beforeEach(() => {
-            Object.defineProperty(constants, "MAIN_URL", {
-                writable: true,
-                value: "https://test.test",
-            });
-        });
-
         it("successfully deletes job posts", async () => {
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
@@ -325,6 +328,43 @@ describe("Job tests", () => {
                 expect(error).toEqual(
                     TypeError(
                         "Cannot read properties of undefined (reading 'filter')"
+                    )
+                );
+            }
+        });
+    });
+
+    it("gets all jobs", async () => {
+        const mockGetJobsFromPage = jest
+            .fn()
+            .mockReturnValue({ jobs: { "test-job": 1 }, hasMorePage: false });
+        Job.prototype["getJobsFromPage"] = mockGetJobsFromPage;
+
+        const job = new Job(page, spinner);
+        const getJobs = await job.getJobs();
+
+        expect(getJobs).toBe(new Map(Object.entries({ "test-job": 1 })));
+    });
+
+    describe("gets job ID from post", () => {
+        it("successfully gets job ID from post", async () => {
+            page = { ...page, $: jest.fn().mockReturnValue(true) };
+            const job = new Job(page, spinner);
+            const getJobIDFromPost = await job.getJobIDFromPost(1);
+
+            expect(getJobIDFromPost).toBe(1);
+        });
+
+        it("fails to get job ID from post", async () => {
+            page = { ...page, $: jest.fn() };
+            const job = new Job(page, spinner);
+
+            try {
+                await job.getJobIDFromPost(1);
+            } catch (error) {
+                expect(error).toEqual(
+                    new Error(
+                        "Job cannot be found in https://test.test/jobapps/1/edit."
                     )
                 );
             }
