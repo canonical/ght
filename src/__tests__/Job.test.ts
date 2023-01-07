@@ -343,7 +343,7 @@ describe("Job tests", () => {
         const job = new Job(page, spinner);
         const getJobs = await job.getJobs();
 
-        expect(getJobs).toBe(new Map(Object.entries({ "test-job": 1 })));
+        expect(getJobs).toEqual(new Map(Object.entries({ "test-job": 1 })));
     });
 
     describe("gets job ID from post", () => {
