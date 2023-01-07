@@ -9,7 +9,6 @@ export default async (): Promise<Config.InitialOptions> => {
         coverageReporters: ["json", "text", "lcov", "clover"],
         detectOpenHandles: true,
         forceExit: true,
-        globalTeardown: "./jest-globals-teardown.ts",
         preset: "ts-jest",
         setupFilesAfterEnv: ["./jest.setup.ts"],
         testEnvironment: "node",
