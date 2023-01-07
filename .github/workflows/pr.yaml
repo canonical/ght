@@ -15,4 +15,4 @@ jobs:
             - name: Install project dependencies
               run: yarn
             - name: Run ght tests
-              run: npm run test
+              run: set -o pipefail && npm run test
