@@ -251,8 +251,11 @@ export default class Job {
         await this.page.goto(url);
 
         const body = await this.page.$("body");
-        const innerHTML = await body?.evaluate((element) => element.innerHTML);
+        let innerHTML = await body?.evaluate((element) => element.innerHTML);
         if (!innerHTML) throw new Error(`Jobs cannot be found from ${url}`);
+
+        // Strip HTML markup around the JSON. For example: <pre>
+        innerHTML = innerHTML.replace(/(<([^>]+)>)/gi, "");
 
         const content = JSON.parse(decodeURIComponent(innerHTML));
 
