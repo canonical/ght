@@ -292,7 +292,9 @@ export default class Job {
 
                         const matchedReqID = nameElement.match(/\([0-9]+\)/);
                         if (!matchedReqID)
-                            throw new Error(`Cannot get req ID.`);
+                            throw new Error(
+                                `Cannot get req ID: ${nameElement}`
+                            );
                         const matchedElement = matchedReqID[0];
                         const reqID = matchedElement.slice(
                             1,
