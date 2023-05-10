@@ -18,7 +18,7 @@ snap install ght
 
 ### Replicate job posts
 
-You can use `ght` to replicate job posts from the Canonical board in regions: americas, EMEA and APAC.
+You can use `ght` to replicate job posts from the Canonical board in regions: americas, emea, apac, canada and latam.
 
 ```
 ght replicate <JOB_POST_ID> --regions=europe,americas

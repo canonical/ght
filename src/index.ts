@@ -244,7 +244,7 @@ function validateRegionParam(param: string) {
     enteredRegions.forEach((enteredRegion) => {
         if (!regions[enteredRegion])
             throw new UserError(
-                `Invalid region, available regions are: americas, apac, emea.`
+                `Invalid region, available regions are: americas, apac, emea, canada, latam.`
             );
     });
 
