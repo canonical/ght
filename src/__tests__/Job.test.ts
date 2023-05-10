@@ -3,6 +3,7 @@ import * as constants from "../common/constants";
 import Job from "../automations/Job";
 import * as jobPost from "../automations/JobPost";
 import { PostInfo } from "../common/types";
+import { america } from "colors";
 
 jest.mock("../common/pageUtils", () => ({
     ...jest.requireActual("../common/pageUtils"),
@@ -65,7 +66,171 @@ describe("Job tests", () => {
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
             );
-            expect(spinner.text).toEqual("178 of 178 job posts are created.");
+            expect(spinner.text).toEqual("200 of 200 job posts are created.");
+            expect(spinner.stop).toHaveBeenCalledTimes(1);
+        });
+
+        it("successfully clones canadian job posts", async () => {
+            jest.spyOn(board, "default").mockImplementation((): any => {
+                return {
+                    getBoards: jest
+                        .fn()
+                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
+                };
+            });
+            jest.spyOn(jobPost, "default").mockImplementation((): any => {
+                return {
+                    duplicate: jest.fn(),
+                };
+            });
+
+            const postInfo = {
+                id: 1,
+                name: "test",
+                location: "test-location",
+                boardInfo: {
+                    id: 1,
+                    name: "Canonical",
+                },
+                job: {
+                    id: 1,
+                    name: "test",
+                    posts: [{}],
+                },
+                isLive: true,
+            } as PostInfo;
+
+            const job = new Job(page, spinner);
+
+            await job.clonePost([postInfo], ["canada"], 0);
+
+            expect(spinner.start).toHaveBeenCalledWith(
+                "Starting to create job posts."
+            );
+            expect(spinner.text).toEqual("20 of 20 job posts are created.");
+            expect(spinner.stop).toHaveBeenCalledTimes(1);
+        });
+
+        it("successfully clones latin america job posts", async () => {
+            jest.spyOn(board, "default").mockImplementation((): any => {
+                return {
+                    getBoards: jest
+                        .fn()
+                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
+                };
+            });
+            jest.spyOn(jobPost, "default").mockImplementation((): any => {
+                return {
+                    duplicate: jest.fn(),
+                };
+            });
+
+            const postInfo = {
+                id: 1,
+                name: "test",
+                location: "test-location",
+                boardInfo: {
+                    id: 1,
+                    name: "Canonical",
+                },
+                job: {
+                    id: 1,
+                    name: "test",
+                    posts: [{}],
+                },
+                isLive: true,
+            } as PostInfo;
+
+            const job = new Job(page, spinner);
+
+            await job.clonePost([postInfo], ["latam"], 0);
+
+            expect(spinner.start).toHaveBeenCalledWith(
+                "Starting to create job posts."
+            );
+            expect(spinner.text).toEqual("19 of 19 job posts are created.");
+            expect(spinner.stop).toHaveBeenCalledTimes(1);
+        });
+
+        it("successfully clones americas job posts", async () => {
+            jest.spyOn(board, "default").mockImplementation((): any => {
+                return {
+                    getBoards: jest
+                        .fn()
+                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
+                };
+            });
+            jest.spyOn(jobPost, "default").mockImplementation((): any => {
+                return {
+                    duplicate: jest.fn(),
+                };
+            });
+
+            const postInfo = {
+                id: 1,
+                name: "test",
+                location: "test-location",
+                boardInfo: {
+                    id: 1,
+                    name: "Canonical",
+                },
+                job: {
+                    id: 1,
+                    name: "test",
+                    posts: [{}],
+                },
+                isLive: true,
+            } as PostInfo;
+
+            const job = new Job(page, spinner);
+
+            await job.clonePost([postInfo], ["latam"], 0);
+
+            expect(spinner.start).toHaveBeenCalledWith(
+                "Starting to create job posts."
+            );
+            expect(spinner.text).toEqual("19 of 19 job posts are created.");
+            expect(spinner.stop).toHaveBeenCalledTimes(1);
+        });
+
+        it("dedups cities before cloning job posts", async () => {
+            jest.spyOn(board, "default").mockImplementation((): any => {
+                return {
+                    getBoards: jest
+                        .fn()
+                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
+                };
+            });
+            jest.spyOn(jobPost, "default").mockImplementation((): any => {
+                return {
+                    duplicate: jest.fn(),
+                };
+            });
+
+            const postInfo = {
+                id: 1,
+                name: "test",
+                location: "test-location",
+                boardInfo: {
+                    id: 1,
+                    name: "Canonical",
+                },
+                job: {
+                    id: 1,
+                    name: "test",
+                    posts: [{}],
+                },
+                isLive: true,
+            } as PostInfo;
+
+            const job = new Job(page, spinner);
+
+            await job.clonePost([postInfo], ["latam", "canada", "americas"], 0);
+
+            expect(spinner.start).toHaveBeenCalledWith(
+                "Starting to create job posts."
+            );
+            expect(spinner.text).toEqual("91 of 91 job posts are created.");
             expect(spinner.stop).toHaveBeenCalledTimes(1);
         });
 
