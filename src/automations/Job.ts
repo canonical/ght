@@ -93,7 +93,7 @@ export default class Job {
         enteredRegions.forEach((regionName: string) => {
             postLocations.push(...regions[regionName]);
         });
-        return postLocations;
+        return [...new Set(postLocations)];
     }
 
     public async markAsLive(jobID: number, oldPosts: PostInfo[]) {

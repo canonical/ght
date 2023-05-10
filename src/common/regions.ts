@@ -98,17 +98,9 @@ export const latamCities: string[] = [
 ];
 export const regionCategories = ["americas", "emea", "apac", "canada", "latam"];
 export const regions: { [key: string]: string[] } = {
-    americas: [
-        ...usaCities,
-        ...canadaCities,
-        ...latamCities,
-    ],
-    canada: [
-        ...canadaCities,
-    ],
-    latam: [
-        ...latamCities,
-    ],
+    americas: [...usaCities, ...canadaCities, ...latamCities],
+    canada: [...canadaCities],
+    latam: [...latamCities],
     emea: [
         "Home based - Africa, Accra",
         "Home based - Africa, Cairo",
