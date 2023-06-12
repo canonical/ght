@@ -1,14 +1,10 @@
 {
     "extends": "@tsconfig/node16/tsconfig.json",
-    "compilerOptions": { 
+    "compilerOptions": {
         "outDir": "dist",
-        "lib": [
-            "es2016",
-            "dom",
-            "dom.iterable"
-        ]
+        "lib": ["es2016", "dom", "dom.iterable"],
+        "esModuleInterop": true
     },
     "include": ["src"],
     "exclude": ["node_modules"]
-
 }

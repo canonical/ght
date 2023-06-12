@@ -1,10 +1,11 @@
-import { USER_ERROR } from "./constants";
 import { Ora } from "ora";
 import * as Sentry from "@sentry/node";
 //It's necessary for sentry to trace errors. Importing @sentry/tracing patches the global hub for tracing to work.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Tracing from "@sentry/tracing";
 import * as puppeteer from "puppeteer";
+
+const USER_ERROR = "UserError";
 
 export const isDevelopment = () => process.env.NODE_ENV === "development";
 
@@ -47,3 +48,10 @@ export const evaluate: (
         throw new Error((err as Error).message);
     }
 };
+
+export class UserError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = USER_ERROR;
+    }
+}

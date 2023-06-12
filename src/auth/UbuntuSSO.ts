@@ -1,21 +1,17 @@
-import { CONFIG_PATH, SSO_DOMAIN, SSO_URL } from "../common/constants";
-import { joinURL } from "../common/pageUtils";
-import UserError from "../common/UserError";
+import { Authentication, LoginCookie } from "./Authentication";
+import { joinURL } from "../utils/pageUtils";
+import { UserError } from "../utils/processUtils";
+import Config from "../config/Config";
 import { HttpsCookieAgent } from "http-cookie-agent";
 import { JSDOM } from "jsdom";
 import fetch, { RequestInit, Response } from "node-fetch";
-import { CookieJar } from "tough-cookie";
 import Enquirer = require("enquirer");
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { CookieJar } from "tough-cookie";
+import { existsSync, writeFileSync } from "fs";
 
-export type SSOCookies = {
-    sessionId: string;
-};
-
-export default class SSO {
-    private jar;
+export default class UbuntuSSO extends Authentication {
     private httpsAgent;
     // the base headers that are sent to login.ubuntu.com
     private headers = {
@@ -35,10 +31,14 @@ export default class SSO {
         "Referrer-Policy": "strict-origin-when-cross-origin",
     };
     private defaultFetchOptions: RequestInit;
-    private spinner: Ora;
+    private jar: CookieJar;
 
-    constructor(spinner: Ora) {
-        if (existsSync(CONFIG_PATH)) {
+    static SESSION_NAME = "sessionid";
+
+    constructor(spinner: Ora, config: Config) {
+        super(spinner, config);
+
+        if (existsSync(config.userSettingsPath)) {
             this.jar = CookieJar.deserializeSync(this.parseUserSettings());
         } else {
             this.jar = new CookieJar();
@@ -57,32 +57,28 @@ export default class SSO {
         this.spinner = spinner;
     }
 
-    private parseUserSettings() {
-        const configRawContent = readFileSync(CONFIG_PATH).toString();
-        try {
-            return JSON.parse(configRawContent);
-        } catch {
-            throw new Error("Failed to parse user settings in " + CONFIG_PATH);
-        }
+    private async currentSessionId(): Promise<string | null> {
+        const cookies = await this.jar.getCookies(this.config.loginUrl);
+        return (
+            cookies.find((cookie) => cookie.key === UbuntuSSO.SESSION_NAME)
+                ?.value || null
+        );
     }
+
     private saveUserSettings() {
-        writeFileSync(CONFIG_PATH, JSON.stringify(this.jar));
+        writeFileSync(this.config.userSettingsPath, JSON.stringify(this.jar));
     }
 
-    public setCookies(page: Puppeteer.Page, ssoCookies: SSOCookies) {
-        return page.setCookie({
-            name: "sessionid",
-            value: ssoCookies.sessionId,
-            domain: SSO_DOMAIN,
-        });
-    }
-
-    public async login(): Promise<SSOCookies> {
+    public async login(): Promise<LoginCookie> {
         this.spinner.start("Checking authentication...");
         let sessionId = await this.currentSessionId();
         if ((await this.isLoggedIn()) && sessionId) {
             this.spinner.succeed("Using the saved credentials.");
-            return { sessionId: sessionId };
+            return {
+                name: UbuntuSSO.SESSION_NAME,
+                value: sessionId,
+                domain: new URL(this.config.loginUrl).hostname,
+            };
         }
         this.spinner.stop();
         interface Credentials {
@@ -98,11 +94,11 @@ export default class SSO {
         }
         this.spinner.start("Logging in...");
         let response: Response = await fetch(
-            joinURL(SSO_URL, "/+login"),
+            joinURL(this.config.loginUrl, "/+login"),
             this.defaultFetchOptions
         );
         let CSRFToken: string = this.getCSRFToken(await response.text());
-        response = await fetch(joinURL(SSO_URL, "/+login"), {
+        response = await fetch(joinURL(this.config.loginUrl, "/+login"), {
             ...this.defaultFetchOptions,
             headers: {
                 ...this.headers,
@@ -117,15 +113,18 @@ export default class SSO {
                 "Authorization failed. Please check your e-mail and password."
             );
         CSRFToken = this.getCSRFToken(html);
-        response = await fetch(joinURL(SSO_URL, "/two_factor_auth"), {
-            ...this.defaultFetchOptions,
-            headers: {
-                ...this.headers,
-                "content-type": "application/x-www-form-urlencoded",
-            },
-            method: "POST",
-            body: `oath_token=${credentials.authCode}&csrfmiddlewaretoken=${CSRFToken}&continue=&openid.usernamesecret=`,
-        });
+        response = await fetch(
+            joinURL(this.config.loginUrl, "/two_factor_auth"),
+            {
+                ...this.defaultFetchOptions,
+                headers: {
+                    ...this.headers,
+                    "content-type": "application/x-www-form-urlencoded",
+                },
+                method: "POST",
+                body: `oath_token=${credentials.authCode}&csrfmiddlewaretoken=${CSRFToken}&continue=&openid.usernamesecret=`,
+            }
+        );
 
         // make sure that the login flow finished successfully
         sessionId = await this.currentSessionId();
@@ -133,33 +132,23 @@ export default class SSO {
             throw new UserError("Invalid 2FA");
         this.saveUserSettings();
         this.spinner.succeed("Authentication completed.");
-        return { sessionId: sessionId };
-    }
-
-    public logout() {
-        this.spinner.start("Logging out...");
-        if (existsSync(CONFIG_PATH)) {
-            unlinkSync(CONFIG_PATH);
-            this.spinner.succeed("Logout completed.");
-        } else {
-            this.spinner.succeed("Already logged out.");
-        }
+        return {
+            name: UbuntuSSO.SESSION_NAME,
+            value: sessionId,
+            domain: new URL(this.config.loginUrl).hostname,
+        };
     }
 
     public async isLoggedIn() {
         if (!(await this.currentSessionId())) return false;
-        const response = await fetch(SSO_URL, this.defaultFetchOptions);
+        const response = await fetch(
+            this.config.loginUrl,
+            this.defaultFetchOptions
+        );
         const html = await response.text();
         // if "Personal details" is present in the page
         // that means that we are in the user details page
         return html.match(/personal details/i);
-    }
-
-    private async currentSessionId(): Promise<string | null> {
-        const cookies = await this.jar.getCookies(SSO_URL);
-        return (
-            cookies.find((cookie) => cookie.key === "sessionid")?.value || null
-        );
     }
 
     private prompt(): Promise<{
@@ -197,21 +186,15 @@ export default class SSO {
         return csrfToken;
     }
 
-    public async authenticate() {
+    public async authenticate(page: Puppeteer.Page) {
         const loginCookies = await this.login();
         this.spinner.start("Setting up...");
-        const browser = await Puppeteer.launch({
-            headless: true,
-            defaultViewport: null,
-            args: ["--no-sandbox"],
+        await page.setCookie({
+            name: UbuntuSSO.SESSION_NAME,
+            value: loginCookies.value,
+            domain: "login.ubuntu.com",
         });
-        const page = await browser.newPage();
-        await this.setCookies(page, loginCookies);
 
         this.spinner.succeed("Setup is completed.");
-        return {
-            browser,
-            page,
-        };
     }
 }

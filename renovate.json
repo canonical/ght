@@ -1,25 +1,17 @@
 {
-  "extends": [
-    "github>canonical-web-and-design/renovate-websites"
-  ],
-  "packageRules": [
-    {
-      "matchPackageNames": [
-        "node-fetch"
-      ],
-      "allowedVersions": "<=2.6.7"
-    },
-    {
-      "matchPackageNames": [
-        "@types/node-fetch"
-      ],
-      "allowedVersions": "<=2.6.1"
-    },
-    {
-      "matchPackageNames": [
-        "ora"
-      ],
-      "allowedVersions": "<=5.4.1"
-    }
-  ]
+    "extends": ["github>canonical-web-and-design/renovate-websites"],
+    "packageRules": [
+        {
+            "matchPackageNames": ["node-fetch"],
+            "allowedVersions": "<=2.6.7"
+        },
+        {
+            "matchPackageNames": ["@types/node-fetch"],
+            "allowedVersions": "<=2.6.1"
+        },
+        {
+            "matchPackageNames": ["ora"],
+            "allowedVersions": "<=5.4.1"
+        }
+    ]
 }

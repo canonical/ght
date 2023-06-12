@@ -1,5 +1,4 @@
-import { evaluate, reportError } from "./processUtils";
-import UserError from "./UserError";
+import { evaluate, reportError, UserError } from "./processUtils";
 import Puppeteer from "puppeteer";
 
 export function getInnerText(
