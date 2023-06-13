@@ -18,4 +18,12 @@ describe("Config", () => {
 
         expect(config.greenhouseUrl).toEqual("https://example.com");
     });
+
+    it("throws an error when an invalid override is provided", () => {
+        const overrides = {
+            unknown: 123,
+        };
+
+        expect(() => new Config(overrides as any)).toThrow();
+    })
 });
