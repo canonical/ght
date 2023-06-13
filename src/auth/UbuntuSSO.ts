@@ -187,13 +187,9 @@ export default class UbuntuSSO extends Authentication {
     }
 
     public async authenticate(page: Puppeteer.Page) {
-        const loginCookies = await this.login();
+        const loginCookie = await this.login();
         this.spinner.start("Setting up...");
-        await page.setCookie({
-            name: UbuntuSSO.SESSION_NAME,
-            value: loginCookies.value,
-            domain: "login.ubuntu.com",
-        });
+        await page.setCookie(loginCookie);
 
         this.spinner.succeed("Setup is completed.");
     }
