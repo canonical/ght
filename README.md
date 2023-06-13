@@ -87,7 +87,7 @@ regions:
         - "Home based - Canada, Montreal"
 ```
 
-To specify it you have to supply the file path with `--config` (or `-c`), i.e:
+To do do, supply the file path with `--config` (or `-c`), i.e:
 
 ```
 ght replicate -i --config ~/ght-config.yaml
