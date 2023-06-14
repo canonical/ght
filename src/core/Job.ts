@@ -48,7 +48,6 @@ export default class Job {
                 (post) => post.id === sourceID && post.boardInfo.name === board
             );
         } else {
-            // If a source post is not provided, use posts that are in the "Canonical" board.
             protectedPosts = posts.filter(
                 (post) => post.boardInfo.name === board
             );
@@ -56,7 +55,7 @@ export default class Job {
 
         if (!protectedPosts?.length) {
             const errorMessage = sourceID
-                ? `Job post with ${sourceID} ID cannot be found in the Canonical Board.`
+                ? `Job post with ${sourceID} ID cannot be found in the ${board} Board.`
                 : `No post found to clone`;
             throw new Error(errorMessage);
         }
