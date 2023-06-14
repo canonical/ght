@@ -8,7 +8,6 @@ describe("GreenhouseAuth", () => {
     it("loads session if it exists", async () => {
         const fileContent =
             '{"name": "sessionid", "value": "1234", "domain": "example.com"}';
-        // Mock the readFileSync method
         jest.spyOn(fs, "readFileSync").mockReturnValue(fileContent);
         jest.spyOn(fs, "existsSync").mockReturnValue(true);
         const spinner = {
