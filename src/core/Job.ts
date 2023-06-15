@@ -147,7 +147,7 @@ export default class Job {
 
         const postToDelete = [];
         for (const post of posts) {
-            const isProtected = !!this.config.protectedJobBoards.find(
+            const isProtected = !!this.config.protectedBoards.find(
                 (protectedBoardName) =>
                     protectedBoardName.match(
                         new RegExp(post.boardInfo.name, "i")

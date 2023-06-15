@@ -77,7 +77,7 @@ copyToBoard: Jobs
 # Job boards that won't be considered when deleting job posts
 # with the `reset` command
 # default: [Canonical, Internal]
-protectedJobBoards: [Internal]
+protectedBoards: [Internal]
 # Regions to publish the job post
 regions:
     emea:

@@ -8,7 +8,7 @@ type Overrides = {
     copyFromBoard?: string;
     copyToBoard?: string;
     testJobBoard?: string;
-    protectedJobBoards?: string[];
+    protectedBoards?: string[];
     regions?: { [key: string]: string[] };
 };
 class Config {
@@ -30,7 +30,7 @@ class Config {
     /**
      * List of job boards that should not be posted to
      */
-    public protectedJobBoards: string[];
+    public protectedBoards: string[];
 
     /**
      * List of attributes to filter out from the job post
@@ -51,7 +51,7 @@ class Config {
         this.greenhouseUrl = config.greenhouseUrl;
         this.copyFromBoard = config.copyFromBoard;
         this.copyToBoard = config.copyToBoard;
-        this.protectedJobBoards = config.protectedJobBoards;
+        this.protectedBoards = config.protectedBoards;
         this.regions = config.regions;
         this.filteredAttributes = config.filteredAttributes;
     }
@@ -65,7 +65,7 @@ class Config {
             "copyFromBoard",
             "copyToBoard",
             "testJobBoard",
-            "protectedJobBoards",
+            "protectedBoards",
             "regions",
         ];
         for (const key of Object.keys(overrides)) {

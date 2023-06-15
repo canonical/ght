@@ -266,7 +266,7 @@ export default {
     copyFromBoard: COPY_FROM_BOARD,
     copyToBoard: COPY_TO_BOARD,
     testJobBoard: TEST_JOB_BOARD,
-    protectedJobBoards: PROTECTED_JOB_BOARDS,
+    protectedBoards: PROTECTED_JOB_BOARDS,
     userSettingsFile: USER_SETTINGS_FILE,
     filteredAttributes: FILTERED_ATTRIBUTES,
     regions: REGIONS,
