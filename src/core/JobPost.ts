@@ -1,22 +1,24 @@
+import { JobBoard, PostInfo } from "./types";
+import { usaCities } from "../config/defaults";
 import {
     getCSRFToken,
     getIDFromURL,
     getInnerText,
     joinURL,
     sendRequest,
-} from "../common/pageUtils";
-import { FILTERED_ATTRIBUTES, MAIN_URL } from "../common/constants";
-import { PostInfo } from "../common/types";
-import { usaCities } from "../common/regions";
-import { evaluate } from "../common/processUtils";
+} from "../utils/pageUtils";
+import Config from "../config/Config";
+import { evaluate } from "../utils/processUtils";
 import Puppeteer, { ElementHandle } from "puppeteer";
 import { blue } from "colors";
 
 export default class JobPost {
     private page: Puppeteer.Page;
+    private config: Config;
 
-    constructor(page: Puppeteer.Page) {
+    constructor(page: Puppeteer.Page, config: Config) {
         this.page = page;
+        this.config = config;
     }
 
     public async getJobPostData(post: ElementHandle) {
@@ -68,7 +70,10 @@ export default class JobPost {
         !!(response?.status === "success" || response?.success);
 
     public async deletePost(jobPost: PostInfo, referrer: string) {
-        const url = joinURL(MAIN_URL, `/jobapps/${jobPost.id}`);
+        const url = joinURL(
+            this.config.greenhouseUrl,
+            `/jobapps/${jobPost.id}`
+        );
 
         await sendRequest(
             this.page,
@@ -86,12 +91,11 @@ export default class JobPost {
         );
     }
 
-    public async getLocationInfo(location: string, jobPostID: number) {
+    public async getLocationInfo(location: string) {
         const locationArr = location.split(",");
         locationArr.shift();
         const cityName = locationArr.reduce((str1, str2) => `${str1}, ${str2}`);
 
-        await this.page.goto(joinURL(MAIN_URL, `/jobapps/${jobPostID}/edit`));
         const accessTokenElement = await this.page.$(
             "*[data-key='LocationControl.Providers.Mapbox.apiKey']"
         );
@@ -129,7 +133,7 @@ export default class JobPost {
                 url:
                     `https://api.mapbox.com/geocoding/v5/mapbox.places/${cityName}.json?access_token=${accessToken}` +
                     `&language=en&autocomplete=true&types=place%2Clocality&limit=10`,
-                referrer: MAIN_URL,
+                referrer: this.config.greenhouseUrl,
             }
         );
 
@@ -177,19 +181,19 @@ export default class JobPost {
      * Create a copy of a given job post and move it to the given location
      * @param jobPost the original job post
      * @param location the location to duplicate to
-     * @param boardID the ID of the board that job post will be created with
+     * @param board the board that job post will be created on
      */
     public async duplicate(
         jobPost: PostInfo,
         location: string,
-        boardID: number
+        board: any
     ): Promise<void> {
         const logName = `${blue(jobPost.name)} | ${blue(location)}`;
-        const url = joinURL(
-            MAIN_URL,
-            `/plans/${jobPost.job.id}/jobapps/new?from=duplicate&greenhouse_job_application_id=${jobPost.id}`
+        const url1 = joinURL(
+            this.config.greenhouseUrl,
+            `/jobapps/${jobPost.id}/edit`
         );
-        await this.page.goto(url);
+        await this.page.goto(url1);
 
         const element = await this.page.$("*[data-react-class='JobPostsForm']");
         if (!element)
@@ -204,6 +208,7 @@ export default class JobPost {
             throw new Error("Failed to retrieve job post form data " + logName);
 
         const jobPostForm = JSON.parse(jobPostFormRaw);
+
         // the pre filled job application that need modifications
         const jobApplication = jobPostForm["job_application"];
 
@@ -260,12 +265,16 @@ export default class JobPost {
 
         // set the new location
         jobApplication.job_post_location.text_value = location;
-        jobApplication.job_post_location.job_post_location_type = {
-            id: 1,
-            name: "Free Text",
-            key: "FREE_TEXT",
-        };
-
+        if (
+            jobApplication.job_post_location.job_post_location_type.key !==
+            "FREE_TEXT"
+        ) {
+            jobApplication.job_post_location.job_post_location_type = {
+                id: 1,
+                name: "Free Text",
+                key: "FREE_TEXT",
+            };
+        }
         jobApplication.job_post_location.custom_location = null;
         // set the title
         jobApplication.title = jobPost.name;
@@ -275,34 +284,41 @@ export default class JobPost {
         jobApplication["enable_eeoc"] = isInUSA;
 
         // Fill free job post board information, enable Indeed posts
-        jobApplication["job_board_feed_settings_attributes"] = [
-            {
+        jobApplication["job_board_feed_settings_attributes"] = jobApplication[
+            "job_board_feed_settings_attributes"
+        ]
+            .filter((i: any) => i.source_key === "INDEED")
+            .map(({ source_id, include_in_feed }: any) => ({
                 id: null,
-                source_id: 7,
-                include_in_feed: true,
-            },
-        ];
+                source_id: source_id,
+                include_in_feed: include_in_feed,
+            }));
+
         // Set location information for free job post board section.
-        const locationInfo = await this.getLocationInfo(location, jobPost.id);
+        const locationInfo = await this.getLocationInfo(location);
         jobApplication["job_board_feed_location_attributes"] = locationInfo;
+        jobApplication["job_post_education_config_attributes"]["id"] = null;
 
         const payload = {
-            external_or_internal_greenhouse_job_board_id: boardID,
+            external_or_internal_greenhouse_job_board_id: board.id,
             greenhouse_job_application: jobApplication,
             template_application_id: jobPost.id,
         };
-        FILTERED_ATTRIBUTES.forEach((attr) => {
+        this.config.filteredAttributes.forEach((attr) => {
             delete payload.greenhouse_job_application[attr];
         });
 
         await sendRequest(
             this.page,
-            joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapps`),
+            joinURL(
+                this.config.greenhouseUrl,
+                `/plans/${jobPost.job.id}/jobapps`
+            ),
             {
                 "content-type": "application/json;charset=UTF-8",
             },
             {
-                referrer: url,
+                referrer: url1,
                 body: JSON.stringify(payload),
                 method: "POST",
             },
@@ -311,15 +327,22 @@ export default class JobPost {
         );
     }
 
-    public async setStatus(jobPost: PostInfo, newStatus: "live" | "offline") {
+    public async setStatus(
+        jobPost: PostInfo,
+        newStatus: "live" | "offline",
+        boardToPost: JobBoard
+    ) {
         const logName = `${blue(jobPost.name)} | ${blue(jobPost.location)}`;
-        const url = joinURL(MAIN_URL, `/plans/${jobPost.job.id}/jobapp`);
+        const url = joinURL(
+            this.config.greenhouseUrl,
+            `/plans/${jobPost.job.id}/jobapp`
+        );
         await this.page.goto(url);
 
         const csrfToken = await getCSRFToken(this.page);
         await sendRequest(
             this.page,
-            joinURL(MAIN_URL, `/jobapps/${jobPost.id}/status`),
+            joinURL(this.config.greenhouseUrl, `/jobapps/${jobPost.id}/status`),
             {
                 "content-type":
                     "application/x-www-form-urlencoded; charset=UTF-8",
@@ -328,7 +351,9 @@ export default class JobPost {
             {
                 referrer: url,
                 body: `utf8=%E2%9C%93&authenticity_token=${csrfToken}&job_application_status_id=${
-                    newStatus === "live" ? 3 : 2
+                    newStatus === "live"
+                        ? boardToPost.publishStatusId
+                        : boardToPost.unpublishStatusId
                 }`,
                 method: "POST",
             },

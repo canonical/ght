@@ -60,4 +60,37 @@ The CLI will manage authentication. To avoid entering credentials every time the
 
 Every time the authentication requires a refresh, you will be requested to authenticate.
 
+### Customising GHT
+
+You can override some of the default values by providing your own config file. This has to be a `yaml` file containing the following (optional) values.
+
+```yaml
+# Url to your greenhouse instance
+# default: https://canonical.greenhouse.io
+greenhouseUrl: https://example.greenhouse.io/
+# Job board that contains the original job post to be copied
+# default: Canonical
+copyFromBoard: Jobs
+# Job board where new posts will be located
+# default: Canonical - Jobs
+copyToBoard: Jobs
+# Job boards that won't be considered when deleting job posts
+# with the `reset` command
+# default: [Canonical, Internal]
+protectedBoards: [Internal]
+# Regions to publish the job post
+regions:
+    emea:
+        - "Home based - Africa, Accra"
+    americas:
+        - "Home based - Canada, Calgary"
+        - "Home based - Canada, Montreal"
+```
+
+To do do, supply the file path with `--config` (or `-c`), i.e:
+
+```
+ght replicate -i --config ~/ght-config.yaml
+```
+
 **Happy hiring!**

@@ -1,3 +1,47 @@
+const GREENHOUSE_URL = "https://canonical.greenhouse.io";
+const AUTH_URL = "https://login.ubuntu.com";
+const COPY_FROM_BOARD = "Canonical";
+const COPY_TO_BOARD = "Canonical - Jobs";
+const TEST_JOB_BOARD = "Test Board";
+const PROTECTED_JOB_BOARDS = ["Canonical", "Internal"];
+const USER_SETTINGS_FILE = "canonical-greenhouse.json";
+const FILTERED_ATTRIBUTES = [
+    "location_questions",
+    "metadata",
+    "requisition_id",
+    "silo_id",
+    "same_content",
+    "update_at",
+    "created_at",
+    "fingerprint",
+    "id",
+    "first_published",
+    "offices",
+    "post_type",
+    "post_under",
+    "prospect_post",
+    "public_url",
+    "post_type",
+    "all_department_ids",
+    "all_office_ids",
+    "office_ids",
+    "questions_for_api",
+    "compliance",
+    "data_compliance",
+    "departments",
+    "free_job_board_location",
+    "greenhouse_job_board_id",
+    "iframe_height",
+    "job_board_partner_ids",
+    "job_board_updated_at",
+    "education",
+    "live",
+    "location",
+    "updated_at",
+];
+
+// Regions and cities
+
 export const usaCities: string[] = [
     "Home based - Americas, Atlanta",
     "Home based - Americas, Anchorage",
@@ -52,7 +96,7 @@ export const usaCities: string[] = [
     "Home based - Americas, Washington",
     "Home based - Americas, Wichita",
 ];
-export const canadaCities: string[] = [
+const canadaCities: string[] = [
     "Home based - Canada, Calgary",
     "Home based - Canada, Montreal",
     "Home based - Canada, Laval",
@@ -75,7 +119,7 @@ export const canadaCities: string[] = [
     "Home based - Canada, Victoria, British Columbia",
     "Home based - Canada, Waterloo, Ontario",
 ];
-export const latamCities: string[] = [
+const latamCities: string[] = [
     "Home based - Latin America, Belo Horizonte",
     "Home based - Latin America, Buenos Aires",
     "Home based - Latin America, Bogota",
@@ -96,8 +140,8 @@ export const latamCities: string[] = [
     "Home based - Latin America, Santiago",
     "Home based - Latin America, São Paulo",
 ];
-export const regionCategories = ["americas", "emea", "apac", "canada", "latam"];
-export const regions: { [key: string]: string[] } = {
+
+const REGIONS = {
     americas: [...usaCities, ...canadaCities, ...latamCities],
     canada: [...canadaCities],
     latam: [...latamCities],
@@ -214,4 +258,16 @@ export const regions: { [key: string]: string[] } = {
         "Home based - Asia Pacific, Nagoya",
         "Home based - Asia Pacific, Osaka",
     ],
+};
+
+export default {
+    greenhouseUrl: GREENHOUSE_URL,
+    authUrl: AUTH_URL,
+    copyFromBoard: COPY_FROM_BOARD,
+    copyToBoard: COPY_TO_BOARD,
+    testJobBoard: TEST_JOB_BOARD,
+    protectedBoards: PROTECTED_JOB_BOARDS,
+    userSettingsFile: USER_SETTINGS_FILE,
+    filteredAttributes: FILTERED_ATTRIBUTES,
+    regions: REGIONS,
 };

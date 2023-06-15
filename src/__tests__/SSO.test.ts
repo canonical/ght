@@ -1,8 +1,11 @@
 import { testHTML } from "./mocks";
-import SSO from "../automations/SSO";
-import UserError from "../common/UserError";
+import SSO from "../auth/UbuntuSSO";
+import { UserError } from "../utils/processUtils";
 import * as cookies from "tough-cookie";
 import Enquirer = require("enquirer");
+import Config from "../config/Config";
+
+const config = new Config();
 
 jest.mock("tough-cookie", () => jest.fn());
 jest.mock(
@@ -47,7 +50,7 @@ describe("SSO tests", () => {
     });
 
     it("logs in with saved credentials", async () => {
-        const sso = new SSO(spinner);
+        const sso = new SSO(spinner, config);
 
         await sso.login();
 
@@ -67,7 +70,7 @@ describe("SSO tests", () => {
             };
         });
 
-        const sso = new SSO(spinner);
+        const sso = new SSO(spinner, config);
 
         try {
             await sso.login();

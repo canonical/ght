@@ -1,30 +1,29 @@
 import JobPost from "./JobPost";
-import Board from "./Board";
+import { JobBoard, JobInfo, PostInfo } from "./types";
 import {
-    JOB_BOARD,
-    MAIN_URL,
-    PROTECTED_JOB_BOARDS,
-    RECRUITER,
-    TEST_JOB_BOARD,
-} from "../common/constants";
-import { getIDFromURL, getInnerText, joinURL } from "../common/pageUtils";
-import { regions } from "../common/regions";
-import { JobInfo, PostInfo } from "../common/types";
-import { evaluate, isDevelopment } from "../common/processUtils";
+    getIDFromURL,
+    getInnerText,
+    joinURL,
+    sendRequest,
+} from "../utils/pageUtils";
+import { evaluate, isDevelopment } from "../utils/processUtils";
+import Config from "../config/Config";
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
+
+const RECRUITER_TAG = "RECRUITER";
 
 export default class Job {
     private page: Puppeteer.Page;
     private jobPost: JobPost;
-    private board: Board;
     private spinner: Ora;
+    private config: Config;
 
-    constructor(page: Puppeteer.Page, spinner: Ora) {
+    constructor(page: Puppeteer.Page, spinner: Ora, config: Config) {
         this.page = page;
-        this.jobPost = new JobPost(page);
-        this.board = new Board(page);
         this.spinner = spinner;
+        this.config = config;
+        this.jobPost = new JobPost(page, config);
     }
 
     /**
@@ -37,10 +36,11 @@ export default class Job {
     public async clonePost(
         posts: PostInfo[],
         regionsToPost: string[],
-        sourceID: number
+        sourceID: number,
+        boardToPost: JobBoard
     ) {
         this.spinner.start(`Starting to create job posts.`);
-        const board = PROTECTED_JOB_BOARDS[0];
+        const board = this.config.copyFromBoard;
         let protectedPosts: PostInfo[];
         // Check if a source post is provided.
         if (sourceID) {
@@ -48,7 +48,6 @@ export default class Job {
                 (post) => post.id === sourceID && post.boardInfo.name === board
             );
         } else {
-            // If a source post is not provided, use posts that are in the "Canonical" board.
             protectedPosts = posts.filter(
                 (post) => post.boardInfo.name === board
             );
@@ -56,30 +55,17 @@ export default class Job {
 
         if (!protectedPosts?.length) {
             const errorMessage = sourceID
-                ? `Job post with ${sourceID} ID cannot be found in the Canonical Board.`
+                ? `Job post with ${sourceID} ID cannot be found in the ${board} Board.`
                 : `No post found to clone`;
             throw new Error(errorMessage);
         }
-
-        // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
-        const boards = await this.board.getBoards();
-        const validBoardToPost = isDevelopment() ? TEST_JOB_BOARD : JOB_BOARD;
-        const boardToPost = boards.find(
-            (board) => board.name === validBoardToPost
-        );
-        if (!boardToPost)
-            throw new Error(`Cannot found ${validBoardToPost} board`);
 
         const cities = this.getCities(regionsToPost);
         const totalJobsToBeCloned = protectedPosts.length * cities.length;
         let count = 1;
         for (const protectedPost of protectedPosts) {
             for (const city of cities) {
-                await this.jobPost.duplicate(
-                    protectedPost,
-                    city,
-                    boardToPost.id
-                );
+                await this.jobPost.duplicate(protectedPost, city, boardToPost);
                 this.spinner.text = `${count} of ${totalJobsToBeCloned} job posts are created.`;
                 count++;
             }
@@ -91,12 +77,16 @@ export default class Job {
     private getCities(enteredRegions: string[]): string[] {
         const postLocations: string[] = [];
         enteredRegions.forEach((regionName: string) => {
-            postLocations.push(...regions[regionName]);
+            postLocations.push(...this.config.regions[regionName]);
         });
         return [...new Set(postLocations)];
     }
 
-    public async markAsLive(jobID: number, oldPosts: PostInfo[]) {
+    public async markAsLive(
+        jobID: number,
+        oldPosts: PostInfo[],
+        boardToPost: any
+    ) {
         this.spinner.start(`Starting to set job posts as live.`);
         const jobData: JobInfo = await this.getJobData(jobID);
 
@@ -111,7 +101,7 @@ export default class Job {
         let count = 1;
         const totalJobsToBeUpdated = postsToMakeLive.length;
         for (const post of postsToMakeLive) {
-            await this.jobPost.setStatus(post, "live");
+            await this.jobPost.setStatus(post, "live", boardToPost);
             this.spinner.text = `${count} of ${totalJobsToBeUpdated} job posts are set live.`;
             count++;
         }
@@ -127,7 +117,10 @@ export default class Job {
             posts: [],
         };
 
-        const jobappURL = joinURL(MAIN_URL, `/plans/${jobID}/jobapp`);
+        const jobappURL = joinURL(
+            this.config.greenhouseUrl,
+            `/plans/${jobID}/jobapp`
+        );
         await this.page.goto(jobappURL);
         const pageCount = await this.getPageCount();
         for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
@@ -154,7 +147,7 @@ export default class Job {
 
         const postToDelete = [];
         for (const post of posts) {
-            const isProtected = !!PROTECTED_JOB_BOARDS.find(
+            const isProtected = !!this.config.protectedBoards.find(
                 (protectedBoardName) =>
                     protectedBoardName.match(
                         new RegExp(post.boardInfo.name, "i")
@@ -164,9 +157,10 @@ export default class Job {
             const locationCheck =
                 !enteredRegions ||
                 !!enteredRegions.find((enteredRegion) => {
-                    const filteredLocations = regions[enteredRegion].filter(
-                        (location) =>
-                            post.location.match(new RegExp(location, "i"))
+                    const filteredLocations = this.config.regions[
+                        enteredRegion
+                    ].filter((location) =>
+                        post.location.match(new RegExp(location, "i"))
                     );
 
                     return filteredLocations.length > 0;
@@ -180,6 +174,7 @@ export default class Job {
     }
 
     public async deletePosts(
+        config: Config,
         jobData: JobInfo,
         enteredRegions?: string[],
         similarPostID?: number
@@ -193,11 +188,19 @@ export default class Job {
             enteredRegions
         );
 
-        const referrer = joinURL(MAIN_URL, `/plans/${jobData.id}/jobapp`);
+        // We need some ids to be able to delete posts.
+        // They are the same for all boards.
+        const boardToPost = await this.getBoardToPost();
+
+        const referrer = joinURL(
+            config.greenhouseUrl,
+            `/plans/${jobData.id}/jobapp`
+        );
         let count = 1;
         const totalJobsToDelete = postToDelete.length;
         for (const post of postToDelete) {
-            post.isLive && (await this.jobPost.setStatus(post, "offline"));
+            post.isLive &&
+                (await this.jobPost.setStatus(post, "offline", boardToPost));
             await this.jobPost.deletePost(post, referrer);
             await this.page.reload();
 
@@ -226,7 +229,7 @@ export default class Job {
     }
 
     public async getJobName(jobID: number): Promise<string> {
-        const url = joinURL(MAIN_URL, `/plans/${jobID}`);
+        const url = joinURL(this.config.greenhouseUrl, `/plans/${jobID}`);
         await this.page.goto(url);
 
         const jobTitleElement = await this.page.$(".job-name");
@@ -247,7 +250,10 @@ export default class Job {
     }
 
     private async getJobsFromPage(page: number) {
-        const url = joinURL(MAIN_URL, `/alljobs/list?page=${page}`);
+        const url = joinURL(
+            this.config.greenhouseUrl,
+            `/alljobs/list?page=${page}`
+        );
         await this.page.goto(url);
 
         const body = await this.page.$("body");
@@ -308,7 +314,7 @@ export default class Job {
             },
             {
                 htmlAsStr: content["html"],
-                recruiterTag: RECRUITER,
+                recruiterTag: RECRUITER_TAG,
             }
         );
 
@@ -340,10 +346,46 @@ export default class Job {
     }
 
     public async getJobIDFromPost(postID: number) {
-        const url = joinURL(MAIN_URL, `/jobapps/${postID}/edit`);
+        const url = joinURL(
+            this.config.greenhouseUrl,
+            `/jobapps/${postID}/edit`
+        );
         await this.page.goto(url);
         const jobElement = await this.page.$(".job-name");
         if (!jobElement) throw new Error(`Job cannot be found in ${url}.`);
         return await getIDFromURL(jobElement, "a");
+    }
+
+    public async getBoardToPost(): Promise<JobBoard> {
+        // Find board "Canonical - Jobs" to get its id. The cloned post should be posted on that board.
+        const response = await sendRequest(
+            this.page,
+            joinURL(this.config.greenhouseUrl, "/jobboard/get_boards"),
+            {},
+            {
+                referrer: joinURL(this.config.greenhouseUrl, "/jobboard"),
+                body: null,
+                method: "GET",
+            },
+            "Failed to get boards",
+            (queryResult: any) => !!queryResult
+        );
+
+        const boards: JobBoard[] = response["job_boards"].map((board: any) => ({
+            id: board["id"],
+            name: board["company_name"],
+            publishStatusId: board["publish_status_id"],
+            unpublishStatusId: board["unpublish_status_id"],
+        }));
+        const validBoardToPost = isDevelopment()
+            ? this.config.testJobBoard
+            : this.config.copyToBoard;
+        const boardToPost = boards.find(
+            (board) => board.name === validBoardToPost
+        );
+        if (!boardToPost)
+            throw new Error(`Cannot found ${validBoardToPost} board`);
+
+        return boardToPost;
     }
 }

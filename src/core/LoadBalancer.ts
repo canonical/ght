@@ -1,6 +1,5 @@
-import { Application, Grader, Job, GraderRecord } from "./types";
-import { MAIN_URL } from "../common/constants";
-import UserError from "../common/UserError";
+import { Application, Grader, JobToAssign, GraderRecord } from "./types";
+import { UserError } from "../utils/processUtils";
 import { green } from "colors";
 import { Ora } from "ora";
 import { Page } from "puppeteer";
@@ -12,24 +11,27 @@ import { Page } from "puppeteer";
 export default class LoadBalancer {
     private page: Page;
     private graders: Grader[];
-    private jobs: Job[];
+    private jobs: JobToAssign[];
     private spinner: Ora;
     private currentUser = "";
     private gradersCount = 2;
     private graderStore: GraderRecord[] = [];
+    private greenhouseUrl: string;
 
     constructor(
         page: Page,
         graders: Grader[],
-        selectedJobs: Job[],
+        selectedJobs: JobToAssign[],
         spinner: Ora,
-        gradersCount: number
+        gradersCount: number,
+        greenhouseUrl: string
     ) {
         this.page = page;
         this.graders = graders;
         this.jobs = selectedJobs;
         this.spinner = spinner;
         this.gradersCount = gradersCount;
+        this.greenhouseUrl = greenhouseUrl;
     }
 
     /**
@@ -82,7 +84,7 @@ export default class LoadBalancer {
     /**
      * Find two random graders for an application
      */
-    private findRandomGraders(job: Job) {
+    private findRandomGraders(job: JobToAssign) {
         const graders = this.graders.filter(
             (grader: Grader) => grader.jobName == job.jobName
         );
@@ -205,15 +207,15 @@ export default class LoadBalancer {
     /**
      * Return url for the page that shows written interviews for a given job
      */
-    private buildUrl(job: Job) {
-        const url = new URL(`${MAIN_URL}people`);
+    private buildUrl(job: JobToAssign) {
+        const url = new URL(`${this.greenhouseUrl}/people`);
         url.searchParams.append("stage_status_id", "2");
         url.searchParams.append("in_stages", "Written Interview");
         url.searchParams.append("hiring_plan_id", job.id.toString());
 
         return url.href;
     }
-    
+
     /**
      * Sort the array by assignments
      */
@@ -226,7 +228,6 @@ export default class LoadBalancer {
         for (const job of this.jobs) {
             const url = this.buildUrl(job);
             await this.page.goto(url, { waitUntil: "networkidle0" });
-            await this.page.waitForSelector(".person");
 
             await this.findUsername();
             let page = 1;

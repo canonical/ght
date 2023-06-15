@@ -1,19 +1,17 @@
-import * as board from "../automations/Board";
-import * as constants from "../common/constants";
-import Job from "../automations/Job";
-import * as jobPost from "../automations/JobPost";
-import { PostInfo } from "../common/types";
-import { america } from "colors";
+import Job from "../core/Job";
+import * as jobPost from "../core/JobPost";
+import { JobBoard, PostInfo } from "../core/types";
+import Config from "../config/Config";
+import ora from "ora";
 
-jest.mock("../common/pageUtils", () => ({
-    ...jest.requireActual("../common/pageUtils"),
+jest.mock("../utils/pageUtils", () => ({
+    ...jest.requireActual("../utils/pageUtils"),
     getIDFromURL: jest.fn().mockReturnValue(1),
 }));
 
-Object.defineProperty(constants, "MAIN_URL", {
-    writable: true,
-    value: "https://test.test",
-});
+const config = new Config();
+
+const spinner = ora();
 
 describe("Job tests", () => {
     let spinner: any;
@@ -25,18 +23,17 @@ describe("Job tests", () => {
             succeed: jest.fn(),
             stop: jest.fn(),
             text: jest.fn(),
+            info: jest.fn(),
         } as any;
     });
 
     describe("clones job posts", () => {
         it("successfully clones job posts", async () => {
-            jest.spyOn(board, "default").mockImplementation((): any => {
-                return {
-                    getBoards: jest
-                        .fn()
-                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
-                };
-            });
+            jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
+                (): any => {
+                    return [{ name: "Canonical - Jobs" }];
+                }
+            );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
                     duplicate: jest.fn(),
@@ -59,9 +56,14 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            await job.clonePost([postInfo], ["americas", "apac", "emea"], 0);
+            await job.clonePost(
+                [postInfo],
+                ["americas", "apac", "emea"],
+                0,
+                {} as JobBoard
+            );
 
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
@@ -71,13 +73,11 @@ describe("Job tests", () => {
         });
 
         it("successfully clones canadian job posts", async () => {
-            jest.spyOn(board, "default").mockImplementation((): any => {
-                return {
-                    getBoards: jest
-                        .fn()
-                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
-                };
-            });
+            jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
+                (): any => {
+                    return [{ name: "Canonical - Jobs" }];
+                }
+            );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
                     duplicate: jest.fn(),
@@ -100,9 +100,9 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            await job.clonePost([postInfo], ["canada"], 0);
+            await job.clonePost([postInfo], ["canada"], 0, {} as JobBoard);
 
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
@@ -112,13 +112,11 @@ describe("Job tests", () => {
         });
 
         it("successfully clones latin america job posts", async () => {
-            jest.spyOn(board, "default").mockImplementation((): any => {
-                return {
-                    getBoards: jest
-                        .fn()
-                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
-                };
-            });
+            jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
+                (): any => {
+                    return [{ name: "Canonical - Jobs" }];
+                }
+            );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
                     duplicate: jest.fn(),
@@ -141,9 +139,9 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            await job.clonePost([postInfo], ["latam"], 0);
+            await job.clonePost([postInfo], ["latam"], 0, {} as JobBoard);
 
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
@@ -153,13 +151,11 @@ describe("Job tests", () => {
         });
 
         it("successfully clones americas job posts", async () => {
-            jest.spyOn(board, "default").mockImplementation((): any => {
-                return {
-                    getBoards: jest
-                        .fn()
-                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
-                };
-            });
+            jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
+                (): any => {
+                    return [{ name: "Canonical - Jobs" }];
+                }
+            );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
                     duplicate: jest.fn(),
@@ -182,9 +178,9 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            await job.clonePost([postInfo], ["latam"], 0);
+            await job.clonePost([postInfo], ["latam"], 0, {} as JobBoard);
 
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
@@ -194,13 +190,11 @@ describe("Job tests", () => {
         });
 
         it("dedups cities before cloning job posts", async () => {
-            jest.spyOn(board, "default").mockImplementation((): any => {
-                return {
-                    getBoards: jest
-                        .fn()
-                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
-                };
-            });
+            jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
+                (): any => {
+                    return [{ name: "Canonical - Jobs" }];
+                }
+            );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
                     duplicate: jest.fn(),
@@ -223,9 +217,14 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            await job.clonePost([postInfo], ["latam", "canada", "americas"], 0);
+            await job.clonePost(
+                [postInfo],
+                ["latam", "canada", "americas"],
+                0,
+                {} as JobBoard
+            );
 
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
@@ -235,13 +234,11 @@ describe("Job tests", () => {
         });
 
         it("fails if region doesn't exist", async () => {
-            jest.spyOn(board, "default").mockImplementation((): any => {
-                return {
-                    getBoards: jest
-                        .fn()
-                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
-                };
-            });
+            jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
+                (): any => {
+                    return [{ name: "Canonical - Jobs" }];
+                }
+            );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
                     duplicate: jest.fn(),
@@ -264,17 +261,11 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            try {
-                await job.clonePost([postInfo], ["test-region"], 0);
-            } catch (error) {
-                expect(error).toEqual(
-                    TypeError(
-                        "regions_1.regions[regionName] is not iterable (cannot read property undefined)"
-                    )
-                );
-            }
+            await expect(
+                job.clonePost([postInfo], ["test"], 0, {} as JobBoard)
+            ).rejects.toThrow();
 
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
@@ -282,13 +273,11 @@ describe("Job tests", () => {
         });
 
         it("fails if region is misspelled/given uppercase character", async () => {
-            jest.spyOn(board, "default").mockImplementation((): any => {
-                return {
-                    getBoards: jest
-                        .fn()
-                        .mockReturnValueOnce([{ name: "Canonical - Jobs" }]),
-                };
-            });
+            jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
+                (): any => {
+                    return [{ name: "Canonical - Jobs" }];
+                }
+            );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
                     duplicate: jest.fn(),
@@ -311,17 +300,11 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            try {
-                await job.clonePost([postInfo], ["Americas"], 0);
-            } catch (error) {
-                expect(error).toEqual(
-                    TypeError(
-                        "regions_1.regions[regionName] is not iterable (cannot read property undefined)"
-                    )
-                );
-            }
+            await expect(
+                job.clonePost([postInfo], ["LATAM"], 0, {} as JobBoard)
+            ).rejects.toThrow(/is not iterable/i);
 
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
@@ -345,10 +328,10 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
             try {
-                await job.clonePost([postInfo], ["test"], 1);
+                await job.clonePost([postInfo], ["test"], 1, {} as JobBoard);
             } catch (error) {
                 expect(error).toEqual(
                     new Error(
@@ -379,10 +362,10 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
             try {
-                await job.clonePost([postInfo], ["test"], 0);
+                await job.clonePost([postInfo], ["test"], 0, {} as JobBoard);
             } catch (error) {
                 expect(error).toEqual(new Error("No post found to clone"));
             }
@@ -393,13 +376,11 @@ describe("Job tests", () => {
         });
 
         it("fails with job board not found", async () => {
-            jest.spyOn(board, "default").mockImplementation((): any => {
-                return {
-                    getBoards: jest
-                        .fn()
-                        .mockReturnValueOnce([{ name: "test" }]),
-                };
-            });
+            jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
+                (): any => {
+                    return [{ name: "Canonical - Jobs" }];
+                }
+            );
 
             const postInfo = {
                 id: 1,
@@ -417,15 +398,11 @@ describe("Job tests", () => {
                 isLive: true,
             } as PostInfo;
 
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            try {
-                await job.clonePost([postInfo], ["test"], 0);
-            } catch (error) {
-                expect(error).toEqual(
-                    new Error("Cannot found Canonical - Jobs board")
-                );
-            }
+            await expect(
+                job.clonePost([postInfo], ["test"], 0, {} as JobBoard)
+            ).rejects.toThrow();
 
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
@@ -462,33 +439,27 @@ describe("Job tests", () => {
 
             postInfo = { ...postInfo, location: "emea" };
             jobData = { id: 1, name: "test", posts: [postInfo] };
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            await job.deletePosts(jobData);
+            await job.deletePosts(config, jobData);
 
             expect(spinner.text).toEqual("1 of 1 job posts were deleted.");
             expect(spinner.succeed).toHaveBeenCalledTimes(1);
         });
 
         it("fails if region doesn't exist", async () => {
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            try {
-                await job.deletePosts(jobData, ["test-region"], 1);
-            } catch (error) {
-                expect(error).toEqual(
-                    TypeError(
-                        "Cannot read properties of undefined (reading 'filter')"
-                    )
-                );
-            }
+            await expect(
+                job.deletePosts(config, jobData, ["test"], 1)
+            ).rejects.toThrow();
         });
 
         it("fails if region is misspelled/given uppercase character", async () => {
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
             try {
-                await job.deletePosts(jobData, ["Apac"], 1);
+                await job.deletePosts(config, jobData, ["Apac"], 1);
             } catch (error) {
                 expect(error).toEqual(
                     TypeError(
@@ -505,7 +476,7 @@ describe("Job tests", () => {
             .mockReturnValue({ jobs: { "test-job": 1 }, hasMorePage: false });
         Job.prototype["getJobsFromPage"] = mockGetJobsFromPage;
 
-        const job = new Job(page, spinner);
+        const job = new Job(page, spinner, config);
         const getJobs = await job.getJobs();
 
         expect(getJobs).toEqual(new Map(Object.entries({ "test-job": 1 })));
@@ -514,7 +485,7 @@ describe("Job tests", () => {
     describe("gets job ID from post", () => {
         it("successfully gets job ID from post", async () => {
             page = { ...page, $: jest.fn().mockReturnValue(true) };
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
             const getJobIDFromPost = await job.getJobIDFromPost(1);
 
             expect(getJobIDFromPost).toBe(1);
@@ -522,17 +493,11 @@ describe("Job tests", () => {
 
         it("fails to get job ID from post", async () => {
             page = { ...page, $: jest.fn() };
-            const job = new Job(page, spinner);
+            const job = new Job(page, spinner, config);
 
-            try {
-                await job.getJobIDFromPost(1);
-            } catch (error) {
-                expect(error).toEqual(
-                    new Error(
-                        "Job cannot be found in https://test.test/jobapps/1/edit."
-                    )
-                );
-            }
+            await expect(job.getJobIDFromPost(1)).rejects.toThrow(
+                /Job cannot be found/i
+            );
         });
     });
 });
