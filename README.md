@@ -54,6 +54,19 @@ Running `ght assign -i` will guide you through the process of selecting the jobs
 -   `name`: should exactly match the name used when selecting the person is the scorecard asignment modal in Greenhouse
 -   `active`: only people with active set to `true` will be randomly selected. This allows you to define people that are on holiday or unavailable for a time.
 
+If you select to assign written interviews at the Hold stage you much update you `ght-graders.yml` to contain that grouped stage:
+
+```
+Job name 1:
+  Hold:
+    - name: Grader One
+      active: true
+    - name: Grader Two
+      active: false
+    - name: Grader Three
+      active: true
+```
+
 ### Authentication
 
 The CLI will manage authentication. To avoid entering credentials every time the command runs, the authorization cookie created by Greenhouse and SSO will be stored in the file: `~/.canonical-greenhouse.json`.
