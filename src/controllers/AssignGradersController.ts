@@ -34,7 +34,7 @@ export class AssignGradersController extends BaseController {
             if (!config[jobName]) {
                 throw new Error(`Unable to find "${jobName}" in config file`);
             }
-            const activeGraders = config[jobName][stage].filter(
+            const activeGraders = config[jobName]["Written Interview"].filter(
                 (grader: any) => grader.active
             );
             activeGraders.forEach(({ name }: { name: string }) => {
