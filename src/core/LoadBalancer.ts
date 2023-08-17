@@ -18,6 +18,7 @@ export default class LoadBalancer {
     private graderStore: GraderRecord[] = [];
     private greenhouseUrl: string;
     private stage: string;
+    private allocationsCount = 0;
 
     constructor(
         page: Page,
@@ -171,6 +172,7 @@ export default class LoadBalancer {
 
         // Click save
         await this.page.click("input[type='submit']");
+        this.allocationsCount++;
 
         this.spinner.stop();
         console.log(green("✔"), outputMessage);
@@ -216,7 +218,6 @@ export default class LoadBalancer {
     }
 
     public async execute(): Promise<void> {
-        let allocationsCount = 0;
         for (const job of this.jobs) {
             const url = this.buildUrl(job);
             await this.page.goto(url, { waitUntil: "networkidle0" });
@@ -233,7 +234,6 @@ export default class LoadBalancer {
                             application,
                             graders
                         );
-                        allocationsCount++;
                     }
                 }
 
@@ -249,10 +249,10 @@ export default class LoadBalancer {
             }
         }
         this.spinner.stop();
-        if (allocationsCount) {
+        if (this.allocationsCount) {
             console.log(
                 green("✔"),
-                `${allocationsCount} submissions were auto-assigned`
+                `${this.allocationsCount} submissions were auto-assigned`
             );
             this.graderStore.sort(this.compareAssignments);
             console.table(this.graderStore);
