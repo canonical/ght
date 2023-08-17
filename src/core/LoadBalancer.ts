@@ -17,6 +17,7 @@ export default class LoadBalancer {
     private gradersCount = 2;
     private graderStore: GraderRecord[] = [];
     private greenhouseUrl: string;
+    private stage: string;
 
     constructor(
         page: Page,
@@ -24,7 +25,8 @@ export default class LoadBalancer {
         selectedJobs: JobToAssign[],
         spinner: Ora,
         gradersCount: number,
-        greenhouseUrl: string
+        greenhouseUrl: string,
+        stage: string
     ) {
         this.page = page;
         this.graders = graders;
@@ -32,6 +34,7 @@ export default class LoadBalancer {
         this.spinner = spinner;
         this.gradersCount = gradersCount;
         this.greenhouseUrl = greenhouseUrl;
+        this.stage = stage;
     }
 
     /**
@@ -40,20 +43,14 @@ export default class LoadBalancer {
     private async getApplicationsPage() {
         return await this.page.$$eval(
             ".person",
-            (people, user) => {
+            (people) => {
                 return people.map((p) => {
                     const applicationID = p.getAttribute("application");
-                    const toggleText = p.querySelector(
-                        "a.toggle-interviews"
-                    )?.textContent;
-                    const toGrade = toggleText === `Scorecard due from ${user}`;
                     const candidate = p.querySelector(".name a")?.textContent;
-
-                    if (applicationID && candidate && toGrade != null) {
+                    if (applicationID && candidate) {
                         return {
                             applicationID,
                             candidate,
-                            toGrade,
                         };
                     }
                 });
@@ -124,12 +121,6 @@ export default class LoadBalancer {
     ) {
         const selector = `.person[application="${application?.applicationID}"]`;
         let interviewCount = 0;
-
-        // Click toggle button
-        await this.page.waitForSelector(`${selector} .toggle-interviews`);
-        await this.page.$eval(`${selector} .toggle-interviews`, (toggle) =>
-            (toggle as HTMLAnchorElement).click()
-        );
 
         // Check there is only one interviewer
         await this.page.waitForSelector(`${selector} tr.interview`);
@@ -210,7 +201,8 @@ export default class LoadBalancer {
     private buildUrl(job: JobToAssign) {
         const url = new URL(`${this.greenhouseUrl}/people`);
         url.searchParams.append("stage_status_id", "2");
-        url.searchParams.append("in_stages", "Written Interview");
+        url.searchParams.append("take_home_test_status_id", "9");
+        url.searchParams.append("in_stages", this.stage);
         url.searchParams.append("hiring_plan_id", job.id.toString());
 
         return url.href;
@@ -235,7 +227,7 @@ export default class LoadBalancer {
                 this.spinner.start("Processing applications");
                 const applicationsPage = await this.getApplicationsPage();
                 for (const application of applicationsPage) {
-                    if (application && application.toGrade) {
+                    if (application) {
                         const graders = this.findRandomGraders(job);
                         await this.assignGradersToApplication(
                             application,

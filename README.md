@@ -51,7 +51,7 @@ Job name 2:
 
 Running `ght assign -i` will guide you through the process of selecting the jobs. For the selected jobs, it will go through the written interviews needing graders (applications where only the hiring lead is assigned, since this is the default behaviour in Greenhouse) and will assign two random names from the list provided.
 
--   `name`: should exactly match the name used when selecting the person is the scorecard asignment modal in Greenhouse
+-   `name`: should exactly match the name used when selecting the person is the scorecard assignment modal in Greenhouse
 -   `active`: only people with active set to `true` will be randomly selected. This allows you to define people that are on holiday or unavailable for a time.
 
 ### Authentication

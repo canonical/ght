@@ -34,7 +34,7 @@ export class AssignGradersController extends BaseController {
             if (!config[jobName]) {
                 throw new Error(`Unable to find "${jobName}" in config file`);
             }
-            const activeGraders = config[jobName][stage].filter(
+            const activeGraders = config[jobName]["Written Interview"].filter(
                 (grader: any) => grader.active
             );
             activeGraders.forEach(({ name }: { name: string }) => {
@@ -48,9 +48,6 @@ export class AssignGradersController extends BaseController {
     async run() {
         const { browser, page } = await this.getPuppeteer();
         await this.auth.authenticate(page);
-
-        // Only Written Interview for now
-        const STAGE = "Written Interview";
 
         // Only interactive mode for now
         if (!this.isInteractive) return;
@@ -69,6 +66,14 @@ export class AssignGradersController extends BaseController {
             graderCountPrompt
         );
         const gradersCount: number = +gradersCountResponse;
+
+        const stagePrompt = new Select({
+            name: "Graders",
+            message: "Choose the stage you would like to assign graders to",
+            choices: ["Written Interview", "Hold"],
+            initial: 0,
+        });
+        const stage: string = await runPrompt(stagePrompt);
 
         const prompt = new MultiSelect({
             name: "Jobs",
@@ -99,7 +104,7 @@ export class AssignGradersController extends BaseController {
         if (!config) {
             throw new UserError("Unable to find list of graders");
         }
-        const graders = this.createPool(gradersConfig, selectedJobs, STAGE);
+        const graders = this.createPool(gradersConfig, selectedJobs, stage);
         if (!graders.length) {
             throw new UserError(
                 "Unable to find graders for the selected jobs. Check that the job name is matching."
@@ -112,7 +117,8 @@ export class AssignGradersController extends BaseController {
             selectedJobs,
             this.spinner,
             gradersCount,
-            this.config.greenhouseUrl
+            this.config.greenhouseUrl,
+            stage
         );
         await loadBalancer.execute();
 

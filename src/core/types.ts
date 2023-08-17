@@ -47,7 +47,6 @@ export type GraderRecord = {
 export type Application = {
     candidate: string;
     applicationID: string;
-    toGrade: boolean;
 };
 
 export type JobToAssign = {
