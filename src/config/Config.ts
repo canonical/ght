@@ -86,8 +86,8 @@ class Config {
         return join(
             homedir(),
             this.isCanonical()
-                ? ".canonical-greenhouse.json"
-                : ".ght-greenhouse.json"
+                ? ".config/ght/.canonical-greenhouse.json"
+                : ".config/ght/.ght-greenhouse.json"
         );
     }
 

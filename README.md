@@ -56,7 +56,7 @@ Running `ght assign -i` will guide you through the process of selecting the jobs
 
 ### Authentication
 
-The CLI will manage authentication. To avoid entering credentials every time the command runs, the authorization cookie created by Greenhouse and SSO will be stored in the file: `~/.canonical-greenhouse.json`.
+The CLI will manage authentication. To avoid entering credentials every time the command runs, the authorization cookie created by Greenhouse and SSO will be stored in the file: `~/.config/ght/.canonical-greenhouse.json`.
 
 Every time the authentication requires a refresh, you will be requested to authenticate.
 

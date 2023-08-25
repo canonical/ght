@@ -9,7 +9,8 @@ import Enquirer = require("enquirer");
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
 import { CookieJar } from "tough-cookie";
-import { existsSync, writeFileSync } from "fs";
+import { existsSync, writeFileSync, mkdirSync } from "fs";
+import { dirname } from "path";
 
 export default class UbuntuSSO extends Authentication {
     private httpsAgent;
@@ -66,6 +67,10 @@ export default class UbuntuSSO extends Authentication {
     }
 
     private saveUserSettings() {
+        const confDir = dirname(this.config.userSettingsPath);
+        if (!existsSync(confDir)) {
+            mkdirSync(confDir, { recursive: true });
+        }
         writeFileSync(this.config.userSettingsPath, JSON.stringify(this.jar));
     }
 
