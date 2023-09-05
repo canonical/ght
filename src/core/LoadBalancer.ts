@@ -147,13 +147,20 @@ export default class LoadBalancer {
         );
 
         // Wait for modal to open
-        await this.page.waitForSelector("ul.chzn-choices", {
+        await this.page.waitForSelector(".modal-dialog", {
             visible: true,
         });
-
-        // Click input field
-        await this.page.waitForSelector(".search-field input[type='text']");
-        await this.page.click(".search-field input[type='text']");
+        // Double check the graders input is visible
+        await this.page.waitForSelector(
+            "#edit_take_home_test_graders_modal .search-field input",
+            {
+                visible: true,
+            }
+        );
+        // Click the graders input
+        await this.page.click(
+            "#edit_take_home_test_graders_modal .search-field input"
+        );
 
         // Delete current use assigned
         await this.page.keyboard.press("Backspace");
@@ -171,7 +178,8 @@ export default class LoadBalancer {
         }
 
         // Click save
-        await this.page.click("input[type='submit']");
+        await this.page.waitForSelector("input[type='submit']#save_graders");
+        await this.page.click("input[type='submit']#save_graders");
         this.allocationsCount++;
 
         this.spinner.stop();
