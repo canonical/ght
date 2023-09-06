@@ -146,11 +146,7 @@ export default class LoadBalancer {
             (btn) => (btn as HTMLAnchorElement).click()
         );
 
-        // Wait for modal to open
-        await this.page.waitForSelector(".modal-dialog", {
-            visible: true,
-        });
-        // Double check the graders input is visible
+        // Check the graders input is visible
         await this.page.waitForSelector(
             "#edit_take_home_test_graders_modal .search-field input",
             {
@@ -185,6 +181,8 @@ export default class LoadBalancer {
         this.spinner.stop();
         console.log(green("✔"), outputMessage);
         this.spinner.start();
+
+        this.page.reload();
     }
 
     /**
