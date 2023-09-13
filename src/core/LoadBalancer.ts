@@ -91,7 +91,10 @@ export default class LoadBalancer {
         }
 
         // Shuffle graders array
-        const shuffledGraders = graders.sort(() => 0.5 - Math.random());
+        const shuffledGraders = graders
+            .map(grader => ({ grader, weight: Math.random() }))
+            .sort((a, b) => a.weight - b.weight)
+            .map(({ grader }) => grader);
 
         // Get sub-array of first elements to the graders count selected
         const selectedGraders = shuffledGraders.slice(0, this.gradersCount);
