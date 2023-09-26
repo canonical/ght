@@ -182,7 +182,7 @@ export default class LoadBalancer {
         console.log(green("✔"), outputMessage);
         this.spinner.start();
 
-        this.page.reload();
+        await this.page.reload();
     }
 
     /**
