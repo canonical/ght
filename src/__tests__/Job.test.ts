@@ -146,7 +146,7 @@ describe("Job tests", () => {
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
             );
-            expect(spinner.text).toEqual("19 of 19 job posts are created.");
+            expect(spinner.text).toEqual("33 of 33 job posts are created.");
             expect(spinner.stop).toHaveBeenCalledTimes(1);
         });
 
@@ -185,7 +185,7 @@ describe("Job tests", () => {
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
             );
-            expect(spinner.text).toEqual("19 of 19 job posts are created.");
+            expect(spinner.text).toEqual("33 of 33 job posts are created.");
             expect(spinner.stop).toHaveBeenCalledTimes(1);
         });
 
