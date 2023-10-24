@@ -68,7 +68,7 @@ describe("Job tests", () => {
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
             );
-            expect(spinner.text).toEqual("203 of 203 job posts are created.");
+            expect(spinner.text).toEqual("217 of 217 job posts are created.");
             expect(spinner.stop).toHaveBeenCalledTimes(1);
         });
 
@@ -146,7 +146,7 @@ describe("Job tests", () => {
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
             );
-            expect(spinner.text).toEqual("19 of 19 job posts are created.");
+            expect(spinner.text).toEqual("33 of 33 job posts are created.");
             expect(spinner.stop).toHaveBeenCalledTimes(1);
         });
 
@@ -185,7 +185,7 @@ describe("Job tests", () => {
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
             );
-            expect(spinner.text).toEqual("19 of 19 job posts are created.");
+            expect(spinner.text).toEqual("33 of 33 job posts are created.");
             expect(spinner.stop).toHaveBeenCalledTimes(1);
         });
 
@@ -229,7 +229,7 @@ describe("Job tests", () => {
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts."
             );
-            expect(spinner.text).toEqual("91 of 91 job posts are created.");
+            expect(spinner.text).toEqual("105 of 105 job posts are created.");
             expect(spinner.stop).toHaveBeenCalledTimes(1);
         });
 
