@@ -70,6 +70,36 @@ function makeProgram(): Command {
             await new ReplicateController(program, jobPostId, options).run();
         });
 
+    // Replicate and Delete command
+    program
+        .command("replicate_and_delete")
+        .usage(
+            "([-i | --interactive] | <job-post-id>" +
+                "\n\n Examples: \n\t ght replicate_and_delete --interactive " +
+                "\n \t ght replicate_and_delete 1234"
+        )
+        .description("Replicate job post and delete the original job post")
+        .addArgument(
+            new Argument(
+                "<job-post-id>",
+                "ID of a job post that will be cloned and deleted"
+            )
+                .argOptional()
+                .argParser((value: string) =>
+                    validateNumberParam(value, "job post id")
+                )
+        )
+        .addOption(
+            new Option("-i, --interactive", "Enable interactive interface")
+        )
+        .action(async (jobPostId, options) => {
+            await new ReplicateController(
+                program,
+                jobPostId,
+                options
+            ).replicateAndDelete();
+        });
+
     // Reset command
     program
         .command("reset")

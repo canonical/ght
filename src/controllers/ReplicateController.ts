@@ -1,7 +1,9 @@
 import { BaseController } from "./BaseController";
 import Job from "../core/Job";
+import JobPost from "../core/JobPost";
 import { JobInfo } from "../core/types";
 import { UserError } from "../utils/processUtils";
+import { joinURL } from "../utils/pageUtils";
 import {
     getJobInteractive,
     getJobPostInteractive,
@@ -110,6 +112,76 @@ export class ReplicateController extends BaseController {
         );
         console.log("Happy hiring!");
 
+        browser.close();
+    }
+
+    public async replicateAndDelete(): Promise<void> {
+        const { browser, page } = await this.getPuppeteer();
+        await this.auth.authenticate(page);
+        const job = new Job(page, this.spinner, this.config);
+        let jobID;
+        let jobInfo: JobInfo;
+
+        if (this.isInteractive) {
+            const { name, id } = await getJobInteractive(
+                job,
+                "What job would you like this action for?",
+                this.spinner
+            );
+            if (!id) throw new Error(`Job cannot be found with id ${id}.`);
+            jobID = id;
+            this.spinner.start(`Fetching job posts for ${name}.`);
+            jobInfo = await job.getJobData(jobID);
+            if (!jobInfo.posts.length)
+                throw new Error(
+                    `Job posts cannot be found for ${jobInfo.name}.`
+                );
+            this.spinner.succeed();
+
+            this.jobPostID = await getJobPostInteractive(
+                this.config,
+                jobInfo.posts,
+                "What job post should this action be for?"
+            );
+        } else {
+            jobID = await job.getJobIDFromPost(this.jobPostID);
+            jobInfo = await job.getJobData(jobID);
+            if (!jobInfo.posts.length)
+                throw new Error(
+                    `Job posts cannot be found for ${jobInfo.name}.`
+                );
+        }
+
+        const postInfo = jobInfo.posts.find(
+            (post) => post.id === this.jobPostID
+        );
+
+        if (postInfo) {
+            const jobPost = new JobPost(page, this.config);
+            const boardToPost = await job.getBoardToPost();
+            // Duplicate job post in the same location
+            // Remove brackets from the location name
+            const postLocation = postInfo.location.replace(/^\(|\)$/g, "");
+            await jobPost.duplicate(postInfo, postLocation, boardToPost);
+            console.log(green("✔"), "Job post duplicated.");
+            if (postInfo.isLive) {
+                // TODO: Set new job post as live
+                // await jobPost.setStatus(postInfo, "live", boardToPost);
+                // console.log(green("✔"), "New job post marked as live.");
+                await jobPost.setStatus(postInfo, "offline", boardToPost);
+                console.log(green("✔"), "old job post marked as offline.");
+            }
+            // Delete old job post
+            const referrer = joinURL(
+                this.config.greenhouseUrl,
+                `/plans/${jobInfo.id}/jobapp`
+            );
+            await jobPost.deletePost(postInfo, referrer);
+            await page.reload();
+            console.log(green("✔"), "Job post deleted.");
+        } else throw new Error(`Job post cannot be found.`);
+
+        console.log("Happy hiring!");
         browser.close();
     }
 }
