@@ -1,17 +1,23 @@
 import { BaseController } from "./BaseController";
 import Job from "../core/Job";
 import { JobInfo } from "../core/types";
+import JobPost from "../core/JobPost";
 import {
+    deleteSpecificPostInteractive,
+    getAllJobPostsInteractive,
     getJobInteractive,
     getJobPostInteractive,
     getRegionsInteractive,
 } from "../utils/prompts";
+import { joinURL } from "../utils/pageUtils";
 import { Command } from "commander";
+import { green } from "colors";
 
 export class ResetController extends BaseController {
     private isInteractive: boolean;
     private regions: string[];
     private jobPostID: number;
+    private specificJobPost: boolean;
 
     constructor(command: Command, jobPostId: number, options: any) {
         super(command);
@@ -21,6 +27,7 @@ export class ResetController extends BaseController {
         this.regions = options.regions
             ? this.validateRegionParam(options.regions)
             : this.config.regionNames;
+        this.specificJobPost = options.specific;
     }
 
     async run(): Promise<void> {
@@ -31,7 +38,7 @@ export class ResetController extends BaseController {
         let jobID;
         let jobInfo: JobInfo;
         let regionNames = this.regions;
-        let postID = this.jobPostID;
+        const postID = this.jobPostID;
 
         if (this.isInteractive) {
             const { name, id } = await getJobInteractive(
@@ -51,24 +58,67 @@ export class ResetController extends BaseController {
                 );
             this.spinner.succeed();
 
-            const jobPostID = await getJobPostInteractive(
-                this.config,
-                jobInfo.posts,
-                "Which job posts should be deleted?"
-            );
-            postID = jobPostID;
-
-            regionNames = await getRegionsInteractive(
-                "What region should the job posts be deleted from? Use space to make a selection.",
-                this.config.regionNames
-            );
+            if (!this.specificJobPost) {
+                const jobPostID = await getJobPostInteractive(
+                    this.config,
+                    jobInfo.posts,
+                    "Which job posts should be deleted?"
+                );
+                regionNames = await getRegionsInteractive(
+                    "What region should the job posts be deleted from? Use space to make a selection.",
+                    this.config.regionNames
+                );
+                await job.deletePosts(
+                    this.config,
+                    jobInfo,
+                    regionNames,
+                    jobPostID
+                );
+            } else {
+                const jobPostID = await getAllJobPostsInteractive(
+                    this.config,
+                    jobInfo.posts,
+                    "Which specific job post should be deleted?"
+                );
+                const jobPost = new JobPost(page, this.config);
+                const postInfo = jobInfo.posts.find(
+                    (post) => post.id === jobPostID
+                );
+                const deleteSpecificPost =
+                    postInfo &&
+                    (await deleteSpecificPostInteractive(
+                        this.config,
+                        jobPost,
+                        jobInfo,
+                        postInfo,
+                        true
+                    ));
+                if (deleteSpecificPost) {
+                    await page.reload();
+                    console.log(green("✔"), "Job post deleted.");
+                }
+            }
+        } else if (this.specificJobPost) {
+            const jobPost = new JobPost(page, this.config);
+            jobID = await job.getJobIDFromPost(postID);
+            jobInfo = await job.getJobData(jobID);
+            const postInfo = jobInfo.posts.find((post) => post.id === postID);
+            if (postInfo) {
+                const referrer = joinURL(
+                    this.config.greenhouseUrl,
+                    `/plans/${jobInfo.id}/jobapp`
+                );
+                await jobPost.deletePost(postInfo, referrer);
+                await page.reload();
+                console.log(green("✔"), "Job post deleted.");
+            } else throw new Error(`Job post cannot be found.`);
         } else {
             this.spinner.start(`Fetching the job information.`);
             jobID = await job.getJobIDFromPost(postID);
             jobInfo = await job.getJobData(jobID);
             this.spinner.succeed();
+            await job.deletePosts(this.config, jobInfo, regionNames, postID);
         }
-        await job.deletePosts(this.config, jobInfo, regionNames, postID);
 
         console.log("Happy hiring!");
 
