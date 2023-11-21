@@ -1,9 +1,7 @@
 import { UserError } from "./processUtils";
 import { runPrompt } from "./commandUtils";
-import { joinURL } from "./pageUtils";
 import { JobInfo, PostInfo } from "../core/types";
 import Job from "../core/Job";
-import JobPost from "../core/JobPost";
 import Config from "../config/Config";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, MultiSelect, Toggle } from "enquirer";
@@ -34,31 +32,6 @@ export async function getJobInteractive(
         name: jobName,
         id: jobs.get(jobName),
     };
-}
-
-export async function getAllJobPostsInteractive(
-    posts: PostInfo[],
-    message: string
-) {
-    if (!posts || !posts.length) throw new Error(`No job post found.`);
-
-    const prompt = new Select({
-        name: "Job Post",
-        message,
-        choices: [
-            ...posts.map((post) => {
-                return `${post.name} - ${post.location} - ${post.id}`;
-            }),
-        ],
-    });
-    const jobPostName = await runPrompt(prompt);
-    const matchedJobPost = posts.find(
-        (post) => `${post.name} - ${post.location} - ${post.id}` === jobPostName
-    );
-    if (!matchedJobPost)
-        throw new Error(`No job post found with name ${jobPostName}.`);
-
-    return matchedJobPost.id;
 }
 
 export async function getJobPostInteractive(
@@ -129,27 +102,4 @@ export async function deletePostsInteractive(
     if (shouldDelete) {
         await job.deletePosts(config, jobInfo, regionNames, similar);
     }
-}
-
-export async function deleteSpecificPostInteractive(
-    config: Config,
-    jobPost: JobPost,
-    jobInfo: JobInfo,
-    postInfo: PostInfo
-) {
-    const prompt = new Toggle({
-        message: "Do you want to remove the old job post?",
-        enabled: "Yes",
-        disabled: "No",
-        initial: true,
-    });
-
-    const shouldDelete = await runPrompt(prompt);
-    if (!shouldDelete) return;
-    const referrer = joinURL(
-        config.greenhouseUrl,
-        `/plans/${jobInfo.id}/jobapp`
-    );
-    await jobPost.deletePost(postInfo, referrer);
-    return true;
 }

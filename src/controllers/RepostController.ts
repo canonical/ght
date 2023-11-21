@@ -2,16 +2,16 @@ import { BaseController } from "./BaseController";
 import Job from "../core/Job";
 import JobPost from "../core/JobPost";
 import { JobBoard, JobInfo, PostInfo } from "../core/types";
+import Config from "../config/Config";
 import { UserError } from "../utils/processUtils";
-import {
-    getJobInteractive,
-    deleteSpecificPostInteractive,
-    getAllJobPostsInteractive,
-} from "../utils/prompts";
+import { getJobInteractive } from "../utils/prompts";
 import { joinURL } from "../utils/pageUtils";
+import { runPrompt } from "../utils/commandUtils";
 import { Command } from "commander";
 import { green } from "colors";
 import Puppeteer from "puppeteer";
+// @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
+import { Select, Toggle } from "enquirer";
 
 export class RepostController extends BaseController {
     private isInteractive: boolean;
@@ -36,7 +36,7 @@ export class RepostController extends BaseController {
         if (this.isInteractive) {
             const { name, id } = await getJobInteractive(
                 job,
-                "What job would you like to create job posts for?",
+                "What job post would you like to repost?",
                 this.spinner
             );
             if (!id) throw new Error(`Job cannot be found with id ${id}.`);
@@ -48,7 +48,7 @@ export class RepostController extends BaseController {
                     `Job posts cannot be found for ${jobInfo.name}.`
                 );
             this.spinner.succeed();
-            const jobPostID = await getAllJobPostsInteractive(
+            const jobPostID = await this.getPostInteractive(
                 jobInfo.posts,
                 "What job post should be copied?"
             );
@@ -58,7 +58,7 @@ export class RepostController extends BaseController {
                 (post) => post.id === jobPostID
             );
             if (!postInfo) throw new Error(`Job post cannot be found.`);
-            await this.createSpecificJobPost(
+            await this.createJobPost(
                 job,
                 jobID,
                 jobInfo,
@@ -66,7 +66,7 @@ export class RepostController extends BaseController {
                 boardToPost,
                 page
             );
-            const deleteSpecificPost = await deleteSpecificPostInteractive(
+            const deleteSpecificPost = await this.deletePostInteractive(
                 this.config,
                 jobPost,
                 jobInfo,
@@ -92,7 +92,7 @@ export class RepostController extends BaseController {
 
             const postInfo = jobInfo.posts.find((post) => post.id === postID);
             if (!postInfo) throw new Error(`Job post cannot be found.`);
-            const jobPost = await this.createSpecificJobPost(
+            const jobPost = await this.createJobPost(
                 job,
                 jobID,
                 jobInfo,
@@ -114,7 +114,7 @@ export class RepostController extends BaseController {
         browser.close();
     }
 
-    private async createSpecificJobPost(
+    private async createJobPost(
         job: Job,
         jobID: number,
         jobInfo: JobInfo,
@@ -133,10 +133,56 @@ export class RepostController extends BaseController {
             green("✔"),
             `New job post for ${postInfo.name} of ${jobInfo.name} is created in ${postLocation}`
         );
-        // Mark old job post as offline
-        await jobPost.setStatus(postInfo, "offline", boardToPost);
-        console.log(green("✔"), "Old job post marked as offline.");
 
         return jobPost;
+    }
+
+    private async getPostInteractive(
+        posts: PostInfo[],
+        message: string
+    ): Promise<number> {
+        if (!posts || !posts.length) throw new Error(`No job post found.`);
+
+        const prompt = new Select({
+            name: "Job Post",
+            message,
+            choices: [
+                ...posts.map((post) => {
+                    return `${post.name} - ${post.location} - ${post.id}`;
+                }),
+            ],
+        });
+        const jobPostName = await runPrompt(prompt);
+        const matchedJobPost = posts.find(
+            (post) =>
+                `${post.name} - ${post.location} - ${post.id}` === jobPostName
+        );
+        if (!matchedJobPost)
+            throw new Error(`No job post found with name ${jobPostName}.`);
+
+        return matchedJobPost.id;
+    }
+
+    private async deletePostInteractive(
+        config: Config,
+        jobPost: JobPost,
+        jobInfo: JobInfo,
+        postInfo: PostInfo
+    ): Promise<boolean> {
+        const prompt = new Toggle({
+            message: "Do you want to delete the old job post?",
+            enabled: "Yes",
+            disabled: "No",
+            initial: true,
+        });
+
+        const shouldDelete = await runPrompt(prompt);
+        if (!shouldDelete) return false;
+        const referrer = joinURL(
+            config.greenhouseUrl,
+            `/plans/${jobInfo.id}/jobapp`
+        );
+        await jobPost.deletePost(postInfo, referrer);
+        return true;
     }
 }
