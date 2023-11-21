@@ -102,13 +102,7 @@ export default class UbuntuSSO extends Authentication {
             joinURL(this.config.loginUrl, "/+login"),
             this.defaultFetchOptions
         );
-        const firstResponse = await response.text();
-        let CSRFToken: string = this.getCSRFToken(firstResponse);
-        console.log("==================")
-        console.log("DEBUG :: STEP 1")
-        console.log(firstResponse)
-        console.log("The token found is:", CSRFToken)
-        console.log("==================")
+        let CSRFToken: string = this.getCSRFToken(await response.text());
         response = await fetch(joinURL(this.config.loginUrl, "/+login"), {
             ...this.defaultFetchOptions,
             headers: {
@@ -119,11 +113,6 @@ export default class UbuntuSSO extends Authentication {
             body: `csrfmiddlewaretoken=${CSRFToken}&email=${credentials.email}&user-intentions=login&password=${credentials.password}&continue=&openid.usernamesecret=`,
         });
         const html = await response.text();
-        console.log("==================")
-        console.log("DEBUG :: STEP 2")
-        console.log(html)
-        console.log("Verification code in page?", !!html.match(/type your verification code/i))
-        console.log("==================")
         if (!html.match(/type your verification code/i))
             throw new UserError(
                 "Authorization failed. Please check your e-mail and password."
