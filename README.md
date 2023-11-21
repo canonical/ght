@@ -30,32 +30,18 @@ If you want to use the interactive mode, you can run the command with the flag `
 ght replicate -i
 ```
 
-### Replicate a specific job post
+### Repost a specific job post
 
-You can use `ght` to replicate a specific job post in the Canonical board - with the flag `-s`.
-
-```
-ght replicate -s <JOB_POST_ID>
-```
-
-If you also want to use the interactive mode to replicate a specific job post, you can run the command with the flags `-i` and `-s`. Let yourself be guided by the tool:
+You can use `ght` to repost a specific job post - the old job post is deleted afterwards.
 
 ```
-ght replicate -i -s
+ght repost <JOB_POST_ID>
 ```
 
-### Delete a specific job post
-
-You can use `ght` to delete a specific job post in the Canonical board - with the flag `-s`.
+If you also want to use the interactive mode to repost a specific job post, you can run the command with the flags `-i`. Let yourself be guided by the tool:
 
 ```
-ght reset -s <JOB_POST_ID>
-```
-
-If you also want to use the interactive mode to delete a specific job post, you can run the command with the flags `-i` and `-s`. Let yourself be guided by the tool:
-
-```
-ght reset -i -s
+ght repost -i
 ```
 
 ### Assign graders to written interviews

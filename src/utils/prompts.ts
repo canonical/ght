@@ -37,14 +37,10 @@ export async function getJobInteractive(
 }
 
 export async function getAllJobPostsInteractive(
-    config: Config,
     posts: PostInfo[],
     message: string
 ) {
-    const board = config.copyFromBoard.toUpperCase();
-
-    if (!posts || !posts.length)
-        throw new Error(`No job post found in the ${board} board.`);
+    if (!posts || !posts.length) throw new Error(`No job post found.`);
 
     const prompt = new Select({
         name: "Job Post",
@@ -57,14 +53,10 @@ export async function getAllJobPostsInteractive(
     });
     const jobPostName = await runPrompt(prompt);
     const matchedJobPost = posts.find(
-        (post) =>
-            `${post.name} - ${post.location} - ${post.id}` === jobPostName &&
-            post.boardInfo.name.toUpperCase() === board
+        (post) => `${post.name} - ${post.location} - ${post.id}` === jobPostName
     );
     if (!matchedJobPost)
-        throw new Error(
-            `No job post found with name ${jobPostName} in the ${board} board.`
-        );
+        throw new Error(`No job post found with name ${jobPostName}.`);
 
     return matchedJobPost.id;
 }
@@ -143,8 +135,7 @@ export async function deleteSpecificPostInteractive(
     config: Config,
     jobPost: JobPost,
     jobInfo: JobInfo,
-    postInfo: PostInfo,
-    autoDelete = false
+    postInfo: PostInfo
 ) {
     const prompt = new Toggle({
         message: "Do you want to remove the old job post?",
@@ -153,14 +144,12 @@ export async function deleteSpecificPostInteractive(
         initial: true,
     });
 
-    const shouldDelete = autoDelete || (await runPrompt(prompt));
-    if (shouldDelete) {
-        const referrer = joinURL(
-            config.greenhouseUrl,
-            `/plans/${jobInfo.id}/jobapp`
-        );
-        await jobPost.deletePost(postInfo, referrer);
-        return true;
-    }
-    return false;
+    const shouldDelete = await runPrompt(prompt);
+    if (!shouldDelete) return;
+    const referrer = joinURL(
+        config.greenhouseUrl,
+        `/plans/${jobInfo.id}/jobapp`
+    );
+    await jobPost.deletePost(postInfo, referrer);
+    return true;
 }

@@ -2,6 +2,7 @@ import {
     LoginController,
     LogoutController,
     ReplicateController,
+    RepostController,
     ResetController,
     AssignGradersController,
 } from "./controllers";
@@ -39,7 +40,7 @@ function makeProgram(): Command {
     program
         .command("replicate")
         .usage(
-            "([-i | --interactive] | [-s | --specific] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
+            "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
                 "\n\n Examples: \n\t ght replicate --interactive " +
                 "\n \t ght replicate 1234 --regions=emea,americas"
         )
@@ -66,9 +67,6 @@ function makeProgram(): Command {
         .addOption(
             new Option("-i, --interactive", "Enable interactive interface")
         )
-        .addOption(
-            new Option("-s, --specific", "Replicate a specific job post")
-        )
         .action(async (jobPostId, options) => {
             await new ReplicateController(program, jobPostId, options).run();
         });
@@ -77,7 +75,7 @@ function makeProgram(): Command {
     program
         .command("reset")
         .usage(
-            "([-i | --interactive] | [-s | --specific] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
+            "([-i | --interactive] | <job-post-id> --regions=<region-name>[, <region-name-2>...])" +
                 " \n\n Examples: \n\t ght reset --interactive " +
                 "\n\t ght reset 1234 --regions=emea,americas"
         )
@@ -101,9 +99,34 @@ function makeProgram(): Command {
         .addOption(
             new Option("-i, --interactive", "Enable interactive interface")
         )
-        .addOption(new Option("-s, --specific", "Delete a specific job post"))
         .action(async (jobPostID, options) => {
             await new ResetController(program, jobPostID, options).run();
+        });
+
+    // Repost command
+    program
+        .command("repost")
+        .usage(
+            "([-i | --interactive] | <job-post-id>)" +
+                " \n\n Examples: \n\t ght repost --interactive " +
+                "\n\t ght repost 1234"
+        )
+        .description("Repost and delete a given job post")
+        .addArgument(
+            new Argument(
+                "<job-post-id>",
+                "ID of a job post that will be cloned and deleted"
+            )
+                .argOptional()
+                .argParser((value: string) =>
+                    validateNumberParam(value, "job-post-id")
+                )
+        )
+        .addOption(
+            new Option("-i, --interactive", "Enable interactive interface")
+        )
+        .action(async (jobPostID, options) => {
+            await new RepostController(program, jobPostID, options).run();
         });
 
     // Assign command
