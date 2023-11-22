@@ -56,7 +56,7 @@ export async function getJobPostInteractive(
         choices: [...uniqueNames],
     });
     const jobPostName = await runPrompt(prompt);
-    // Get one of job posts whose name matches with the chosen name. It doesn not matter which one.
+    // Get one of job posts whose name matches with the chosen name. It does not matter which one.
     const matchedJobPost = posts.find(
         (post) =>
             post.name === jobPostName &&
