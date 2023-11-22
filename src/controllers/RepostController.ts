@@ -36,7 +36,7 @@ export class RepostController extends BaseController {
         if (this.isInteractive) {
             const { name, id } = await getJobInteractive(
                 job,
-                "What job post would you like to repost?",
+                "What job's job post would you like to repost?",
                 this.spinner
             );
             if (!id) throw new Error(`Job cannot be found with id ${id}.`);
@@ -66,13 +66,13 @@ export class RepostController extends BaseController {
                 boardToPost,
                 page
             );
-            const deleteSpecificPost = await this.deletePostInteractive(
+            const deletePost = await this.deletePostInteractive(
                 this.config,
                 jobPost,
                 jobInfo,
                 postInfo
             );
-            if (deleteSpecificPost) {
+            if (deletePost) {
                 await page.reload();
                 console.log(green("✔"), "Old job post deleted.");
             }
