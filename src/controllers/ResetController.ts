@@ -68,7 +68,7 @@ export class ResetController extends BaseController {
             jobInfo = await job.getJobData(jobID);
             this.spinner.succeed();
         }
-        await job.deletePosts(this.config, jobInfo, regionNames, postID);
+        await job.deletePosts(jobInfo, regionNames, postID);
 
         console.log("Happy hiring!");
 

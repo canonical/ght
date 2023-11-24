@@ -2,10 +2,8 @@ import { BaseController } from "./BaseController";
 import Job from "../core/Job";
 import JobPost from "../core/JobPost";
 import { JobBoard, JobInfo, PostInfo } from "../core/types";
-import Config from "../config/Config";
 import { UserError } from "../utils/processUtils";
 import { getJobInteractive } from "../utils/prompts";
-import { joinURL } from "../utils/pageUtils";
 import { runPrompt } from "../utils/commandUtils";
 import { Command } from "commander";
 import { green } from "colors";
@@ -67,7 +65,6 @@ export class RepostController extends BaseController {
                 page
             );
             const deletePost = await this.deletePostInteractive(
-                this.config,
                 jobPost,
                 jobInfo,
                 postInfo
@@ -100,11 +97,7 @@ export class RepostController extends BaseController {
                 boardToPost,
                 page
             );
-            const referrer = joinURL(
-                this.config.greenhouseUrl,
-                `/plans/${jobInfo.id}/jobapp`
-            );
-            await jobPost.deletePost(postInfo, referrer);
+            await jobPost.deletePost(postInfo, jobInfo);
             await page.reload();
             console.log(green("✔"), "Old job post deleted.");
         }
@@ -164,7 +157,6 @@ export class RepostController extends BaseController {
     }
 
     private async deletePostInteractive(
-        config: Config,
         jobPost: JobPost,
         jobInfo: JobInfo,
         postInfo: PostInfo
@@ -178,11 +170,7 @@ export class RepostController extends BaseController {
 
         const shouldDelete = await runPrompt(prompt);
         if (!shouldDelete) return false;
-        const referrer = joinURL(
-            config.greenhouseUrl,
-            `/plans/${jobInfo.id}/jobapp`
-        );
-        await jobPost.deletePost(postInfo, referrer);
+        await jobPost.deletePost(postInfo, jobInfo);
         return true;
     }
 }
