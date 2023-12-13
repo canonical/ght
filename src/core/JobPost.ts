@@ -57,7 +57,8 @@ export default class JobPost {
         return {
             id: parseInt(jobPostID),
             name: titleLocationInfo[0],
-            location: titleLocationInfo[1],
+            // Remove surrounding parentheses
+            location: titleLocationInfo[1].replace(/\(|\)/g, ''),
             boardInfo: {
                 name: boardName,
                 id: boardID,

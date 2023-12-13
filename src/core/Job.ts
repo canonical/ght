@@ -159,36 +159,28 @@ export default class Job {
                         new RegExp(post.boardInfo.name, "i")
                     )
             );
+            const nameCheck = !similarPost || similarPost.name === post.name;
 
             // Job post is on the entered regions
             const locationCheck =
                 !enteredRegions ||
                 !!enteredRegions.find((enteredRegion) => {
-                    const filteredLocations = this.config.regions[
+                    return this.config.regions[
                         enteredRegion
-                    ].filter((location) =>
-                        post.location.match(new RegExp(location, "i"))
-                    );
-
-                    return filteredLocations.length > 0;
+                    ].includes(post.location)
                 });
-
             // Job post region is not in our list
-            const isRegionUnknown = !this.config.regionNames.find((location) => {
-                return post.location.match(new RegExp(location, "i"))
-            });                
+            const isUnknownRegion = !this.config.locations.includes(post.location);
 
-            const nameCheck = !similarPost || similarPost.name === post.name;
             if (!isProtected && nameCheck) {
                 if (locationCheck) {
                     postToDelete.push(post);
-                } else if (isRegionUnknown) {
+                } else if (isUnknownRegion) {
                     postsUnknownRegion.push(post)
                 }
             }
-                
-            
         }
+
         return [postToDelete, postsUnknownRegion];
     }
 
@@ -214,8 +206,12 @@ export default class Job {
         
         // Check if there are posts in unrecognised regions and prompt to delete them
         if (postsUnknownRegion.length > 0) {
+            console.log(`${postsUnknownRegion.length} job posts in unrecognised regions:`)
+            for (const post of postsUnknownRegion) {
+                console.log(`${this.config.greenhouseUrl}/jobapps/${post.id}/edit in ${post.location}`)
+            }
             const prompt = new Toggle({
-                message: `${postsUnknownRegion.length} job posts in unrecognised regions. Do you want to delete them?`,
+                message: "Do you want to delete them?",
                 enabled: "Yes",
                 disabled: "No",
                 initial: false,
