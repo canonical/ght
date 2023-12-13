@@ -212,10 +212,10 @@ export default class Job {
 
         await this.deleteJobPosts(postToDelete, boardToPost, jobData);
         
-        // Check if there are posts on unrecognised regions and prompt to delete them
+        // Check if there are posts in unrecognised regions and prompt to delete them
         if (postsUnknownRegion.length > 0) {
             const prompt = new Toggle({
-                message: `${postsUnknownRegion.length} job posts on unrecognised regions. Do you want to delete them?`,
+                message: `${postsUnknownRegion.length} job posts in unrecognised regions. Do you want to delete them?`,
                 enabled: "Yes",
                 disabled: "No",
                 initial: false,
