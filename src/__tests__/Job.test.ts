@@ -458,15 +458,9 @@ describe("Job tests", () => {
         it("fails if region is misspelled/given uppercase character", async () => {
             const job = new Job(page, spinner, config);
 
-            try {
-                await job.deletePosts(jobData, ["Apac"], 1);
-            } catch (error) {
-                expect(error).toEqual(
-                    TypeError(
-                        "Cannot read properties of undefined (reading 'filter')"
-                    )
-                );
-            }
+            await expect(
+                job.deletePosts(jobData, ["Apac"], 1)
+            ).rejects.toThrow(TypeError);
         });
     });
 
