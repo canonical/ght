@@ -206,9 +206,9 @@ export default class Job {
         
         // Check if there are posts in unrecognised regions and prompt to delete them
         if (postsUnknownRegion.length > 0) {
-            console.log(`${postsUnknownRegion.length} job posts in unrecognised regions:`)
+            this.spinner.warn(`${postsUnknownRegion.length} job posts in unrecognised regions:`)
             for (const post of postsUnknownRegion) {
-                console.log(`${this.config.greenhouseUrl}/jobapps/${post.id}/edit in ${post.location}`)
+                console.log(`- ${post.location}`)
             }
             const prompt = new Toggle({
                 message: "Do you want to delete them?",
