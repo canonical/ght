@@ -27,6 +27,9 @@ jest.mock("tough-cookie", () => {
                 getCookies: jest
                     .fn()
                     .mockReturnValue([{ key: "sessionid", value: "test" }]),
+                store: {
+                    synchronous: true,
+                },
             };
         }),
     };
@@ -67,6 +70,9 @@ describe("SSO tests", () => {
             return {
                 setCookie: jest.fn(),
                 getCookies: jest.fn().mockReturnValue([]),
+                store: {
+                    synchronous: true,
+                },
             };
         });
 
