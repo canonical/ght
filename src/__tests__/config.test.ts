@@ -25,5 +25,5 @@ describe("Config", () => {
         };
 
         expect(() => new Config(overrides as any)).toThrow();
-    })
+    });
 });

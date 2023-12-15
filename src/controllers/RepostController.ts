@@ -7,7 +7,7 @@ import { getJobInteractive } from "../utils/prompts";
 import { runPrompt } from "../utils/commandUtils";
 import { Command } from "commander";
 import { green } from "colors";
-import Puppeteer from "puppeteer";
+import * as Puppeteer from "puppeteer";
 // @ts-ignore This can be deleted after https://github.com/enquirer/enquirer/issues/135 is fixed.
 import { Select, Toggle } from "enquirer";
 
@@ -35,7 +35,7 @@ export class RepostController extends BaseController {
             const { name, id } = await getJobInteractive(
                 job,
                 "What job's job post would you like to repost?",
-                this.spinner
+                this.spinner,
             );
             if (!id) throw new Error(`Job cannot be found with id ${id}.`);
             jobID = id;
@@ -43,17 +43,17 @@ export class RepostController extends BaseController {
             jobInfo = await job.getJobData(jobID);
             if (!jobInfo.posts.length)
                 throw new Error(
-                    `Job posts cannot be found for ${jobInfo.name}.`
+                    `Job posts cannot be found for ${jobInfo.name}.`,
                 );
             this.spinner.succeed();
             const jobPostID = await this.getPostInteractive(
                 jobInfo.posts,
-                "What job post should be copied?"
+                "What job post should be copied?",
             );
             const boardToPost = await job.getBoardToPost();
             const jobPost = new JobPost(page, this.config);
             const postInfo = jobInfo.posts.find(
-                (post) => post.id === jobPostID
+                (post) => post.id === jobPostID,
             );
             if (!postInfo) throw new Error(`Job post cannot be found.`);
             await this.createJobPost(
@@ -62,12 +62,12 @@ export class RepostController extends BaseController {
                 jobInfo,
                 postInfo,
                 boardToPost,
-                page
+                page,
             );
             const deletePost = await this.deletePostInteractive(
                 jobPost,
                 jobInfo,
-                postInfo
+                postInfo,
             );
             if (deletePost) {
                 await page.reload();
@@ -81,7 +81,7 @@ export class RepostController extends BaseController {
             jobInfo = await job.getJobData(jobID);
             if (!jobInfo.posts.length)
                 throw new Error(
-                    `Job posts cannot be found for ${jobInfo.name}.`
+                    `Job posts cannot be found for ${jobInfo.name}.`,
                 );
             this.spinner.succeed();
 
@@ -95,7 +95,7 @@ export class RepostController extends BaseController {
                 jobInfo,
                 postInfo,
                 boardToPost,
-                page
+                page,
             );
             await jobPost.deletePost(postInfo, jobInfo);
             await page.reload();
@@ -113,7 +113,7 @@ export class RepostController extends BaseController {
         jobInfo: JobInfo,
         postInfo: PostInfo,
         boardToPost: JobBoard,
-        page: Puppeteer.Page
+        page: Puppeteer.Page,
     ): Promise<JobPost> {
         const jobPost = new JobPost(page, this.config);
         const postLocation = postInfo.location
@@ -123,7 +123,7 @@ export class RepostController extends BaseController {
         await job.markAsLive(jobID, jobInfo.posts, boardToPost);
         console.log(
             green("✔"),
-            `New job post for ${postInfo.name} of ${jobInfo.name} is created in ${postLocation}`
+            `New job post for ${postInfo.name} of ${jobInfo.name} is created in ${postLocation}`,
         );
 
         return jobPost;
@@ -131,7 +131,7 @@ export class RepostController extends BaseController {
 
     private async getPostInteractive(
         posts: PostInfo[],
-        message: string
+        message: string,
     ): Promise<number> {
         if (!posts || !posts.length) throw new Error(`No job post found.`);
 
@@ -147,7 +147,7 @@ export class RepostController extends BaseController {
         const jobPostName = await runPrompt(prompt);
         const matchedJobPost = posts.find(
             (post) =>
-                `${post.name} - ${post.location} - ${post.id}` === jobPostName
+                `${post.name} - ${post.location} - ${post.id}` === jobPostName,
         );
         if (!matchedJobPost)
             throw new Error(`No job post found with name ${jobPostName}.`);
@@ -158,7 +158,7 @@ export class RepostController extends BaseController {
     private async deletePostInteractive(
         jobPost: JobPost,
         jobInfo: JobInfo,
-        postInfo: PostInfo
+        postInfo: PostInfo,
     ): Promise<boolean> {
         const prompt = new Toggle({
             message: "Do you want to delete the old job post?",

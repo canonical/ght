@@ -9,7 +9,8 @@ import {
 } from "../utils/pageUtils";
 import Config from "../config/Config";
 import { evaluate } from "../utils/processUtils";
-import Puppeteer, { ElementHandle } from "puppeteer";
+import * as Puppeteer from "puppeteer";
+import { ElementHandle } from "puppeteer";
 import { blue } from "colors";
 
 export default class JobPost {
@@ -36,11 +37,11 @@ export default class JobPost {
         const jobPostID = await evaluate(
             this.page,
             (el) => el?.getAttribute("data-job-id"),
-            triggerBox
+            triggerBox,
         );
         if (!jobPostID)
             throw new Error(
-                `Post information cannot be found in ${this.page.url()}.`
+                `Post information cannot be found in ${this.page.url()}.`,
             );
 
         const postBoard = await post.$(".board-column");
@@ -73,7 +74,7 @@ export default class JobPost {
     public async deletePost(jobPost: PostInfo, jobData: JobInfo) {
         const url = joinURL(
             this.config.greenhouseUrl,
-            `/jobapps/${jobPost.id}`
+            `/jobapps/${jobPost.id}`,
         );
         const referrer = joinURL(
             this.config.greenhouseUrl,
@@ -92,7 +93,7 @@ export default class JobPost {
                 method: "DELETE",
             },
             `Failed to delete ${jobPost.name} | ${jobPost.location}`,
-            this.isSuccessful
+            this.isSuccessful,
         );
     }
 
@@ -102,14 +103,14 @@ export default class JobPost {
         const cityName = locationArr.reduce((str1, str2) => `${str1}, ${str2}`);
 
         const accessTokenElement = await this.page.$(
-            "*[data-key='LocationControl.Providers.Mapbox.apiKey']"
+            "*[data-key='LocationControl.Providers.Mapbox.apiKey']",
         );
         if (!accessTokenElement)
             throw new Error(
-                "Data key to retrieve location information cannot be found."
+                "Data key to retrieve location information cannot be found.",
             );
         const accessToken = await evaluate(accessTokenElement, (node) =>
-            node.getAttribute("data-value")
+            node.getAttribute("data-value"),
         );
 
         const response = await evaluate(
@@ -139,23 +140,23 @@ export default class JobPost {
                     `https://api.mapbox.com/geocoding/v5/mapbox.places/${cityName}.json?access_token=${accessToken}` +
                     `&language=en&autocomplete=true&types=place%2Clocality&limit=10`,
                 referrer: this.config.greenhouseUrl,
-            }
+            },
         );
 
         if (!response) {
             throw new Error(
-                `Failed to retrieve location information for ${cityName}.`
+                `Failed to retrieve location information for ${cityName}.`,
             );
         }
 
         const locationInfoList = response["features"];
         if (!locationInfoList || !locationInfoList.length)
             throw new Error(
-                `Location infomation cannot be found for ${cityName}.`
+                `Location infomation cannot be found for ${cityName}.`,
             );
         const locationInfo = locationInfoList[0];
         const contextInformation = locationInfo["context"]?.find((info: any) =>
-            info["id"].includes("country")
+            info["id"].includes("country"),
         );
         const countryInfo = contextInformation
             ? {
@@ -191,23 +192,23 @@ export default class JobPost {
     public async duplicate(
         jobPost: PostInfo,
         location: string,
-        board: any
+        board: any,
     ): Promise<void> {
         const logName = `${blue(jobPost.name)} | ${blue(location)}`;
         const url1 = joinURL(
             this.config.greenhouseUrl,
-            `/jobapps/${jobPost.id}/edit`
+            `/jobapps/${jobPost.id}/edit`,
         );
         await this.page.goto(url1);
 
         const element = await this.page.$("*[data-react-class='JobPostsForm']");
         if (!element)
             throw new Error(
-                "Failed to retrieve job post form details of " + logName
+                "Failed to retrieve job post form details of " + logName,
             );
 
         const jobPostFormRaw = await evaluate(element, (node) =>
-            node.getAttribute("data-react-props")
+            node.getAttribute("data-react-props"),
         );
         if (!jobPostFormRaw)
             throw new Error("Failed to retrieve job post form data " + logName);
@@ -265,7 +266,7 @@ export default class JobPost {
 
         jobApplication.questions_attributes = Object.assign(
             {},
-            jobApplication.questions_attributes
+            jobApplication.questions_attributes,
         );
 
         // set the new location
@@ -317,7 +318,7 @@ export default class JobPost {
             this.page,
             joinURL(
                 this.config.greenhouseUrl,
-                `/plans/${jobPost.job.id}/jobapps`
+                `/plans/${jobPost.job.id}/jobapps`,
             ),
             {
                 "content-type": "application/json;charset=UTF-8",
@@ -328,19 +329,19 @@ export default class JobPost {
                 method: "POST",
             },
             "Failed to create " + logName,
-            this.isSuccessful
+            this.isSuccessful,
         );
     }
 
     public async setStatus(
         jobPost: PostInfo,
         newStatus: "live" | "offline",
-        boardToPost: JobBoard
+        boardToPost: JobBoard,
     ) {
         const logName = `${blue(jobPost.name)} | ${blue(jobPost.location)}`;
         const url = joinURL(
             this.config.greenhouseUrl,
-            `/plans/${jobPost.job.id}/jobapp`
+            `/plans/${jobPost.job.id}/jobapp`,
         );
         await this.page.goto(url);
 
@@ -363,7 +364,7 @@ export default class JobPost {
                 method: "POST",
             },
             "Failed to update the status of " + logName,
-            this.isSuccessful
+            this.isSuccessful,
         );
     }
 }

@@ -20,14 +20,14 @@ export abstract class Authentication {
 
     protected parseUserSettings() {
         const configRawContent = readFileSync(
-            this.config.userSettingsPath
+            this.config.userSettingsPath,
         ).toString();
         try {
             return JSON.parse(configRawContent);
         } catch {
             throw new Error(
                 "Failed to parse user settings in " +
-                    this.config.userSettingsPath
+                    this.config.userSettingsPath,
             );
         }
     }

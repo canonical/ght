@@ -1,8 +1,8 @@
 import { evaluate, reportError, UserError } from "./processUtils";
-import Puppeteer from "puppeteer";
+import * as Puppeteer from "puppeteer";
 
 export function getInnerText(
-    element: Puppeteer.ElementHandle
+    element: Puppeteer.ElementHandle,
 ): Promise<string> {
     return evaluate(element, (el: Element) => (el as HTMLElement).innerText);
 }
@@ -11,7 +11,7 @@ export function getCSRFToken(page: Puppeteer.Page): Promise<string> {
     // CSRF token should be put in the request's header.
     return page.$eval(
         "head > meta[name=csrf-token]",
-        (element) => (element as HTMLMetaElement).content
+        (element) => (element as HTMLMetaElement).content,
     );
 }
 
@@ -25,7 +25,7 @@ export async function sendRequest(
     headers: { [key: string]: string },
     options: { [key: string]: string | null },
     errorMessage: string,
-    isSuccessful: (response: { [key: string]: string }) => boolean
+    isSuccessful: (response: { [key: string]: string }) => boolean,
 ) {
     const response = await evaluate(
         page,
@@ -60,7 +60,7 @@ export async function sendRequest(
             headers,
             options,
             csrfToken: await getCSRFToken(page),
-        }
+        },
     );
 
     if (!response || response.isError || !isSuccessful(response)) {
@@ -76,10 +76,10 @@ export async function sendRequest(
 
 export async function getIDFromURL(
     element: Puppeteer.ElementHandle,
-    selector: string
+    selector: string,
 ): Promise<number> {
     const url = await element.$eval(selector, (anchor: Element) =>
-        anchor.getAttribute("href")
+        anchor.getAttribute("href"),
     );
     if (!url) throw new Error(`Cannot get ID from ${url}.`);
     const urlParts: string[] = url.split("/");

@@ -29,7 +29,7 @@ export type GradersConfig = {
             {
                 name: string;
                 active: boolean;
-            }
+            },
         ];
     };
 };

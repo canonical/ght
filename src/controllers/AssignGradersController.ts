@@ -24,18 +24,14 @@ export class AssignGradersController extends BaseController {
     /**
      * Return list of graders based on selected options
      */
-    private createPool(
-        config: GradersConfig,
-        selectedJobs: JobToAssign[],
-        stage: string
-    ) {
+    private createPool(config: GradersConfig, selectedJobs: JobToAssign[]) {
         const pool: Grader[] = [];
         selectedJobs.forEach(({ jobName }) => {
             if (!config[jobName]) {
                 throw new Error(`Unable to find "${jobName}" in config file`);
             }
             const activeGraders = config[jobName]["Written Interview"].filter(
-                (grader: any) => grader.active
+                (grader: any) => grader.active,
             );
             activeGraders.forEach(({ name }: { name: string }) => {
                 pool.push({ name, jobName });
@@ -62,9 +58,8 @@ export class AssignGradersController extends BaseController {
             choices: ["1", "2", "3", "4"],
             initial: 1,
         });
-        const gradersCountResponse: string[] = await runPrompt(
-            graderCountPrompt
-        );
+        const gradersCountResponse: string[] =
+            await runPrompt(graderCountPrompt);
         const gradersCount: number = +gradersCountResponse;
 
         const stagePrompt = new Select({
@@ -98,16 +93,16 @@ export class AssignGradersController extends BaseController {
 
         const gradersConfigPath = join(
             process.env["SNAP_REAL_HOME"] || homedir(),
-            "ght-graders.yml"
+            "ght-graders.yml",
         );
         const gradersConfig = loadConfigFile<GradersConfig>(gradersConfigPath);
         if (!config) {
             throw new UserError("Unable to find list of graders");
         }
-        const graders = this.createPool(gradersConfig, selectedJobs, stage);
+        const graders = this.createPool(gradersConfig, selectedJobs);
         if (!graders.length) {
             throw new UserError(
-                "Unable to find graders for the selected jobs. Check that the job name is matching."
+                "Unable to find graders for the selected jobs. Check that the job name is matching.",
             );
         }
 
@@ -118,7 +113,7 @@ export class AssignGradersController extends BaseController {
             this.spinner,
             gradersCount,
             this.config.greenhouseUrl,
-            stage
+            stage,
         );
         await loadBalancer.execute();
 

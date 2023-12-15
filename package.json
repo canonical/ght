@@ -19,7 +19,7 @@
         "colors": "1.4.0",
         "commander": "11.1.0",
         "enquirer": "2.3.6",
-        "http-cookie-agent": "5.0.4",
+        "http-cookie-agent": "^5.0.4",
         "js-yaml": "^4.1.0",
         "jsdom": "23.0.1",
         "node-fetch": "2.6.7",
@@ -29,7 +29,7 @@
     },
     "devDependencies": {
         "@testing-library/jest-dom": "^6.0.0",
-        "@tsconfig/node16": "16.1.1",
+        "@tsconfig/node16": "^16.1.1",
         "@types/colors": "1.2.1",
         "@types/jest": "^29.1.2",
         "@types/js-yaml": "^4.0.5",

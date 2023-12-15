@@ -10,7 +10,7 @@ import { Ora } from "ora";
 export async function getJobInteractive(
     job: Job,
     message: string,
-    spinner: Ora
+    spinner: Ora,
 ) {
     spinner.start("Fetching your jobs.");
     const jobs = await job.getJobs();
@@ -18,7 +18,7 @@ export async function getJobInteractive(
 
     if (jobs.size === 0)
         throw new UserError(
-            "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR."
+            "Only hiring leads can create job posts. If you are not sure about your hiring role please contact HR.",
         );
 
     const prompt = new Select({
@@ -37,14 +37,14 @@ export async function getJobInteractive(
 export async function getJobPostInteractive(
     config: Config,
     posts: PostInfo[],
-    message: string
+    message: string,
 ) {
     // As a default, only job posts in the "Canonical" board should be displayed
     const board = config.copyFromBoard.toUpperCase();
     const uniqueNames = new Set(
         posts
             .filter((post) => post.boardInfo.name.toUpperCase() === board)
-            .map((post) => post.name)
+            .map((post) => post.name),
     );
 
     if (!uniqueNames.size)
@@ -60,11 +60,11 @@ export async function getJobPostInteractive(
     const matchedJobPost = posts.find(
         (post) =>
             post.name === jobPostName &&
-            post.boardInfo.name.toUpperCase() === board
+            post.boardInfo.name.toUpperCase() === board,
     );
     if (!matchedJobPost)
         throw new Error(
-            `No job post found with name ${jobPostName} in the ${board} board.`
+            `No job post found with name ${jobPostName} in the ${board} board.`,
         );
 
     return matchedJobPost.id;
@@ -72,7 +72,7 @@ export async function getJobPostInteractive(
 
 export async function getRegionsInteractive(
     message: string,
-    regionNames: string[]
+    regionNames: string[],
 ) {
     const prompt = new MultiSelect({
         name: "Regions",
@@ -88,7 +88,7 @@ export async function deletePostsInteractive(
     job: Job,
     jobInfo: JobInfo,
     regionNames: string[],
-    similar: number
+    similar: number,
 ) {
     const prompt = new Toggle({
         message: "Do you want to remove existing job posts?",
