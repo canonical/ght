@@ -116,8 +116,7 @@ export class RepostController extends BaseController {
         page: Puppeteer.Page
     ): Promise<JobPost> {
         const jobPost = new JobPost(page, this.config);
-        // Remove brackets from the location name
-        const postLocation = postInfo.location.replace(/^\(|\)$/g, "");
+        const postLocation = postInfo.location
         // Duplicate job post in the same location
         await jobPost.duplicate(postInfo, postLocation, boardToPost);
         // Mark all newly added job posts as live
