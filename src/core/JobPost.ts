@@ -1,4 +1,4 @@
-import { JobBoard, PostInfo } from "./types";
+import { JobBoard, JobInfo, PostInfo } from "./types";
 import { usaCities } from "../config/defaults";
 import {
     getCSRFToken,
@@ -57,7 +57,8 @@ export default class JobPost {
         return {
             id: parseInt(jobPostID),
             name: titleLocationInfo[0],
-            location: titleLocationInfo[1],
+            // Remove surrounding parentheses
+            location: titleLocationInfo[1].replace(/\(|\)/g, ''),
             boardInfo: {
                 name: boardName,
                 id: boardID,
@@ -69,10 +70,14 @@ export default class JobPost {
     public isSuccessful = (response: { [key: string]: string }) =>
         !!(response?.status === "success" || response?.success);
 
-    public async deletePost(jobPost: PostInfo, referrer: string) {
+    public async deletePost(jobPost: PostInfo, jobData: JobInfo) {
         const url = joinURL(
             this.config.greenhouseUrl,
             `/jobapps/${jobPost.id}`
+        );
+        const referrer = joinURL(
+            this.config.greenhouseUrl,
+            `/plans/${jobData.id}/jobapp`
         );
 
         await sendRequest(

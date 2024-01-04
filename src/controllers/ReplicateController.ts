@@ -65,7 +65,6 @@ export class ReplicateController extends BaseController {
             );
 
             await deletePostsInteractive(
-                this.config,
                 job,
                 jobInfo,
                 regionNames,

@@ -10,6 +10,9 @@ import { evaluate, isDevelopment } from "../utils/processUtils";
 import Config from "../config/Config";
 import Puppeteer from "puppeteer";
 import { Ora } from "ora";
+// @ts-ignore 2023-11-24: https://github.com/enquirer/enquirer/issues/135 still not solved.
+import { Toggle } from "enquirer";
+import { runPrompt } from "../utils/commandUtils";
 
 const RECRUITER_TAG = "RECRUITER";
 
@@ -144,8 +147,11 @@ export default class Job {
                 );
             }
         }
-
+        
         const postToDelete = [];
+        // Posts whose region is not part of those we define
+        const postsUnknownRegion = []
+
         for (const post of posts) {
             const isProtected = !!this.config.protectedBoards.find(
                 (protectedBoardName) =>
@@ -153,28 +159,32 @@ export default class Job {
                         new RegExp(post.boardInfo.name, "i")
                     )
             );
+            const nameCheck = !similarPost || similarPost.name === post.name;
 
+            // Job post is on the entered regions
             const locationCheck =
                 !enteredRegions ||
                 !!enteredRegions.find((enteredRegion) => {
-                    const filteredLocations = this.config.regions[
+                    return this.config.regions[
                         enteredRegion
-                    ].filter((location) =>
-                        post.location.match(new RegExp(location, "i"))
-                    );
-
-                    return filteredLocations.length > 0;
+                    ].includes(post.location)
                 });
+            // Job post region is not in our list
+            const isUnknownRegion = !this.config.locations.includes(post.location);
 
-            const nameCheck = !similarPost || similarPost.name === post.name;
-            if (!isProtected && locationCheck && nameCheck)
-                postToDelete.push(post);
+            if (!isProtected && nameCheck) {
+                if (locationCheck) {
+                    postToDelete.push(post);
+                } else if (isUnknownRegion) {
+                    postsUnknownRegion.push(post)
+                }
+            }
         }
-        return postToDelete;
+
+        return [postToDelete, postsUnknownRegion];
     }
 
     public async deletePosts(
-        config: Config,
         jobData: JobInfo,
         enteredRegions?: string[],
         similarPostID?: number
@@ -182,26 +192,45 @@ export default class Job {
         this.spinner.start(`Starting to delete job posts.`);
         const posts: PostInfo[] = jobData.posts;
 
-        const postToDelete = this.filterPostsToDelete(
+        const [postToDelete, postsUnknownRegion] = this.filterPostsToDelete(
             posts,
             similarPostID,
             enteredRegions
         );
 
-        // We need some ids to be able to delete posts.
-        // They are the same for all boards.
+        // We need `publishStatusId` and `unpublishStatusId`
+        // to be able to delete posts. They are the same for all boards.
         const boardToPost = await this.getBoardToPost();
 
-        const referrer = joinURL(
-            config.greenhouseUrl,
-            `/plans/${jobData.id}/jobapp`
-        );
+        await this.deleteJobPosts(postToDelete, boardToPost, jobData);
+        
+        // Check if there are posts in unrecognised regions and prompt to delete them
+        if (postsUnknownRegion.length > 0) {
+            this.spinner.warn(`${postsUnknownRegion.length} job posts in unrecognised regions:`)
+            for (const post of postsUnknownRegion) {
+                console.log(`- ${post.location}`)
+            }
+            const prompt = new Toggle({
+                message: "Do you want to delete them?",
+                enabled: "Yes",
+                disabled: "No",
+                initial: false,
+            });
+            const confirm = await runPrompt(prompt);
+            if (confirm) {
+                await this.deleteJobPosts(postsUnknownRegion, boardToPost, jobData);
+            }
+        }
+    }
+
+    private async deleteJobPosts(postsToDelete: PostInfo[], boardToPost: JobBoard, jobData: JobInfo) {
+        this.spinner.start();
         let count = 1;
-        const totalJobsToDelete = postToDelete.length;
-        for (const post of postToDelete) {
+        const totalJobsToDelete = postsToDelete.length;
+        for (const post of postsToDelete) {
             post.isLive &&
                 (await this.jobPost.setStatus(post, "offline", boardToPost));
-            await this.jobPost.deletePost(post, referrer);
+            await this.jobPost.deletePost(post, jobData);
             await this.page.reload();
 
             this.spinner.text = `${count} of ${totalJobsToDelete} job posts were deleted.`;

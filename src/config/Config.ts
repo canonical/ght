@@ -99,6 +99,13 @@ class Config {
     }
 
     /**
+     * List of all locations
+     */
+    get locations(): string[] {
+        return Object.values(this.regions).flat();
+    }
+
+    /**
      * Authorization URL
      */
     get loginUrl(): string {

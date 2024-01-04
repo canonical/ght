@@ -441,7 +441,7 @@ describe("Job tests", () => {
             jobData = { id: 1, name: "test", posts: [postInfo] };
             const job = new Job(page, spinner, config);
 
-            await job.deletePosts(config, jobData);
+            await job.deletePosts(jobData);
 
             expect(spinner.text).toEqual("1 of 1 job posts were deleted.");
             expect(spinner.succeed).toHaveBeenCalledTimes(1);
@@ -451,22 +451,16 @@ describe("Job tests", () => {
             const job = new Job(page, spinner, config);
 
             await expect(
-                job.deletePosts(config, jobData, ["test"], 1)
+                job.deletePosts(jobData, ["test"], 1)
             ).rejects.toThrow();
         });
 
         it("fails if region is misspelled/given uppercase character", async () => {
             const job = new Job(page, spinner, config);
 
-            try {
-                await job.deletePosts(config, jobData, ["Apac"], 1);
-            } catch (error) {
-                expect(error).toEqual(
-                    TypeError(
-                        "Cannot read properties of undefined (reading 'filter')"
-                    )
-                );
-            }
+            await expect(
+                job.deletePosts(jobData, ["Apac"], 1)
+            ).rejects.toThrow(TypeError);
         });
     });
 
