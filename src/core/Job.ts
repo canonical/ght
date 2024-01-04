@@ -224,6 +224,7 @@ export default class Job {
     }
 
     private async deleteJobPosts(postsToDelete: PostInfo[], boardToPost: JobBoard, jobData: JobInfo) {
+        this.spinner.start();
         let count = 1;
         const totalJobsToDelete = postsToDelete.length;
         for (const post of postsToDelete) {
