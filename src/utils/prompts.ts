@@ -85,7 +85,6 @@ export async function getRegionsInteractive(
 }
 
 export async function deletePostsInteractive(
-    config: Config,
     job: Job,
     jobInfo: JobInfo,
     regionNames: string[],
