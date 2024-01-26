@@ -456,11 +456,11 @@ describe("Job tests", () => {
             const job = new Job(page, spinner, config);
 
             try {
-                await job.deletePosts(config, jobData, ["Apac"], 1);
+                await job.deletePosts(jobData, ["Apac"], 1);
             } catch (error) {
                 expect(error).toEqual(
                     TypeError(
-                        "Cannot read properties of undefined (reading 'filter')",
+                        "Cannot read properties of undefined (reading 'includes')",
                     ),
                 );
             }
