@@ -27,7 +27,7 @@ export default class LoadBalancer {
         spinner: Ora,
         gradersCount: number,
         greenhouseUrl: string,
-        stage: string
+        stage: string,
     ) {
         this.page = page;
         this.graders = graders;
@@ -56,7 +56,7 @@ export default class LoadBalancer {
                     }
                 });
             },
-            this.currentUser
+            this.currentUser,
         );
     }
 
@@ -70,11 +70,11 @@ export default class LoadBalancer {
         // Make sure that the user was correctly assigned
         const gradersAssigned = await this.page.$$eval(
             "ul .search-choice span",
-            (el) => el.map((grader) => grader.textContent)
+            (el) => el.map((grader) => grader.textContent),
         );
         if (!gradersAssigned.includes(grader.name)) {
             throw new UserError(
-                `Couldn't assign ${grader.name}. Please verify there's a Greenhouse user with this name`
+                `Couldn't assign ${grader.name}. Please verify there's a Greenhouse user with this name`,
             );
         }
     }
@@ -84,7 +84,7 @@ export default class LoadBalancer {
      */
     private findRandomGraders(job: JobToAssign) {
         const graders = this.graders.filter(
-            (grader: Grader) => grader.jobName == job.jobName
+            (grader: Grader) => grader.jobName == job.jobName,
         );
         if (graders.length < this.gradersCount) {
             throw new UserError("Not enough graders to pick from");
@@ -92,7 +92,7 @@ export default class LoadBalancer {
 
         // Shuffle graders array
         const shuffledGraders = graders
-            .map(grader => ({ grader, weight: Math.random() }))
+            .map((grader) => ({ grader, weight: Math.random() }))
             .sort((a, b) => a.weight - b.weight)
             .map(({ grader }) => grader);
 
@@ -108,7 +108,7 @@ export default class LoadBalancer {
     private async findUsername() {
         const currentUser = await this.page.$eval(
             "script[data-key='ZendeskConfig.userName']",
-            (el) => (el as HTMLElement).dataset.value
+            (el) => (el as HTMLElement).dataset.value,
         );
         if (!currentUser) {
             throw new Error("Unable to find user's name in Greenhouse");
@@ -121,7 +121,7 @@ export default class LoadBalancer {
      */
     private async assignGradersToApplication(
         application: Application,
-        graders: Grader[]
+        graders: Grader[],
     ) {
         const selector = `.person[application="${application?.applicationID}"]`;
         let interviewCount = 0;
@@ -132,7 +132,7 @@ export default class LoadBalancer {
             `${selector} tr.interview`,
             (interviewRows) => {
                 return interviewRows.length;
-            }
+            },
         );
 
         if (interviewCount !== 1) {
@@ -141,12 +141,12 @@ export default class LoadBalancer {
 
         // Click edit
         await this.page.waitForSelector(
-            `${selector} .edit-take-home-test-graders-link`
+            `${selector} .edit-take-home-test-graders-link`,
         );
 
         await this.page.$eval(
             `${selector} .edit-take-home-test-graders-link`,
-            (btn) => (btn as HTMLAnchorElement).click()
+            (btn) => (btn as HTMLAnchorElement).click(),
         );
 
         // Check the graders input is visible
@@ -154,11 +154,11 @@ export default class LoadBalancer {
             "#edit_take_home_test_graders_modal .search-field input",
             {
                 visible: true,
-            }
+            },
         );
         // Click the graders input
         await this.page.click(
-            "#edit_take_home_test_graders_modal .search-field input"
+            "#edit_take_home_test_graders_modal .search-field input",
         );
 
         // Delete current use assigned
@@ -193,7 +193,7 @@ export default class LoadBalancer {
      */
     private recordGrader(person: Grader) {
         const index = this.graderStore.findIndex(
-            (e) => e.Grader === person.name
+            (e) => e.Grader === person.name,
         );
         if (index === -1) {
             this.graderStore.push({
@@ -241,14 +241,14 @@ export default class LoadBalancer {
                         const graders = this.findRandomGraders(job);
                         await this.assignGradersToApplication(
                             application,
-                            graders
+                            graders,
                         );
                     }
                 }
 
                 // Keep doing this until there are no more pages
                 const nextPageBtn = await this.page.$(
-                    "a.next_page:not(.disabled)"
+                    "a.next_page:not(.disabled)",
                 );
                 if (!nextPageBtn) break;
                 page++;
@@ -261,12 +261,12 @@ export default class LoadBalancer {
         if (this.allocationsCount) {
             console.log(
                 green("✔"),
-                `${this.allocationsCount} submissions were auto-assigned`
+                `${this.allocationsCount} submissions were auto-assigned`,
             );
             this.graderStore.sort(this.compareAssignments);
             console.table(this.graderStore);
             console.log(
-                "Visit https://hiring.canonical.com/dashboards/performance to view historical team workload"
+                "Visit https://hiring.canonical.com/dashboards/performance to view historical team workload",
             );
         } else {
             console.log(green("✔"), `No submissions found to auto-assign`);

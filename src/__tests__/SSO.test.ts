@@ -1,9 +1,9 @@
 import { testHTML } from "./mocks";
 import SSO from "../auth/UbuntuSSO";
 import { UserError } from "../utils/processUtils";
+import Config from "../config/Config";
 import * as cookies from "tough-cookie";
 import Enquirer = require("enquirer");
-import Config from "../config/Config";
 
 const config = new Config();
 
@@ -14,8 +14,8 @@ jest.mock(
         jest.fn(() =>
             Promise.resolve({
                 text: () => Promise.resolve(testHTML),
-            })
-        ) as jest.Mock
+            }),
+        ) as jest.Mock,
 );
 jest.mock("enquirer");
 jest.mock("fs");
@@ -27,6 +27,9 @@ jest.mock("tough-cookie", () => {
                 getCookies: jest
                     .fn()
                     .mockReturnValue([{ key: "sessionid", value: "test" }]),
+                store: {
+                    synchronous: true,
+                },
             };
         }),
     };
@@ -55,10 +58,10 @@ describe("SSO tests", () => {
         await sso.login();
 
         expect(spinner.start).toHaveBeenLastCalledWith(
-            "Checking authentication..."
+            "Checking authentication...",
         );
         expect(spinner.succeed).toHaveBeenCalledWith(
-            "Using the saved credentials."
+            "Using the saved credentials.",
         );
     });
 
@@ -67,6 +70,9 @@ describe("SSO tests", () => {
             return {
                 setCookie: jest.fn(),
                 getCookies: jest.fn().mockReturnValue([]),
+                store: {
+                    synchronous: true,
+                },
             };
         });
 

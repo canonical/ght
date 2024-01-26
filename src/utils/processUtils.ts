@@ -3,7 +3,6 @@ import * as Sentry from "@sentry/node";
 //It's necessary for sentry to trace errors. Importing @sentry/tracing patches the global hub for tracing to work.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Tracing from "@sentry/tracing";
-import * as puppeteer from "puppeteer";
 
 const USER_ERROR = "UserError";
 
@@ -37,9 +36,9 @@ export const reportError = (error: string) => {
  * to be able to track the source of the error
  */
 export const evaluate: (
-    element: puppeteer.Page | puppeteer.ElementHandle<any>,
-    pageFunction: puppeteer.EvaluateFn<any>,
-    ...args: puppeteer.SerializableOrJSHandle[]
+    element: any,
+    pageFunction: any,
+    ...args: any
 ) => Promise<any> = async (element, pageFunction, ...args) => {
     try {
         return await element.evaluate(pageFunction, ...args);

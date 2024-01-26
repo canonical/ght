@@ -8,7 +8,7 @@ import {
 } from "../utils/pageUtils";
 import { evaluate, isDevelopment } from "../utils/processUtils";
 import Config from "../config/Config";
-import Puppeteer from "puppeteer";
+import * as Puppeteer from "puppeteer";
 import { Ora } from "ora";
 // @ts-ignore 2023-11-24: https://github.com/enquirer/enquirer/issues/135 still not solved.
 import { Toggle } from "enquirer";
@@ -40,7 +40,7 @@ export default class Job {
         posts: PostInfo[],
         regionsToPost: string[],
         sourceID: number,
-        boardToPost: JobBoard
+        boardToPost: JobBoard,
     ) {
         this.spinner.start(`Starting to create job posts.`);
         const board = this.config.copyFromBoard;
@@ -48,11 +48,11 @@ export default class Job {
         // Check if a source post is provided.
         if (sourceID) {
             protectedPosts = posts.filter(
-                (post) => post.id === sourceID && post.boardInfo.name === board
+                (post) => post.id === sourceID && post.boardInfo.name === board,
             );
         } else {
             protectedPosts = posts.filter(
-                (post) => post.boardInfo.name === board
+                (post) => post.boardInfo.name === board,
             );
         }
 
@@ -88,14 +88,14 @@ export default class Job {
     public async markAsLive(
         jobID: number,
         oldPosts: PostInfo[],
-        boardToPost: any
+        boardToPost: any,
     ) {
         this.spinner.start(`Starting to set job posts as live.`);
         const jobData: JobInfo = await this.getJobData(jobID);
 
         // Find posts that are newly added.
         let postsToMakeLive = jobData.posts.filter(
-            (post) => !oldPosts.find((oldPost) => post.id === oldPost.id)
+            (post) => !oldPosts.find((oldPost) => post.id === oldPost.id),
         );
 
         if (postsToMakeLive.length === 0)
@@ -122,7 +122,7 @@ export default class Job {
 
         const jobappURL = joinURL(
             this.config.greenhouseUrl,
-            `/plans/${jobID}/jobapp`
+            `/plans/${jobID}/jobapp`,
         );
         await this.page.goto(jobappURL);
         const pageCount = await this.getPageCount();
@@ -136,14 +136,14 @@ export default class Job {
     private filterPostsToDelete(
         posts: PostInfo[],
         similarPostID?: number,
-        enteredRegions?: string[]
+        enteredRegions?: string[],
     ) {
         let similarPost;
         if (similarPostID) {
             similarPost = posts.find((post) => post.id === similarPostID);
             if (!similarPost) {
                 throw new Error(
-                    `Post with ${similarPostID} ID cannot be found`
+                    `Post with ${similarPostID} ID cannot be found`,
                 );
             }
         }
@@ -156,8 +156,8 @@ export default class Job {
             const isProtected = !!this.config.protectedBoards.find(
                 (protectedBoardName) =>
                     protectedBoardName.match(
-                        new RegExp(post.boardInfo.name, "i")
-                    )
+                        new RegExp(post.boardInfo.name, "i"),
+                    ),
             );
             const nameCheck = !similarPost || similarPost.name === post.name;
 
@@ -187,7 +187,7 @@ export default class Job {
     public async deletePosts(
         jobData: JobInfo,
         enteredRegions?: string[],
-        similarPostID?: number
+        similarPostID?: number,
     ) {
         this.spinner.start(`Starting to delete job posts.`);
         const posts: PostInfo[] = jobData.posts;
@@ -195,7 +195,7 @@ export default class Job {
         const [postToDelete, postsUnknownRegion] = this.filterPostsToDelete(
             posts,
             similarPostID,
-            enteredRegions
+            enteredRegions,
         );
 
         // We need `publishStatusId` and `unpublishStatusId`
@@ -237,7 +237,7 @@ export default class Job {
             count++;
         }
         this.spinner.succeed(
-            `${totalJobsToDelete} job posts of ${jobData.name} were deleted.`
+            `${totalJobsToDelete} job posts of ${jobData.name} were deleted.`,
         );
     }
 
@@ -265,7 +265,7 @@ export default class Job {
         const jobAnchor = await jobTitleElement?.$("a");
         if (!jobAnchor)
             throw new Error(
-                `Cannot find name of the job with ${jobID} ID in the ${url} page.`
+                `Cannot find name of the job with ${jobID} ID in the ${url} page.`,
             );
         return await getInnerText(jobAnchor);
     }
@@ -281,7 +281,7 @@ export default class Job {
     private async getJobsFromPage(page: number) {
         const url = joinURL(
             this.config.greenhouseUrl,
-            `/alljobs/list?page=${page}`
+            `/alljobs/list?page=${page}`,
         );
         await this.page.goto(url);
 
@@ -308,7 +308,7 @@ export default class Job {
                         let isRecruiter = false;
                         for (const tag of tags) {
                             const recruiterCheck = tag.innerHTML.match(
-                                new RegExp(recruiterTag, "i")
+                                new RegExp(recruiterTag, "i"),
                             );
                             if (recruiterCheck) {
                                 isRecruiter = true;
@@ -328,12 +328,12 @@ export default class Job {
                         const matchedReqID = nameElement.match(/\([0-9]+\)/);
                         if (!matchedReqID)
                             throw new Error(
-                                `Cannot get req ID: ${nameElement}`
+                                `Cannot get req ID: ${nameElement}`,
                             );
                         const matchedElement = matchedReqID[0];
                         const reqID = matchedElement.slice(
                             1,
-                            matchedElement.length - 1
+                            matchedElement.length - 1,
                         );
                         const jobName = nameElement.split(/\([0-9]+\)/)[0];
                         jobInfo[`[${reqID}] ${jobName}`] = id;
@@ -344,7 +344,7 @@ export default class Job {
             {
                 htmlAsStr: content["html"],
                 recruiterTag: RECRUITER_TAG,
-            }
+            },
         );
 
         return {
@@ -377,7 +377,7 @@ export default class Job {
     public async getJobIDFromPost(postID: number) {
         const url = joinURL(
             this.config.greenhouseUrl,
-            `/jobapps/${postID}/edit`
+            `/jobapps/${postID}/edit`,
         );
         await this.page.goto(url);
         const jobElement = await this.page.$(".job-name");
@@ -397,7 +397,7 @@ export default class Job {
                 method: "GET",
             },
             "Failed to get boards",
-            (queryResult: any) => !!queryResult
+            (queryResult: any) => !!queryResult,
         );
 
         const boards: JobBoard[] = response["job_boards"].map((board: any) => ({
@@ -410,7 +410,7 @@ export default class Job {
             ? this.config.testJobBoard
             : this.config.copyToBoard;
         const boardToPost = boards.find(
-            (board) => board.name === validBoardToPost
+            (board) => board.name === validBoardToPost,
         );
         if (!boardToPost)
             throw new Error(`Cannot found ${validBoardToPost} board`);

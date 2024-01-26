@@ -6,10 +6,10 @@ jobs:
         runs-on: ubuntu-22.04
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
             - name: Setup NodeJS
               run: |
-                  sudo snap install node --channel=16/stable --classic
+                  sudo snap install node --channel=18/stable --classic
                   npm install -g typescript
                   npm install -g ts-node
             - name: Install project dependencies

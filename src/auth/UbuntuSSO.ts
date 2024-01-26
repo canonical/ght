@@ -2,11 +2,11 @@ import { Authentication, LoginCookie } from "./Authentication";
 import { joinURL } from "../utils/pageUtils";
 import { UserError } from "../utils/processUtils";
 import Config from "../config/Config";
-import { HttpsCookieAgent } from "http-cookie-agent";
+import { HttpsCookieAgent } from "http-cookie-agent/http";
 import { JSDOM } from "jsdom";
 import fetch, { RequestInit, Response } from "node-fetch";
 import Enquirer = require("enquirer");
-import Puppeteer from "puppeteer";
+import * as Puppeteer from "puppeteer";
 import { Ora } from "ora";
 import { CookieJar } from "tough-cookie";
 import { existsSync, writeFileSync, mkdirSync } from "fs";
@@ -45,10 +45,11 @@ export default class UbuntuSSO extends Authentication {
             this.jar = new CookieJar();
             this.jar.setCookie(
                 "_cookies_accepted=all",
-                "https://login.ubuntu.com/"
+                "https://login.ubuntu.com/",
             );
         }
-        this.httpsAgent = new HttpsCookieAgent({ jar: this.jar });
+        const jar = this.jar;
+        this.httpsAgent = new HttpsCookieAgent({ cookies: { jar } });
         this.defaultFetchOptions = {
             agent: this.httpsAgent,
             headers: this.headers,
@@ -100,7 +101,7 @@ export default class UbuntuSSO extends Authentication {
         this.spinner.start("Logging in...");
         let response: Response = await fetch(
             joinURL(this.config.loginUrl, "/+login"),
-            this.defaultFetchOptions
+            this.defaultFetchOptions,
         );
         let CSRFToken: string = this.getCSRFToken(await response.text());
         response = await fetch(joinURL(this.config.loginUrl, "/+login"), {
@@ -115,7 +116,7 @@ export default class UbuntuSSO extends Authentication {
         const html = await response.text();
         if (!html.match(/type your verification code/i))
             throw new UserError(
-                "Authorization failed. Please check your e-mail and password."
+                "Authorization failed. Please check your e-mail and password.",
             );
         CSRFToken = this.getCSRFToken(html);
         response = await fetch(
@@ -128,7 +129,7 @@ export default class UbuntuSSO extends Authentication {
                 },
                 method: "POST",
                 body: `oath_token=${credentials.authCode}&csrfmiddlewaretoken=${CSRFToken}&continue=&openid.usernamesecret=`,
-            }
+            },
         );
 
         // make sure that the login flow finished successfully
@@ -148,7 +149,7 @@ export default class UbuntuSSO extends Authentication {
         if (!(await this.currentSessionId())) return false;
         const response = await fetch(
             this.config.loginUrl,
-            this.defaultFetchOptions
+            this.defaultFetchOptions,
         );
         const html = await response.text();
         // if "Personal details" is present in the page

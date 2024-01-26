@@ -37,7 +37,7 @@ export class ResetController extends BaseController {
             const { name, id } = await getJobInteractive(
                 job,
                 "What job would you like to delete job posts from?",
-                this.spinner
+                this.spinner,
             );
 
             if (!id) throw new Error(`Job with ${id} cannot be found.`);
@@ -47,20 +47,20 @@ export class ResetController extends BaseController {
             jobInfo = await job.getJobData(jobID);
             if (!jobInfo.posts.length)
                 throw new Error(
-                    `Job posts cannot be found for ${jobInfo.name}.`
+                    `Job posts cannot be found for ${jobInfo.name}.`,
                 );
             this.spinner.succeed();
 
             const jobPostID = await getJobPostInteractive(
                 this.config,
                 jobInfo.posts,
-                "Which job posts should be deleted?"
+                "Which job posts should be deleted?",
             );
             postID = jobPostID;
 
             regionNames = await getRegionsInteractive(
                 "What region should the job posts be deleted from? Use space to make a selection.",
-                this.config.regionNames
+                this.config.regionNames,
             );
         } else {
             this.spinner.start(`Fetching the job information.`);

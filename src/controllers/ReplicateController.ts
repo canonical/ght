@@ -40,7 +40,7 @@ export class ReplicateController extends BaseController {
             const { name, id } = await getJobInteractive(
                 job,
                 "What job would you like to create job posts for?",
-                this.spinner
+                this.spinner,
             );
             if (!id) throw new Error(`Job cannot be found with id ${id}.`);
             jobID = id;
@@ -48,27 +48,27 @@ export class ReplicateController extends BaseController {
             jobInfo = await job.getJobData(jobID);
             if (!jobInfo.posts.length)
                 throw new Error(
-                    `Job posts cannot be found for ${jobInfo.name}.`
+                    `Job posts cannot be found for ${jobInfo.name}.`,
                 );
             this.spinner.succeed();
 
             const jobPostID = await getJobPostInteractive(
                 this.config,
                 jobInfo.posts,
-                "What job post should be copied?"
+                "What job post should be copied?",
             );
             cloneFrom = jobPostID;
 
             regionNames = await getRegionsInteractive(
                 "What region should those job posts be? Use space to make a selection.",
-                this.config.regionNames
+                this.config.regionNames,
             );
 
             await deletePostsInteractive(
                 job,
                 jobInfo,
                 regionNames,
-                cloneFrom
+                cloneFrom,
             );
         } else {
             if (!this.jobPostID)
@@ -82,7 +82,7 @@ export class ReplicateController extends BaseController {
             jobInfo = await job.getJobData(jobID);
             if (!jobInfo.posts.length)
                 throw new Error(
-                    `Job posts cannot be found for ${jobInfo.name}.`
+                    `Job posts cannot be found for ${jobInfo.name}.`,
                 );
             this.spinner.succeed();
         }
@@ -92,20 +92,20 @@ export class ReplicateController extends BaseController {
             jobInfo.posts,
             regionNames,
             cloneFrom,
-            boardToPost
+            boardToPost,
         );
         // Mark all newly added job posts as live
         const processedJobCount = await job.markAsLive(
             jobID,
             jobInfo.posts,
-            boardToPost
+            boardToPost,
         );
 
         console.log(
             green("✔"),
             `${processedJobCount} job posts for ${clonedJobPosts
                 .map((post) => post.name)
-                .join(", ")} of ${jobInfo.name} were created in ${regionNames}`
+                .join(", ")} of ${jobInfo.name} were created in ${regionNames}`,
         );
         console.log("Happy hiring!");
 

@@ -5,8 +5,7 @@ import { joinURL } from "../utils/pageUtils";
 import Enquirer = require("enquirer");
 import { Ora } from "ora";
 import { Page } from "puppeteer";
-import fs from "fs";
-import { writeFileSync } from "fs";
+import fs, { writeFileSync } from "fs";
 
 interface Credentials {
     email: string;
@@ -51,7 +50,7 @@ export default class GreenhouseAuth extends Authentication {
     private async getSessionId(page: Page): Promise<string | undefined> {
         const cookies = await page.cookies();
         return cookies.find(
-            (cookie) => cookie.name === GreenhouseAuth.SESSION_NAME
+            (cookie) => cookie.name === GreenhouseAuth.SESSION_NAME,
         )?.value;
     }
 

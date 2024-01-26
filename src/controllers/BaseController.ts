@@ -3,7 +3,7 @@ import { GreenhouseAuth, UbuntuSSO, Authentication } from "../auth";
 import { UserError, isDevelopment } from "../utils/processUtils";
 import { loadConfigFile } from "../utils/configUtils";
 import ora, { Ora } from "ora";
-import Puppeteer from "puppeteer";
+import * as Puppeteer from "puppeteer";
 import { Command } from "commander";
 import { existsSync } from "fs";
 
@@ -83,7 +83,7 @@ export abstract class BaseController {
             if (!this.config.regions[enteredRegion]) {
                 const regionNames = this.config.regionNames.join(", ");
                 throw new UserError(
-                    `Invalid region, available regions are: ${regionNames}`
+                    `Invalid region, available regions are: ${regionNames}`,
                 );
             }
         });
