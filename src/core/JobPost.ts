@@ -59,7 +59,7 @@ export default class JobPost {
             id: parseInt(jobPostID),
             name: titleLocationInfo[0],
             // Remove surrounding parentheses
-            location: titleLocationInfo[1].replace(/\(|\)/g, ''),
+            location: titleLocationInfo[1].replace(/\(|\)/g, ""),
             boardInfo: {
                 name: boardName,
                 id: boardID,
@@ -78,7 +78,7 @@ export default class JobPost {
         );
         const referrer = joinURL(
             this.config.greenhouseUrl,
-            `/plans/${jobData.id}/jobapp`
+            `/plans/${jobData.id}/jobapp`,
         );
 
         await sendRequest(

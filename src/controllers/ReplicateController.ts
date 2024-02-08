@@ -64,12 +64,7 @@ export class ReplicateController extends BaseController {
                 this.config.regionNames,
             );
 
-            await deletePostsInteractive(
-                job,
-                jobInfo,
-                regionNames,
-                cloneFrom,
-            );
+            await deletePostsInteractive(job, jobInfo, regionNames, cloneFrom);
         } else {
             if (!this.jobPostID)
                 throw new UserError(`Job post ID argument is missing.`);

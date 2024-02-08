@@ -448,7 +448,7 @@ describe("Job tests", () => {
             const job = new Job(page, spinner, config);
 
             await expect(
-                job.deletePosts(jobData, ["test"], 1)
+                job.deletePosts(jobData, ["test"], 1),
             ).rejects.toThrow();
         });
 

@@ -8,11 +8,11 @@ import {
 } from "../utils/pageUtils";
 import { evaluate, isDevelopment } from "../utils/processUtils";
 import Config from "../config/Config";
+import { runPrompt } from "../utils/commandUtils";
 import * as Puppeteer from "puppeteer";
 import { Ora } from "ora";
 // @ts-ignore 2023-11-24: https://github.com/enquirer/enquirer/issues/135 still not solved.
 import { Toggle } from "enquirer";
-import { runPrompt } from "../utils/commandUtils";
 
 const RECRUITER_TAG = "RECRUITER";
 
@@ -147,10 +147,10 @@ export default class Job {
                 );
             }
         }
-        
+
         const postToDelete = [];
         // Posts whose region is not part of those we define
-        const postsUnknownRegion = []
+        const postsUnknownRegion = [];
 
         for (const post of posts) {
             const isProtected = !!this.config.protectedBoards.find(
@@ -165,18 +165,20 @@ export default class Job {
             const locationCheck =
                 !enteredRegions ||
                 !!enteredRegions.find((enteredRegion) => {
-                    return this.config.regions[
-                        enteredRegion
-                    ].includes(post.location)
+                    return this.config.regions[enteredRegion].includes(
+                        post.location,
+                    );
                 });
             // Job post region is not in our list
-            const isUnknownRegion = !this.config.locations.includes(post.location);
+            const isUnknownRegion = !this.config.locations.includes(
+                post.location,
+            );
 
             if (!isProtected && nameCheck) {
                 if (locationCheck) {
                     postToDelete.push(post);
                 } else if (isUnknownRegion) {
-                    postsUnknownRegion.push(post)
+                    postsUnknownRegion.push(post);
                 }
             }
         }
@@ -203,12 +205,14 @@ export default class Job {
         const boardToPost = await this.getBoardToPost();
 
         await this.deleteJobPosts(postToDelete, boardToPost, jobData);
-        
+
         // Check if there are posts in unrecognised regions and prompt to delete them
         if (postsUnknownRegion.length > 0) {
-            this.spinner.warn(`${postsUnknownRegion.length} job posts in unrecognised regions:`)
+            this.spinner.warn(
+                `${postsUnknownRegion.length} job posts in unrecognised regions:`,
+            );
             for (const post of postsUnknownRegion) {
-                console.log(`- ${post.location}`)
+                console.log(`- ${post.location}`);
             }
             const prompt = new Toggle({
                 message: "Do you want to delete them?",
@@ -218,12 +222,20 @@ export default class Job {
             });
             const confirm = await runPrompt(prompt);
             if (confirm) {
-                await this.deleteJobPosts(postsUnknownRegion, boardToPost, jobData);
+                await this.deleteJobPosts(
+                    postsUnknownRegion,
+                    boardToPost,
+                    jobData,
+                );
             }
         }
     }
 
-    private async deleteJobPosts(postsToDelete: PostInfo[], boardToPost: JobBoard, jobData: JobInfo) {
+    private async deleteJobPosts(
+        postsToDelete: PostInfo[],
+        boardToPost: JobBoard,
+        jobData: JobInfo,
+    ) {
         this.spinner.start();
         let count = 1;
         const totalJobsToDelete = postsToDelete.length;

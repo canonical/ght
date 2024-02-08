@@ -12,8 +12,8 @@ parts:
     node:
         plugin: dump
         source:
-            - on amd64: https://nodejs.org/dist/v16.14.0/node-v16.14.0-linux-x64.tar.xz
-            - on arm64: https://nodejs.org/dist/v16.14.0/node-v16.14.0-linux-arm64.tar.xz
+            - on amd64: https://nodejs.org/dist/v20.11.0/node-v20.11.0-linux-x64.tar.gz
+            - on arm64: https://nodejs.org/dist/v20.11.0/node-v20.11.0-linux-x64.tar.xz
         stage:
             - bin
             - include
@@ -25,14 +25,13 @@ parts:
         build-packages:
             - on arm64: ["chromium-browser"]
         override-build: |
-            npm config set unsafe-perm true
             npm install -g yarn
             yarn install
             yarn build
             # this causes PROT_EXEC problem
             rm -f ./node_modules/puppeteer/.local-chromium/linux-*/chrome-linux/nacl_irt_*.nexe
             cp -a ./dist/. $SNAPCRAFT_PART_INSTALL/
-            cp -r ./node_modules $SNAPCRAFT_PART_INSTALL
+            cp -r ./node_modules $SNAPCRAFT_PART_INSTALL 
         stage-packages:
             # dependencies required by chromium
             - libasound2
