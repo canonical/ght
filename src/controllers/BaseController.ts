@@ -59,7 +59,7 @@ export abstract class BaseController {
             };
         } else {
             options = {
-                headless: true,
+                headless: "new",
                 defaultViewport: null,
                 args: ["--no-sandbox"],
             };
