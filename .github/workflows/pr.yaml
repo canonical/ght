@@ -16,3 +16,22 @@ jobs:
               run: yarn
             - name: Run ght tests
               run: yarn test
+    check-package-lock-sync:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            - name: Setup NodeJS
+              run: |
+                  sudo snap install node --channel=18/stable --classic
+            - name: Install project dependencies
+              run: |
+                  npm i --package-lock-only
+            - name: Check for modifications to generated files
+              run: |
+                  if [[ -n "$(git status -s)" ]]; then
+                    echo "Please run 'npm i --package-lock-only' then commit/push changes"
+                    echo
+                    git diff
+                    exit 1
+                  fi
