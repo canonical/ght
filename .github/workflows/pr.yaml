@@ -2,6 +2,11 @@ name: PR check
 on: pull_request
 
 jobs:
+    build-snap:
+        runs-on: ubuntu-22.04
+        steps:
+            - uses: actions/checkout@v4
+            - uses: snapcore/action-build@v1
     tests:
         runs-on: ubuntu-22.04
         steps:
