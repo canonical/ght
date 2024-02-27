@@ -157,8 +157,6 @@ const latamCities: string[] = [
 
 const REGIONS = {
     americas: [...usaCities, ...canadaCities, ...latamCities],
-    canada: [...canadaCities],
-    latam: [...latamCities],
     emea: [
         "Home based - Africa, Accra",
         "Home based - Africa, Cairo",
