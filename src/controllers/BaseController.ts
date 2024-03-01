@@ -1,5 +1,5 @@
 import Config from "../config/Config";
-import { GreenhouseAuth, UbuntuSSO, Authentication } from "../auth";
+import { GreenhouseAuth, UbuntuSSO, NewUbuntuSSO, Authentication } from "../auth";
 import { UserError, isDevelopment } from "../utils/processUtils";
 import { loadConfigFile } from "../utils/configUtils";
 import ora, { Ora } from "ora";
@@ -26,13 +26,18 @@ export abstract class BaseController {
     constructor(command: Command) {
         this.spinner = ora();
 
+        // --new is a global option
+        const isNew = command.opts().new;
+
         // configPath is a global option
         const configPath = command.opts().config;
         this.config = this.getConfig(configPath);
 
-        this.auth = this.config.isCanonical()
-            ? new UbuntuSSO(this.spinner, this.config)
-            : new GreenhouseAuth(this.spinner, this.config);
+        if (this.config.isCanonical()) {
+            this.auth = isNew ? new NewUbuntuSSO(this.spinner, this.config) : new UbuntuSSO(this.spinner, this.config);
+        } else {
+            this.auth = new GreenhouseAuth(this.spinner, this.config);
+        }
     }
 
     private getConfig(path: string | undefined) {
