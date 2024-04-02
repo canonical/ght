@@ -152,9 +152,9 @@ export default class UbuntuSSO extends Authentication {
             this.defaultFetchOptions,
         );
         const html = await response.text();
-        // if "Personal details" is present in the page
+        // if "this id is present in the page
         // that means that we are in the user details page
-        return html.match(/personal details/i);
+        return html.match(/id="account"/i);
     }
 
     private prompt(): Promise<{
