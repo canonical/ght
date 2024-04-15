@@ -136,7 +136,8 @@ function makeProgram(): Command {
         .command("assign")
         .usage(
             "([-i | --interactive])" +
-                "\n\n Examples: \n\t ght assign --interactive",
+                "\n\n Examples: \n\t ght assign --interactive" +
+                " \n\t ght assign --interactive --unassigned",
         )
         .description(
             "Assign graders to written interviews for the jobs selected.\n" +
@@ -144,6 +145,12 @@ function makeProgram(): Command {
         )
         .addOption(
             new Option("-i, --interactive", "Enable interactive interface"),
+        )
+        .addOption(
+            new Option(
+                "-u, --unassigned",
+                "Only assign interviews that do not have an assignee enabled in ght-graders.yml",
+            ),
         )
         .action(async (options) => {
             await new AssignGradersController(program, options).run();

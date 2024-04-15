@@ -14,11 +14,13 @@ import { join } from "path";
 
 export class AssignGradersController extends BaseController {
     private isInteractive: boolean;
+    private onlyUnassigned: boolean;
 
     constructor(command: Command, options: any) {
         super(command);
 
         this.isInteractive = options.interactive;
+        this.onlyUnassigned = options.unassigned;
     }
 
     /**
@@ -114,6 +116,7 @@ export class AssignGradersController extends BaseController {
             gradersCount,
             this.config.greenhouseUrl,
             stage,
+            this.onlyUnassigned,
         );
         await loadBalancer.execute();
 

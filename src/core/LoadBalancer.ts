@@ -19,6 +19,7 @@ export default class LoadBalancer {
     private greenhouseUrl: string;
     private stage: string;
     private allocationsCount = 0;
+    private onlyUnassigned: boolean = false;
 
     constructor(
         page: Page,
@@ -28,6 +29,7 @@ export default class LoadBalancer {
         gradersCount: number,
         greenhouseUrl: string,
         stage: string,
+        onlyUnassigned: boolean,
     ) {
         this.page = page;
         this.graders = graders;
@@ -36,6 +38,7 @@ export default class LoadBalancer {
         this.gradersCount = gradersCount;
         this.greenhouseUrl = greenhouseUrl;
         this.stage = stage;
+        this.onlyUnassigned = onlyUnassigned;
     }
 
     /**
@@ -68,15 +71,41 @@ export default class LoadBalancer {
         await this.page.keyboard.press("Enter");
 
         // Make sure that the user was correctly assigned
-        const gradersAssigned = await this.page.$$eval(
-            "ul .search-choice span",
-            (el) => el.map((grader) => grader.textContent),
-        );
+        const gradersAssigned = await this.getAssignedGraders();
         if (!gradersAssigned.includes(grader.name)) {
             throw new UserError(
                 `Couldn't assign ${grader.name}. Please verify there's a Greenhouse user with this name`,
             );
         }
+    }
+
+    /**
+     * Get currently assigned graders
+     */
+    private async getAssignedGraders() {
+        return await this.page.$$eval("ul .search-choice span", (el) =>
+            el.map((grader) => grader.textContent),
+        );
+    }
+
+    /**
+     * Returns true if assigned graders has at least graders count
+     * of already assigned graders.
+     *
+     * Example:
+     *   Grader Count: 2
+     *   Graders: ['Janet', 'Rosco', 'Joe', 'Jill]
+     *   Currently assigned Graders: ['Rosco', 'Jill'] => true
+     *   Currently assigned Graders: ['Bill'] => false
+     *   Currently assigned Graders: ['Janet', 'Joe', 'Jill'] => false
+     */
+    private async gradersAlreadyAssigned() {
+        const gradersAssigned = await this.getAssignedGraders();
+        const seenGraders = this.graders.filter((g) =>
+            gradersAssigned.includes(g.name),
+        ).length;
+
+        return seenGraders >= 1 && seenGraders === this.gradersCount;
     }
 
     /**
@@ -156,36 +185,51 @@ export default class LoadBalancer {
                 visible: true,
             },
         );
-        // Click the graders input
-        await this.page.click(
-            "#edit_take_home_test_graders_modal .search-field input",
-        );
 
-        // Delete current use assigned
-        await this.page.keyboard.press("Backspace");
-        await this.page.keyboard.press("Backspace");
+        const gradersAssigned =
+            this.onlyUnassigned && (await this.gradersAlreadyAssigned());
+        if (gradersAssigned) {
+            const outputMessage = `Skipping assignment for ${application.candidate} because it is already assigned`;
+            this.spinner.stop();
+            console.log(green("✔"), outputMessage);
+            this.spinner.start();
+            const cancelSelector = "a.cancel";
+            await this.page.waitForSelector(cancelSelector);
+            await this.page.click(cancelSelector);
+        } else {
+            // Click the graders input
+            await this.page.click(
+                "#edit_take_home_test_graders_modal .search-field input",
+            );
 
-        let outputMessage = `Written Interview from ${application.candidate} assigned to: `;
+            // Delete current use assigned
+            await this.page.keyboard.press("Backspace");
+            await this.page.keyboard.press("Backspace");
 
-        // Type graders
-        let comma = "";
-        for (const grader of graders) {
-            this.recordGrader(grader);
-            await this.writeGrader(grader);
-            outputMessage += `${comma}${grader.name}`;
-            comma = ", ";
+            let outputMessage = `Written Interview from ${application.candidate} assigned to: `;
+
+            // Type graders
+            let comma = "";
+            for (const grader of graders) {
+                this.recordGrader(grader);
+                await this.writeGrader(grader);
+                outputMessage += `${comma}${grader.name}`;
+                comma = ", ";
+            }
+
+            // Click save
+            await this.page.waitForSelector(
+                "input[type='submit']#save_graders",
+            );
+            await this.page.click("input[type='submit']#save_graders");
+            this.allocationsCount++;
+
+            this.spinner.stop();
+            console.log(green("✔"), outputMessage);
+            this.spinner.start();
+
+            await this.page.reload();
         }
-
-        // Click save
-        await this.page.waitForSelector("input[type='submit']#save_graders");
-        await this.page.click("input[type='submit']#save_graders");
-        this.allocationsCount++;
-
-        this.spinner.stop();
-        console.log(green("✔"), outputMessage);
-        this.spinner.start();
-
-        await this.page.reload();
     }
 
     /**
