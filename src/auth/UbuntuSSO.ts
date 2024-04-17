@@ -77,14 +77,19 @@ export default class UbuntuSSO extends Authentication {
 
     public async login(): Promise<LoginCookie> {
         this.spinner.start("Checking authentication...");
-        let sessionId = await this.currentSessionId();
-        if ((await this.isLoggedIn()) && sessionId) {
-            this.spinner.succeed("Using the saved credentials.");
-            return {
-                name: UbuntuSSO.SESSION_NAME,
-                value: sessionId,
-                domain: new URL(this.config.loginUrl).hostname,
-            };
+        let sessionId;
+        try {
+            sessionId = await this.currentSessionId();
+            if ((await this.isLoggedIn()) && sessionId) {
+                this.spinner.succeed("Using the saved credentials.");
+                return {
+                    name: UbuntuSSO.SESSION_NAME,
+                    value: sessionId,
+                    domain: new URL(this.config.loginUrl).hostname,
+                };
+            }
+        } catch {
+            // if the session is invalid, we continue with the login flow
         }
         this.spinner.stop();
         interface Credentials {
