@@ -35,6 +35,10 @@ parts:
             rm -f ./node_modules/puppeteer/.local-chromium/linux-*/chrome-linux/nacl_irt_*.nexe
             cp -a ./dist/. $SNAPCRAFT_PART_INSTALL/
             cp -r ./node_modules $SNAPCRAFT_PART_INSTALL
+            # Chromium adds this smylink to the root system
+            rm $SNAPCRAFT_PART_INSTALL/usr/bin/xdg-email
+            # chromium also sets the permissions to use suid for user execution (r-sr-xr-x), this simplifies the permission (r-xr-xr-x)
+            chmod 555 $SNAPCRAFT_PART_INSTALL/usr/lib/chromium-browser/chrome-sandbox
         stage-snaps:
             - chromium
         stage-packages:
