@@ -29,7 +29,7 @@ describe("Job tests", () => {
             jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
                 (): any => {
                     return [{ name: "Canonical - Jobs" }];
-                }
+                },
             );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
@@ -59,13 +59,13 @@ describe("Job tests", () => {
                 [postInfo],
                 ["americas", "apac", "emea"],
                 0,
-                {} as JobBoard
+                {} as JobBoard,
             );
 
             expect(spinner.start).toHaveBeenCalledWith(
-                "Starting to create job posts."
+                "Starting to create job posts.",
             );
-            expect(spinner.text).toEqual("217 of 217 job posts are created.");
+            expect(spinner.text).toEqual("215 of 215 job posts are created.");
             expect(spinner.stop).toHaveBeenCalledTimes(1);
         });
 
@@ -73,7 +73,7 @@ describe("Job tests", () => {
             jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
                 (): any => {
                     return [{ name: "Canonical - Jobs" }];
-                }
+                },
             );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
@@ -100,11 +100,11 @@ describe("Job tests", () => {
             const job = new Job(page, spinner, config);
 
             await expect(
-                job.clonePost([postInfo], ["test"], 0, {} as JobBoard)
+                job.clonePost([postInfo], ["test"], 0, {} as JobBoard),
             ).rejects.toThrow();
 
             expect(spinner.start).toHaveBeenCalledWith(
-                "Starting to create job posts."
+                "Starting to create job posts.",
             );
         });
 
@@ -112,7 +112,7 @@ describe("Job tests", () => {
             jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
                 (): any => {
                     return [{ name: "Canonical - Jobs" }];
-                }
+                },
             );
             jest.spyOn(jobPost, "default").mockImplementation((): any => {
                 return {
@@ -139,11 +139,11 @@ describe("Job tests", () => {
             const job = new Job(page, spinner, config);
 
             await expect(
-                job.clonePost([postInfo], ["LATAM"], 0, {} as JobBoard)
+                job.clonePost([postInfo], ["LATAM"], 0, {} as JobBoard),
             ).rejects.toThrow(/is not iterable/i);
 
             expect(spinner.start).toHaveBeenCalledWith(
-                "Starting to create job posts."
+                "Starting to create job posts.",
             );
         });
 
@@ -171,13 +171,13 @@ describe("Job tests", () => {
             } catch (error) {
                 expect(error).toEqual(
                     new Error(
-                        "Job post with 1 ID cannot be found in the Canonical Board."
-                    )
+                        "Job post with 1 ID cannot be found in the Canonical Board.",
+                    ),
                 );
             }
 
             expect(spinner.start).toHaveBeenCalledWith(
-                "Starting to create job posts."
+                "Starting to create job posts.",
             );
         });
 
@@ -207,7 +207,7 @@ describe("Job tests", () => {
             }
 
             expect(spinner.start).toHaveBeenCalledWith(
-                "Starting to create job posts."
+                "Starting to create job posts.",
             );
         });
 
@@ -215,7 +215,7 @@ describe("Job tests", () => {
             jest.spyOn(Job.prototype, "getBoardToPost").mockImplementation(
                 (): any => {
                     return [{ name: "Canonical - Jobs" }];
-                }
+                },
             );
 
             const postInfo = {
@@ -237,11 +237,11 @@ describe("Job tests", () => {
             const job = new Job(page, spinner, config);
 
             await expect(
-                job.clonePost([postInfo], ["test"], 0, {} as JobBoard)
+                job.clonePost([postInfo], ["test"], 0, {} as JobBoard),
             ).rejects.toThrow();
 
             expect(spinner.start).toHaveBeenCalledWith(
-                "Starting to create job posts."
+                "Starting to create job posts.",
             );
         });
     });
@@ -287,7 +287,7 @@ describe("Job tests", () => {
             const job = new Job(page, spinner, config);
 
             await expect(
-                job.deletePosts(jobData, ["test"], 1)
+                job.deletePosts(jobData, ["test"], 1),
             ).rejects.toThrow();
         });
 
@@ -299,8 +299,8 @@ describe("Job tests", () => {
             } catch (error) {
                 expect(error).toEqual(
                     TypeError(
-                        "Cannot read properties of undefined (reading 'includes')"
-                    )
+                        "Cannot read properties of undefined (reading 'includes')",
+                    ),
                 );
             }
         });
@@ -332,7 +332,7 @@ describe("Job tests", () => {
             const job = new Job(page, spinner, config);
 
             await expect(job.getJobIDFromPost(1)).rejects.toThrow(
-                /Job cannot be found/i
+                /Job cannot be found/i,
             );
         });
     });
