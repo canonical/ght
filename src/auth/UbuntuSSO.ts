@@ -46,7 +46,7 @@ export default class UbuntuSSO extends Authentication {
             this.jar.setCookie(
                 "_cookies_accepted=all",
                 "https://login.ubuntu.com/",
-            );            
+            );
         }
 
         const jar = this.jar;
@@ -87,7 +87,7 @@ export default class UbuntuSSO extends Authentication {
                 domain: new URL(this.config.loginUrl).hostname,
             };
         }
-        
+
         this.spinner.stop();
         interface Credentials {
             email?: string;

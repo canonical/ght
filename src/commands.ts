@@ -20,10 +20,7 @@ function makeProgram(): Command {
         "-c, --config <path>",
         "Path to a custom config file path that will be used to override default values",
     );
-    program.option(
-        "--new",
-        "Use alternative authentication implementation",
-    );
+    program.option("--new", "Use alternative authentication implementation");
 
     // Login command
     program

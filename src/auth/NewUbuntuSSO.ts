@@ -6,7 +6,6 @@ import { Page } from "puppeteer";
 import { Ora } from "ora";
 import fs, { writeFileSync } from "fs";
 
-
 type SessionCookie = {
     name: string;
     value: string;
@@ -17,7 +16,7 @@ type Credentials = {
     email?: string;
     password?: string;
     authCode?: string;
-}
+};
 
 /**
  * Alternative implementation of the UbuntuSSO authentication method,
@@ -29,12 +28,12 @@ export default class NewUbuntuSSO extends Authentication {
     constructor(spinner: Ora, config: Config) {
         super(spinner, config);
     }
-    
+
     private async loadSession() {
         if (!fs.existsSync(this.config.userSettingsPath)) return;
         return this.parseUserSettings();
     }
-    
+
     private async isLoggedIn(page) {
         await page.goto(this.config.loginUrl);
         const content = await page.content();
@@ -47,11 +46,11 @@ export default class NewUbuntuSSO extends Authentication {
             (cookie) => cookie.name === NewUbuntuSSO.SESSION_NAME,
         )?.value;
     }
-    
+
     private saveUserSettings(session: SessionCookie) {
         writeFileSync(this.config.userSettingsPath, JSON.stringify(session));
-    }    
-    
+    }
+
     private prompt(): Promise<Credentials> {
         return Enquirer.prompt([
             {
@@ -91,7 +90,7 @@ export default class NewUbuntuSSO extends Authentication {
             // UbuntuSSO implementation
         }
         this.spinner.stop();
-        
+
         let credentials: Credentials;
         try {
             credentials = await this.prompt();
@@ -99,17 +98,17 @@ export default class NewUbuntuSSO extends Authentication {
             throw new UserError("Interrupted");
         }
         this.spinner.start("Logging in...");
-        
+
         // Go to the login page
         await page.goto(this.config.loginUrl);
 
         // Close cookies policy so it doesn't block the login button
         await page.click("#cookie-policy-button-accept");
-        
-        // Type email 
+
+        // Type email
         await page.waitForSelector("input[type='email']");
         await page.type("input[type='email']", credentials.email);
-        
+
         // Type password
         await page.type("input[type='password']", credentials.password);
 
@@ -127,8 +126,7 @@ export default class NewUbuntuSSO extends Authentication {
 
         const isLoggedIn = await this.isLoggedIn(page);
         const sessionId = await this.getSessionId(page);
-        if (!isLoggedIn || !sessionId)
-            throw new UserError("Invalid 2FA");
+        if (!isLoggedIn || !sessionId) throw new UserError("Invalid 2FA");
 
         session = {
             name: NewUbuntuSSO.SESSION_NAME,
@@ -137,7 +135,7 @@ export default class NewUbuntuSSO extends Authentication {
         };
         this.saveUserSettings(session);
         this.spinner.succeed("Authentication completed.");
-        
+
         return session;
     }
 

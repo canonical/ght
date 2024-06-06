@@ -1,5 +1,10 @@
 import Config from "../config/Config";
-import { GreenhouseAuth, UbuntuSSO, NewUbuntuSSO, Authentication } from "../auth";
+import {
+    GreenhouseAuth,
+    UbuntuSSO,
+    NewUbuntuSSO,
+    Authentication,
+} from "../auth";
 import { UserError, isDevelopment } from "../utils/processUtils";
 import { loadConfigFile } from "../utils/configUtils";
 import ora, { Ora } from "ora";
