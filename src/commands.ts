@@ -22,7 +22,7 @@ function makeProgram(): Command {
     );
     program.option(
         "--new",
-        "Use the new Ubuntu SSO for authentication.",
+        "Use alternative authentication implementation",
     );
 
     // Login command
