@@ -33,11 +33,18 @@ export abstract class BaseController {
         const configPath = command.opts().config;
         this.config = this.getConfig(configPath);
 
+        let auth;
         if (this.config.isCanonical()) {
-            this.auth = isNew ? new NewUbuntuSSO(this.spinner, this.config) : new UbuntuSSO(this.spinner, this.config);
+            if (isNew) {
+                auth = new NewUbuntuSSO(this.spinner, this.config);
+            } else {
+                auth = new UbuntuSSO(this.spinner, this.config);
+            }
         } else {
-            this.auth = new GreenhouseAuth(this.spinner, this.config);
+            auth = new GreenhouseAuth(this.spinner, this.config);
         }
+
+        this.auth = auth;
     }
 
     private getConfig(path: string | undefined) {
