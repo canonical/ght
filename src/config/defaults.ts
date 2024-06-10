@@ -96,6 +96,9 @@ export const usaCities: string[] = [
     "Home based - Americas, Washington",
     "Home based - Americas, Wichita",
 ];
+// Sudbury and St. John's have been temporarily commented out while TS
+// assesses the Geocoding API bug, as they are repeat offenders of the
+// issue.
 const canadaCities: string[] = [
     "Home based - Canada, Calgary",
     "Home based - Canada, Montreal",
