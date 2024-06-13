@@ -102,9 +102,6 @@ export default class NewUbuntuSSO extends Authentication {
         // Go to the login page
         await page.goto(this.config.loginUrl);
 
-        // Close cookies policy so it doesn't block the login button
-        await page.click("#cookie-policy-button-accept");
-
         // Type email
         await page.waitForSelector("input[type='email']");
         await page.type("input[type='email']", credentials.email);
@@ -114,7 +111,7 @@ export default class NewUbuntuSSO extends Authentication {
 
         // Click login
         await page.click("button[type='submit']");
-
+        
         // Wait for 2FA
         await page.waitForSelector("input[name='oath_token']");
 
