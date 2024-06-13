@@ -39,15 +39,16 @@ export default class UbuntuSSO extends Authentication {
     constructor(spinner: Ora, config: Config) {
         super(spinner, config);
 
-        if (existsSync(config.userSettingsPath)) {
+        try {
             this.jar = CookieJar.deserializeSync(this.parseUserSettings());
-        } else {
+        } catch {
             this.jar = new CookieJar();
             this.jar.setCookie(
                 "_cookies_accepted=all",
                 "https://login.ubuntu.com/",
             );
         }
+
         const jar = this.jar;
         this.httpsAgent = new HttpsCookieAgent({ cookies: { jar } });
         this.defaultFetchOptions = {
@@ -86,6 +87,7 @@ export default class UbuntuSSO extends Authentication {
                 domain: new URL(this.config.loginUrl).hostname,
             };
         }
+
         this.spinner.stop();
         interface Credentials {
             email?: string;

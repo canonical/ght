@@ -15,10 +15,12 @@ function makeProgram(): Command {
         "GHT is a command-line tool that provides helpers to automate " +
             "interactions with the Canonical Greenhouse website.",
     );
+    // Global options
     program.option(
         "-c, --config <path>",
         "Path to a custom config file path that will be used to override default values",
     );
+    program.option("--new", "Use alternative authentication implementation");
 
     // Login command
     program
