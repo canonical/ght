@@ -96,6 +96,9 @@ export const usaCities: string[] = [
     "Home based - Americas, Washington",
     "Home based - Americas, Wichita",
 ];
+// Sudbury and St. John's have been temporarily commented out while TS
+// assesses the Geocoding API bug, as they are repeat offenders of the
+// issue.
 const canadaCities: string[] = [
     "Home based - Canada, Calgary",
     "Home based - Canada, Montreal",
@@ -107,14 +110,14 @@ const canadaCities: string[] = [
     "Home based - Canada, Toronto",
     "Home based - Canada, Mississauga",
     "Home based - Canada, Hamilton",
-    "Home based - Canada, Sudbury",
+    // "Home based - Canada, Sudbury",
     "Home based - Canada, Moncton",
     "Home based - Canada, Winnipeg",
     "Home based - Canada, Regina",
     "Home based - Canada, Edmonton",
     "Home based - Canada, Calgary",
     "Home based - Canada, Saint John",
-    "Home based - Canada, St. John's",
+    // "Home based - Canada, St. John's",
     "Home based - Canada, Vancouver",
     "Home based - Canada, Victoria, British Columbia",
     "Home based - Canada, Waterloo, Ontario",
@@ -259,7 +262,9 @@ const REGIONS = {
         "Home based - Asia Pacific, Hsinchu",
         "Home based - Asia Pacific, Hong Kong",
         "Home based - Asia Pacific, Hyderabad",
+        "Home based - Asia Pacific, Kuala Lumpur",
         "Home based - Asia Pacific, Kyoto",
+        "Home based - Asia Pacific, Manila",
         "Home based - Asia Pacific, Melbourne",
         "Home based - Asia Pacific, Mumbai",
         "Home based - Asia Pacific, Nagoya",
