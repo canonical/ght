@@ -4,7 +4,8 @@ import Config from "../config/Config";
 import Enquirer = require("enquirer");
 import { Page } from "puppeteer";
 import { Ora } from "ora";
-import fs, { writeFileSync } from "fs";
+import fs from "fs";
+import path from "path";
 
 type SessionCookie = {
     name: string;
@@ -48,7 +49,11 @@ export default class NewUbuntuSSO extends Authentication {
     }
 
     private saveUserSettings(session: SessionCookie) {
-        writeFileSync(this.config.userSettingsPath, JSON.stringify(session));
+        const confDir = path.dirname(this.config.userSettingsPath);
+        if (!fs.existsSync(confDir)) {
+            fs.mkdirSync(confDir, { recursive: true });
+        }
+        fs.writeFileSync(this.config.userSettingsPath, JSON.stringify(session));
     }
 
     private prompt(): Promise<Credentials> {
@@ -111,7 +116,7 @@ export default class NewUbuntuSSO extends Authentication {
 
         // Click login
         await page.click("button[type='submit']");
-        
+
         // Wait for 2FA
         await page.waitForSelector("input[name='oath_token']");
 
