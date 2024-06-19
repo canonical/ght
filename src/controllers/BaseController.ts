@@ -84,7 +84,7 @@ export abstract class BaseController {
 
         const browser = await Puppeteer.launch(options);
         const page = await browser.newPage();
-        // Set a sane user agent to avoid anti bot protections
+        // Set a standard browser user agent to avoid anti bot protections
         if (isDevelopment) {
             page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36');
         }
