@@ -7,6 +7,7 @@ import {
 } from "../auth";
 import { UserError, isDevelopment } from "../utils/processUtils";
 import { loadConfigFile } from "../utils/configUtils";
+import { ScreenRecorder } from "../utils/screenRecorder";
 import ora, { Ora } from "ora";
 import * as Puppeteer from "puppeteer";
 import { Command } from "commander";
@@ -28,6 +29,16 @@ export abstract class BaseController {
      */
     protected auth: Authentication;
 
+    /**
+     * Whether or not to record Puppeteer session to mp4
+     */
+    protected recordingEnabled: boolean;
+
+    /**
+     * Screen recorder instance
+     */
+    protected screenRecorder: ScreenRecorder;
+
     constructor(command: Command) {
         this.spinner = ora();
 
@@ -37,6 +48,9 @@ export abstract class BaseController {
         // configPath is a global option
         const configPath = command.opts().config;
         this.config = this.getConfig(configPath);
+
+        // --record is a global option
+        this.recordingEnabled = command.opts().record;
 
         let auth;
         if (this.config.isCanonical()) {
@@ -86,7 +100,15 @@ export abstract class BaseController {
         const page = await browser.newPage();
         // Set a standard browser user agent to avoid anti bot protections
         if (isDevelopment) {
-            page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36');
+            page.setUserAgent(
+                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+            );
+        }
+
+        // optionally initialize screen recorder instance
+        if (this.recordingEnabled) {
+            this.screenRecorder = new ScreenRecorder(page);
+            await this.screenRecorder.start();
         }
 
         return {
@@ -110,6 +132,13 @@ export abstract class BaseController {
         });
 
         return enteredRegions;
+    }
+
+    // method to handle stopping a recording
+    public async stopRecording(): Promise<void> {
+        if (this.screenRecorder && this.screenRecorder.isActive()) {
+            await this.screenRecorder.stop();
+        }
     }
 
     /**
