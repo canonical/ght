@@ -107,4 +107,11 @@ To do do, supply the file path with `--config` (or `-c`), i.e:
 ght replicate -i --config ~/ght-config.yaml
 ```
 
+### Recording GHT
+You can also optionally record the Puppeteer session of any GHT action you are attempting. This can be helpful if you are experiencing errors and would like to provide WPE with more information to investigate. To do so, add the `--record` flag to any GHT operation.
+
+```
+ght replicate -i --record
+```
+
 **Happy hiring!**
