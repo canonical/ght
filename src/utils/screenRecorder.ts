@@ -1,6 +1,7 @@
 import { ScreenRecorderOptions } from "../core/types";
 import { PuppeteerScreenRecorder } from "puppeteer-screen-recorder";
 import { Page } from "puppeteer";
+import os from "os";
 import { join } from "path";
 import { createWriteStream, existsSync, mkdirSync, WriteStream } from "fs";
 
@@ -23,7 +24,8 @@ export class ScreenRecorder {
         }
 
         // define output directory for recording file
-        const directory = join(process.cwd(), "recordings");
+        const homeDir = process.env.SNAP_REAL_HOME || os.homedir();
+        const directory = join(homeDir, ".ght", "recordings");
         if (!existsSync(directory)) {
             mkdirSync(directory, { recursive: true });
         }
