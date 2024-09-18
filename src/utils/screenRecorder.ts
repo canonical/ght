@@ -12,7 +12,9 @@ export class ScreenRecorder {
     private options: ScreenRecorderOptions = {
         followNewTab: true,
         fps: 25,
-        ffmpeg_Path: null,
+        ffmpeg_Path: process.env.SNAP
+            ? `${process.env.SNAP}/usr/bin/ffmpeg`
+            : null,
         aspectRatio: "4:3",
     };
 

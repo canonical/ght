@@ -63,11 +63,18 @@ parts:
             - libxfixes3
             - libxkbcommon-x11-0
             - libxrandr2
+            # for screen recording
+            - ffmpeg
+            - libpulse0
+            - libblas3
+            - liblapack3
 apps:
     ght:
         command: ght
         environment:
             PUPPETEER_EXECUTABLE_PATH: $SNAP/bin/chromium.launcher
+            # for ffmpeg to locate required libs
+            LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/x86_64-linux-gnu/pulseaudio:$SNAP/usr/lib/x86_64-linux-gnu/blas:$SNAP/usr/lib/x86_64-linux-gnu/lapack
         plugs:
             - desktop
             - desktop-legacy
