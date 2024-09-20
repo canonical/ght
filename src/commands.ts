@@ -7,6 +7,7 @@ import {
     AssignGradersController,
 } from "./controllers";
 import { validateNumberParam } from "./utils/commandUtils";
+import { UserError } from "./utils/processUtils";
 import { Command, Argument, Option } from "commander";
 
 function makeProgram(): Command {
@@ -21,13 +22,24 @@ function makeProgram(): Command {
         "Path to a custom config file path that will be used to override default values",
     );
     program.option("--new", "Use alternative authentication implementation");
+    program.option(
+        "--record",
+        "Record the Puppeteer session. For debugging purposes.",
+    );
 
     // Login command
     program
         .command("login")
         .description("Login and save credentials")
         .action(async () => {
-            await new LoginController(program).run();
+            const controller = new LoginController(program);
+            try {
+                await controller.run();
+            } catch (error) {
+                throw new UserError(`Error during login: ${error}`);
+            } finally {
+                await controller.stopRecording();
+            }
         });
 
     // Logout command
@@ -35,7 +47,14 @@ function makeProgram(): Command {
         .command("logout")
         .description("Remove saved credentials")
         .action(async () => {
-            await new LogoutController(program).run();
+            const controller = new LogoutController(program);
+            try {
+                await controller.run();
+            } catch (error) {
+                throw new UserError(`Error during logout: ${error}`);
+            } finally {
+                await controller.stopRecording();
+            }
         });
 
     // Replicate command
@@ -70,7 +89,18 @@ function makeProgram(): Command {
             new Option("-i, --interactive", "Enable interactive interface"),
         )
         .action(async (jobPostId, options) => {
-            await new ReplicateController(program, jobPostId, options).run();
+            const controller = new ReplicateController(
+                program,
+                jobPostId,
+                options,
+            );
+            try {
+                await controller.run();
+            } catch (error) {
+                throw new UserError(`Error replicating job post: ${error}`);
+            } finally {
+                await controller.stopRecording();
+            }
         });
 
     // Reset command
@@ -102,7 +132,14 @@ function makeProgram(): Command {
             new Option("-i, --interactive", "Enable interactive interface"),
         )
         .action(async (jobPostID, options) => {
-            await new ResetController(program, jobPostID, options).run();
+            const controller = new ResetController(program, jobPostID, options);
+            try {
+                await controller.run();
+            } catch (error) {
+                throw new UserError(`Error resetting job posts: ${error}`);
+            } finally {
+                await controller.stopRecording();
+            }
         });
 
     // Repost command
@@ -128,7 +165,18 @@ function makeProgram(): Command {
             new Option("-i, --interactive", "Enable interactive interface"),
         )
         .action(async (jobPostID, options) => {
-            await new RepostController(program, jobPostID, options).run();
+            const controller = new RepostController(
+                program,
+                jobPostID,
+                options,
+            );
+            try {
+                await controller.run();
+            } catch (error) {
+                throw new UserError(`Error reposting job: ${error}`);
+            } finally {
+                await controller.stopRecording();
+            }
         });
 
     // Assign command
@@ -153,7 +201,14 @@ function makeProgram(): Command {
             ),
         )
         .action(async (options) => {
-            await new AssignGradersController(program, options).run();
+            const controller = new AssignGradersController(program, options);
+            try {
+                await controller.run();
+            } catch (error) {
+                throw new UserError(`Error assigning graders: ${error}`);
+            } finally {
+                await controller.stopRecording();
+            }
         });
 
     return program;

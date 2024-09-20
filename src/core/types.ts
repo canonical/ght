@@ -53,3 +53,25 @@ export type JobToAssign = {
     id: number;
     jobName: string;
 };
+
+export type ScreenRecorderOptions = {
+    aspectRatio?: "3:2" | "4:3" | "16:9";
+    autopad?: {
+        color?: string;
+    };
+    ffmpeg_Path?: string | null;
+    followNewTab?: boolean;
+    format?: "jpeg" | "png";
+    fps?: number;
+    quality?: number;
+    recordDurationLimit?: number;
+    videoBitrate?: number;
+    videoCodec?: string;
+    videoCrf?: number;
+    videoFrame?: {
+        height?: number | null;
+        width?: number | null;
+    };
+    videoPixelFormat?: string;
+    videoPreset?: string;
+};
