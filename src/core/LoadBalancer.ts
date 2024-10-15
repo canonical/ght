@@ -217,11 +217,26 @@ export default class LoadBalancer {
                 comma = ", ";
             }
 
-            // Click save
+            // Click save and await POST response
+            // POST is to this endpoint:
+            // https://canonical.greenhouse.io/interviews/take_home_test/graders
+            await Promise.all([
+                this.page.waitForResponse(
+                    (response) =>
+                        response
+                            .url()
+                            .includes("/interviews/take_home_test/graders") &&
+                        response.request().method() === "POST",
+                ),
+                this.page.click("input[type='submit']#save_graders"),
+            ]);
+
+            // Wait for the modal to disappear
             await this.page.waitForSelector(
-                "input[type='submit']#save_graders",
+                "#edit_take_home_test_graders_modal",
+                { hidden: true, timeout: 10000 },
             );
-            await this.page.click("input[type='submit']#save_graders");
+
             this.allocationsCount++;
 
             this.spinner.stop();
