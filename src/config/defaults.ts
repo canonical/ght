@@ -268,6 +268,7 @@ const REGIONS = {
         "Home based - Asia Pacific, Melbourne",
         "Home based - Asia Pacific, Mumbai",
         "Home based - Asia Pacific, Nagoya",
+        "Home based - Asia Pacific, Osaka",
         "Home based - Asia Pacific, Perth",
         "Home based - Asia Pacific, Pune",
         "Home based - Asia Pacific, Seoul",
