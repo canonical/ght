@@ -26,8 +26,8 @@ export class ScreenRecorder {
         }
 
         // define output directory for recording file
-        const homeDir = process.env.SNAP_REAL_HOME || os.homedir();
-        const directory = join(homeDir, ".ght", "recordings");
+        const homeDir = process.env.SNAP_USER_COMMON || join(os.homedir(), ".ght");
+        const directory = join(homeDir, "recordings");
         if (!existsSync(directory)) {
             mkdirSync(directory, { recursive: true });
         }
