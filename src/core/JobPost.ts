@@ -100,7 +100,11 @@ export default class JobPost {
     public async getLocationInfo(location: string) {
         const locationArr = location.split(",");
         locationArr.shift();
-        const cityName = locationArr.reduce((str1, str2) => `${str1}, ${str2}`);
+        // get city name from free job boards section if raw
+        // location string doesn't contain a city name
+        const cityName = locationArr.length
+            ? locationArr.reduce((str1, str2) => `${str1}, ${str2}`)
+            : this.getCityNameFromFreeJobBoards();
 
         const accessTokenElement = await this.page.$(
             "*[data-key='LocationControl.Providers.Mapbox.apiKey']",
@@ -164,11 +168,25 @@ export default class JobPost {
                   country_short_name:
                       contextInformation["short_code"].toUpperCase(),
               }
-            : {
-                  country_long_name: locationInfo["text"],
-                  country_short_name:
-                      locationInfo["properties"]["short_code"].toUpperCase(),
-              };
+            : locationInfo?.properties?.short_code
+              ? {
+                    country_long_name: locationInfo["text"],
+                    country_short_name:
+                        locationInfo["properties"]["short_code"].toUpperCase(),
+                }
+              : {
+                    // if properties.short_code doesn't exist, use
+                    // the first value in the context field array.
+                    // this can be a region instead of a country, but in these
+                    // cases the text and short_code fields will still
+                    // be accurate.
+                    // slicing because sometimes numbers are added to the
+                    // short code. i.e. HR-21 for Croatia instead of just HR.
+                    country_long_name: locationInfo["context"][0]["text"],
+                    country_short_name: locationInfo["context"][0]["short_code"]
+                        .slice(0, 2)
+                        .toUpperCase(),
+                };
 
         return {
             city: locationInfo["text"],
@@ -365,6 +383,20 @@ export default class JobPost {
             },
             "Failed to update the status of " + logName,
             this.isSuccessful,
+        );
+    }
+
+    /**
+     * Sometimes a raw location string does not contain a city name. In these
+     * cases, the city name in the free job boards section at the bottom of
+     * the edit page can be used instead. This function returns said city name.
+     *
+     * @returns (string): The city name from the free job boards section
+     */
+    private async getCityNameFromFreeJobBoards(): Promise<string> {
+        return await this.page.$eval(
+            'input[placeholder="Select location"]',
+            (element: HTMLInputElement) => element.value,
         );
     }
 }

@@ -2,6 +2,7 @@ import Job from "../core/Job";
 import * as jobPost from "../core/JobPost";
 import { JobBoard, PostInfo } from "../core/types";
 import Config from "../config/Config";
+import JobPost from "../core/JobPost";
 
 jest.mock("../utils/pageUtils", () => ({
     ...jest.requireActual("../utils/pageUtils"),
@@ -334,6 +335,83 @@ describe("Job tests", () => {
             await expect(job.getJobIDFromPost(1)).rejects.toThrow(
                 /Job cannot be found/i,
             );
+        });
+    });
+
+    describe("raw location strings", () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+            jest.restoreAllMocks();
+        });
+
+        it("successfully duplicates post with no city name in location", async () => {
+            // test page
+            const testPage = {
+                $: jest.fn(),
+                $eval: jest
+                    .fn()
+                    .mockResolvedValue("Douglas, IsleMan, Isle of Man"),
+            } as any;
+
+            const jobPostInstance = new JobPost(testPage, config);
+
+            // spy on functions we want to verify
+            const reduceSpy = jest.spyOn(Array.prototype, "reduce");
+            const getCityNameSpy = jest.spyOn(
+                jobPostInstance as any,
+                "getCityNameFromFreeJobBoards",
+            );
+
+            // expect error fetching data key as it will not exist in
+            // mocked environment.  this test is for the code before
+            // the fetching of this data key.
+            await expect(
+                jobPostInstance.getLocationInfo("Home based - EMEA"),
+            ).rejects.toThrow(
+                "Data key to retrieve location information cannot be found.",
+            );
+
+            // since no city name, reduce function should not be called,
+            // getCityNameFromFreeJobBoards should be called, and eval
+            // should be called with a specific selector
+            expect(reduceSpy).not.toHaveBeenCalled();
+            expect(getCityNameSpy).toHaveBeenCalled();
+            expect(testPage.$eval).toHaveBeenCalledWith(
+                'input[placeholder="Select location"]',
+                expect.any(Function),
+            );
+        });
+
+        it("successfully duplicates post with city name in location", async () => {
+            // test page
+            const testPage = {
+                $: jest.fn(),
+                $eval: jest.fn(),
+            } as any;
+
+            const jobPostInstance = new JobPost(testPage, config);
+
+            // spy on functions we want to verify
+            const reduceSpy = jest.spyOn(Array.prototype, "reduce");
+            const getCityNameSpy = jest.spyOn(
+                jobPostInstance as any,
+                "getCityNameFromFreeJobBoards",
+            );
+
+            // expect error fetching data key as it will not exist in
+            // mocked environment.  this test is for the code before
+            // the fetching of this data key.
+            await expect(
+                jobPostInstance.getLocationInfo("Home based - Europe, Zagreb"),
+            ).rejects.toThrow(
+                "Data key to retrieve location information cannot be found.",
+            );
+
+            // since there is a city name, reduce function should be called,
+            // and getCityNameFromFreeJobBoards nor eval should be called.
+            expect(reduceSpy).toHaveBeenCalled();
+            expect(getCityNameSpy).not.toHaveBeenCalled();
+            expect(testPage.$eval).not.toHaveBeenCalled();
         });
     });
 });
