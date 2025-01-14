@@ -270,18 +270,18 @@ export default class JobPost {
         );
 
         // set the new location
-        jobApplication.job_post_location.text_value = location;
+        jobApplication.job_post_locations[0].text_value = location;
         if (
-            jobApplication.job_post_location.job_post_location_type.key !==
+            jobApplication.job_post_locations[0].job_post_location_type.key !==
             "FREE_TEXT"
         ) {
-            jobApplication.job_post_location.job_post_location_type = {
+            jobApplication.job_post_locations[0].job_post_location_type = {
                 id: 1,
                 name: "Free Text",
                 key: "FREE_TEXT",
             };
         }
-        jobApplication.job_post_location.custom_location = null;
+        jobApplication.job_post_locations[0].custom_location = null;
         // set the title
         jobApplication.title = jobPost.name;
 
