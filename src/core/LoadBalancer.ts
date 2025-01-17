@@ -290,6 +290,13 @@ export default class LoadBalancer {
             const url = this.buildUrl(job);
             await this.page.goto(url, { waitUntil: "networkidle0" });
 
+            const cookiesOkButton = await this.page.$(
+                `#footer [data-provides="inform-cookies-popup"] button`,
+            );
+            if (cookiesOkButton) {
+                await cookiesOkButton.click();
+            }
+
             await this.findUsername();
             let page = 1;
             while (true) {

@@ -1,5 +1,5 @@
 name: ght
-version: "1.11.2"
+version: "1.11.3"
 summary: Perform actions in Canonical's Greenhouse automatically.
 description: An automated browser that does a set of tasks on Canonical's Greenhouse dashboard without the need of interaction with the UI.
 base: core22
