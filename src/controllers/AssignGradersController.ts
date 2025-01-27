@@ -2,7 +2,6 @@ import { BaseController } from "./BaseController";
 import { runPrompt } from "../utils/commandUtils";
 import Job from "../core/Job";
 import { UserError } from "../utils/processUtils";
-import config from "../config/Config";
 import { loadConfigFile } from "../utils/configUtils";
 import { GradersConfig, Grader, JobToAssign } from "../core/types";
 import LoadBalancer from "../core/LoadBalancer";
@@ -98,7 +97,7 @@ export class AssignGradersController extends BaseController {
             "ght-graders.yml",
         );
         const gradersConfig = loadConfigFile<GradersConfig>(gradersConfigPath);
-        if (!config) {
+        if (!gradersConfig) {
             throw new UserError("Unable to find list of graders");
         }
         const graders = this.createPool(gradersConfig, selectedJobs);
