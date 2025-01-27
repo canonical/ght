@@ -92,14 +92,30 @@ export class AssignGradersController extends BaseController {
             };
         });
 
-        const gradersConfigPath = join(
-            process.env["SNAP_REAL_HOME"] || homedir(),
-            "ght-graders.yml",
-        );
-        const gradersConfig = loadConfigFile<GradersConfig>(gradersConfigPath);
-        if (!gradersConfig) {
-            throw new UserError("Unable to find list of graders");
+        // Check both `$HOME/ght-graders.yml` and `$HOME/.config/ght/ght-graders.yml`
+        const gradersConfigPaths: string[] = [
+            join(
+                process.env["SNAP_REAL_HOME"] || homedir(),
+                ".config/ght/ght-graders.yml",
+            ),
+            join(process.env["SNAP_REAL_HOME"] || homedir(), "ght-graders.yml"),
+        ];
+
+        let gradersConfig = null;
+        for (let p of gradersConfigPaths) {
+            try {
+                gradersConfig = loadConfigFile<GradersConfig>(p);
+            } catch {
+                continue;
+            }
         }
+
+        if (!gradersConfig) {
+            throw new UserError(
+                "Unable to find list of graders. Please ensure 'ght-graders.yml' is present at either '$HOME/ght-graders.yml' or '$HOME/.config/ght-graders.yml'.",
+            );
+        }
+
         const graders = this.createPool(gradersConfig, selectedJobs);
         if (!graders.length) {
             throw new UserError(
