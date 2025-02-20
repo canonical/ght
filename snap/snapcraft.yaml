@@ -86,3 +86,4 @@ apps:
             - opengl
             - unity7
             - x11
+            - password-manager-service
