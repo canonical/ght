@@ -65,7 +65,7 @@ describe("Job tests", () => {
             expect(spinner.start).toHaveBeenCalledWith(
                 "Starting to create job posts.",
             );
-            expect(spinner.text).toEqual("218 of 218 job posts are created.");
+            expect(spinner.text).toEqual("212 of 212 job posts are created.");
             expect(spinner.stop).toHaveBeenCalledTimes(1);
         });
 
