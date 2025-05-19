@@ -98,6 +98,10 @@ export abstract class BaseController {
 
         const browser = await Puppeteer.launch(options);
         const page = await browser.newPage();
+
+        // remove navigation timeout
+        page.setDefaultNavigationTimeout(0);
+
         // Set a standard browser user agent to avoid anti bot protections
         if (isDevelopment) {
             page.setUserAgent(
