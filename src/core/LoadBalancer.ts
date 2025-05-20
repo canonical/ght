@@ -1,5 +1,6 @@
 import { Application, Grader, JobToAssign, GraderRecord } from "./types";
 import { UserError } from "../utils/processUtils";
+import { clearPopups } from "../utils/pageUtils";
 import { green } from "colors";
 import { Ora } from "ora";
 import { Page } from "puppeteer";
@@ -289,13 +290,7 @@ export default class LoadBalancer {
         for (const job of this.jobs) {
             const url = this.buildUrl(job);
             await this.page.goto(url, { waitUntil: "networkidle0" });
-
-            const cookiesOkButton = await this.page.$(
-                `#footer [data-provides="inform-cookies-popup"] button`,
-            );
-            if (cookiesOkButton) {
-                await cookiesOkButton.click();
-            }
+            await clearPopups(this.page);
 
             await this.findUsername();
             let page = 1;
@@ -321,6 +316,7 @@ export default class LoadBalancer {
                 await this.page.goto(url + `&page=${page}`, {
                     waitUntil: "networkidle0",
                 });
+                await clearPopups(this.page);
             }
         }
         this.spinner.stop();
