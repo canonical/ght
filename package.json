@@ -1,6 +1,6 @@
 {
     "name": "ght",
-    "version": "1.11.5",
+    "version": "1.11.6",
     "scripts": {
         "build": "tsc && cp package.json ght ./dist",
         "dev": "NODE_ENV=development ts-node ./src/index.ts",
