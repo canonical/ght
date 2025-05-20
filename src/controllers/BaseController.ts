@@ -119,8 +119,9 @@ export abstract class BaseController {
         page.on('request', request => {
             if (request.url().includes('pendo')) {
                 request.abort();
+            } else {
+                request.continue();
             }
-            request.continue();
         });
 
         return {
