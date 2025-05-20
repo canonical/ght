@@ -9,6 +9,7 @@ import {
 import { evaluate, isDevelopment } from "../utils/processUtils";
 import Config from "../config/Config";
 import { runPrompt } from "../utils/commandUtils";
+import { clearPopups } from "../utils/pageUtils";
 import * as Puppeteer from "puppeteer";
 import { Ora } from "ora";
 // @ts-ignore 2023-11-24: https://github.com/enquirer/enquirer/issues/135 still not solved.
@@ -125,9 +126,13 @@ export default class Job {
             `/plans/${jobID}/jobapp`,
         );
         await this.page.goto(jobappURL);
+        await clearPopups(this.page);
+
         const pageCount = await this.getPageCount();
         for (let currentPage = 1; currentPage <= pageCount; currentPage++) {
             await this.page.goto(`${jobappURL}?page=${currentPage}`);
+            await clearPopups(this.page);
+            
             job.posts.push(...(await this.getJobPosts(job)));
         }
         return job;
@@ -272,6 +277,7 @@ export default class Job {
     public async getJobName(jobID: number): Promise<string> {
         const url = joinURL(this.config.greenhouseUrl, `/plans/${jobID}`);
         await this.page.goto(url);
+        await clearPopups(this.page);
 
         const jobTitleElement = await this.page.$(".job-name");
         const jobAnchor = await jobTitleElement?.$("a");
@@ -296,6 +302,7 @@ export default class Job {
             `/alljobs/list?page=${page}`,
         );
         await this.page.goto(url);
+        await clearPopups(this.page);
 
         const body = await this.page.$("body");
         let innerHTML = await body?.evaluate((element) => element.innerHTML);
@@ -392,6 +399,8 @@ export default class Job {
             `/jobapps/${postID}/edit`,
         );
         await this.page.goto(url);
+        await clearPopups(this.page);
+
         const jobElement = await this.page.$(".job-name");
         if (!jobElement) throw new Error(`Job cannot be found in ${url}.`);
         return await getIDFromURL(jobElement, "a");

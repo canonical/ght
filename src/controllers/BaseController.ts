@@ -115,6 +115,15 @@ export abstract class BaseController {
             await this.screenRecorder.start();
         }
 
+        await page.setRequestInterception(true);
+        page.on('request', request => {
+            if (request.url().includes('pendo.io')) {
+                request.abort();
+            } else {
+                request.continue();
+            }
+        });
+
         return {
             browser,
             page,

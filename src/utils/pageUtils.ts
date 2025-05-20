@@ -85,3 +85,30 @@ export async function getIDFromURL(
     const urlParts: string[] = url.split("/");
     return parseInt(urlParts[urlParts.length - 1]);
 }
+
+export async function clearPopups(page) {
+    const cookiesOkButton = await page.$(
+        `#footer [data-provides="inform-cookies-popup"] button`,
+    );
+    if (cookiesOkButton) {
+        await cookiesOkButton.click();
+    }
+
+    // "join upcoming webinar popup"
+    // doesn't show up for everyone
+    const popupDismissButton = await page.$(
+        `button.bb-button._pendo-button-secondaryButton._pendo-button`,
+    );
+    if (popupDismissButton) {
+        await popupDismissButton.click();
+    }
+
+    // "join upcoming webinar popup"
+    // doesn't show up for everyone
+    const popupCloseButton = await page.$(
+        `button._pendo-close-guide`,
+    );
+    if (popupCloseButton) {
+        await popupCloseButton.click();
+    }
+}

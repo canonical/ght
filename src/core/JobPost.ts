@@ -1,6 +1,7 @@
 import { JobBoard, JobInfo, PostInfo } from "./types";
 import { usaCities } from "../config/defaults";
 import {
+    clearPopups,
     getCSRFToken,
     getIDFromURL,
     getInnerText,
@@ -200,6 +201,7 @@ export default class JobPost {
             `/jobapps/${jobPost.id}/edit`,
         );
         await this.page.goto(url1);
+        await clearPopups(this.page);
 
         const element = await this.page.$("*[data-react-class='JobPostsForm']");
         if (!element)
@@ -344,6 +346,7 @@ export default class JobPost {
             `/plans/${jobPost.job.id}/jobapp`,
         );
         await this.page.goto(url);
+        await clearPopups(this.page);
 
         const csrfToken = await getCSRFToken(this.page);
         await sendRequest(
