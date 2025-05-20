@@ -6,6 +6,7 @@ import Config from "../config/Config";
 jest.mock("../utils/pageUtils", () => ({
     ...jest.requireActual("../utils/pageUtils"),
     getIDFromURL: jest.fn().mockReturnValue(1),
+    clearPopups: jest.fn(),
 }));
 
 const config = new Config();
