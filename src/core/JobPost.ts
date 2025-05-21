@@ -204,14 +204,6 @@ export default class JobPost {
         // second city and on so skip reloading.
         if (this.page.url() != url1) {
             await this.page.goto(url1);
-
-            // url1("/jobapps/${jobPost.id}/edit") may have a
-            // beforeunload handler so accept the "Changes you made may
-            // not be saved" dialog since we are not editing anything
-            // but replicating the existing data only.
-            const acceptBeforeUnload = dialog =>
-                dialog.type() === "beforeunload" && dialog.accept();
-            this.page.on("dialog", acceptBeforeUnload);
         }
 
         const element = await this.page.$("*[data-react-class='JobPostsForm']");
