@@ -199,7 +199,12 @@ export default class JobPost {
             this.config.greenhouseUrl,
             `/jobapps/${jobPost.id}/edit`,
         );
-        await this.page.goto(url1);
+
+        // The expected URL is already opened when replicating to the
+        // second city and on so skip reloading.
+        if (this.page.url() != url1) {
+            await this.page.goto(url1);
+        }
 
         const element = await this.page.$("*[data-react-class='JobPostsForm']");
         if (!element)

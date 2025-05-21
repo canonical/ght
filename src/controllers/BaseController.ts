@@ -115,6 +115,16 @@ export abstract class BaseController {
             await this.screenRecorder.start();
         }
 
+        // url1("/jobapps/${jobPost.id}/edit") may have a
+        // beforeunload handler so accept the "Changes you made may
+        // not be saved" dialog since we are not editing anything
+        // but replicating the existing data only.
+        page.on("dialog", dialog => {
+            if (dialog.type() === "beforeunload") {
+                dialog.accept();
+            }
+        });
+
         return {
             browser,
             page,
