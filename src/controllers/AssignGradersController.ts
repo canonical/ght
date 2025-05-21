@@ -112,7 +112,7 @@ export class AssignGradersController extends BaseController {
 
         if (!gradersConfig) {
             throw new UserError(
-                "Unable to find list of graders. Please ensure 'ght-graders.yml' is present at either '$HOME/ght-graders.yml' or '$HOME/.config/ght-graders.yml'.",
+                "Unable to find list of graders. Please ensure 'ght-graders.yml' is present at either '$HOME/ght-graders.yml' or '$HOME/.config/ght/ght-graders.yml'.",
             );
         }
 
