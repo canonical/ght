@@ -18,7 +18,7 @@ yarn
 -   Run command with the given format:
 
 ```
-ts-node ./src/index.ts <command-name> <options>
+NODE_ENV=development ts-node ./src/index.ts <command-name> <options>
 ```
 
 ## Using Snapcraft
